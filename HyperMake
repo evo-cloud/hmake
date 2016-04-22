@@ -1,0 +1,9 @@
+---
+format: hypermake.v0
+
+targets:
+    all:
+        after: [a, b, c]
+    a: {}
+    b: {}
+    c: {}

@@ -1,0 +1,9 @@
+---
+cli:
+    name: hmake
+    description: HyperMake builds your project using consistent environment
+    commands:
+        - name: make
+          description: Make default/specified targets
+        - name: targets
+          description: List available targets in current project
