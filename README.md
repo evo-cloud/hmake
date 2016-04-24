@@ -30,8 +30,8 @@ _hmake_ expects a `HyperMake` file in root of the project,
 and you can run `hmake` from any sub-directory inside the project,
 the command will figure out project root by locating `HyperMake` file.
 
-In any sub-directory, a file called `HyperMake` or `*.hmake` will be collected
-and aggregated into the _world view_ of _hmake_.
+In any sub-directory, files called `*.hmake` can be included in `HyperMake` in
+the root directory or any other `*.hmake` files.
 
 ## File Format
 
@@ -39,6 +39,7 @@ In `HyperMake` or `*.hmake`, define any of the following things:
 
 - Targets: the target to build, including dependencies and commands.
 - Settings: the settings applies to _hmake_.
+- Includes: include more `*.hmake` files.
 
 Here's the schema in example:
 
@@ -80,17 +81,8 @@ settings:
     caps-drop:
         - ...
 
+includes:
+    - src/**/*.hmake
 ```
-
-#### Rules for settings
-
-The settings in files in parent folder will be visible to targets in the
-same file and files in sub-directories.
-While settings doesn't populate back to targets defines in parent folders.
-
-There's one special file called `hmakerc` which contains only settings and
-applies to all _hmake_ targets defined in current folder and sub-directories.
-
-The current schema of settings is a flat map, with values be of arbitrary types
 
 #### Pre-defined Environment Variables

@@ -6,11 +6,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
+	"sort"
 
 	"github.com/codingbrain/clix.go/clix"
-	"github.com/codingbrain/gms"
-	"github.com/codingbrain/mapper.go/mapper"
+	"github.com/easeway/mapper.go/mapper"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -19,56 +18,39 @@ const (
 	Format = "hypermake.v0"
 	// RootFile is hmake filename sits on root
 	RootFile = "HyperMake"
-	// Suffix is suffix of alternative hmake file name
-	Suffix = ".hmake"
-	// RcFile is file name only for settings
-	RcFile = "hmakerc"
 )
 
 // ErrUnsupportedFormat indicates the file is not recognized
 var ErrUnsupportedFormat = errors.New("unsupported format")
 
-// Target defines a build target
-type Target struct {
-	Name   string                 `json:"name"`
-	Before []string               `json:"before"`
-	After  []string               `json:"after"`
-	Envs   []string               `json:"envs"`
-	Cmds   []*Command             `json:"cmds"`
-	Ext    map[string]interface{} `json:"*"`
+// File defines the content of HyperMake or .hmake file
+type File struct {
+	// Format indicates file format
+	Format string `json:"format"`
+	// Targets are targets defined in current file
+	Targets map[string]*Target `json:"targets"`
+	// Settings are properties
+	Settings Settings `json:"settings"`
+	// Includes are patterns for sourcing external files
+	Includes []string `json:"includes"`
 
-	// Source is the file defined the target
-	Source string `json:"-"`
-}
-
-// Command defines a single command to execute
-type Command struct {
-	Shell string                 `json:"*"`
-	Ext   map[string]interface{} `json:"*"`
-}
-
-// Settings applies to targets
-type Settings struct {
-	Properties map[string]interface{} `json:"*"`
-
-	Source string `json:"-"`
-	Scope  string `json:"-"`
-}
-
-// Schema defines the content in a file
-type Schema struct {
-	Format   string                 `json:"format"`
-	Targets  map[string]*Target     `json:"targets"`
-	Settings map[string]interface{} `json:"settings"`
-
+	// Source is the relative path to the file
 	Source string `json:"-"`
 }
 
 // Project is the world view of hmake
 type Project struct {
-	BaseDir  string
-	Schemas  []*Schema
-	Settings []*Settings
+	// BaseDir is the root directory of project
+	BaseDir string
+
+	// MasterFile is the file with everything merged
+	MasterFile File
+
+	// All loaded make files
+	Files []*File
+
+	// Tasks are built from resolved targets
+	Targets TargetNameMap
 }
 
 func loadYaml(filename string) (map[string]interface{}, error) {
@@ -80,27 +62,41 @@ func loadYaml(filename string) (map[string]interface{}, error) {
 	return val, yaml.Unmarshal(data, val)
 }
 
-// Locate looks up the root directory of project where HyperMake exists
-func (p *Project) Locate() error {
-	if p.BaseDir != "" {
-		return nil
+// LoadFile loads from specified path
+func LoadFile(baseDir, path string) (*File, error) {
+	val, err := loadYaml(filepath.Join(baseDir, path))
+	if err != nil {
+		return nil, err
 	}
 
+	if format, ok := val["format"].(string); !ok || format != Format {
+		return nil, fmt.Errorf("unsupported format: " + format)
+	}
+
+	m := &mapper.Mapper{}
+	f := &File{}
+	err = m.Map(f, val)
+	if err == nil {
+		f.Source = path
+	}
+	return f, err
+}
+
+// LocateProject creates a project by locating the root file
+func LocateProject() (*Project, error) {
 	wd, err := os.Getwd()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for {
-		data, err := loadYaml(filepath.Join(wd, RootFile))
+		p := &Project{BaseDir: wd}
+		_, err := p.Load(RootFile)
 		if err == nil {
-			format, ok := data["format"].(string)
-			if ok && format == Format {
-				p.BaseDir = wd
-				return nil
-			}
-		} else if !os.IsNotExist(err) {
-			return err
+			return p, nil
+		}
+		if !os.IsNotExist(err) {
+			return nil, err
 		}
 		dir := filepath.Dir(wd)
 		if dir == wd {
@@ -109,88 +105,118 @@ func (p *Project) Locate() error {
 		wd = dir
 	}
 
-	return os.ErrNotExist
+	return nil, os.ErrNotExist
 }
 
-// Load a single hmake file or hmakerc
-func (p *Project) Load(filename string, asRc bool) error {
-	val, err := loadYaml(filepath.Join(p.BaseDir, filename))
+// LoadProject locates, resolves and finalizes project
+func LoadProject() (p *Project, err error) {
+	if p, err = LocateProject(); err != nil {
+		return
+	}
+	if err = p.Resolve(); err != nil {
+		return
+	}
+	err = p.Finalize()
+	return
+}
+
+// Merge merges content from another file
+func (f *File) Merge(s *File) error {
+	errs := &clix.AggregatedError{}
+	if f.Targets == nil {
+		f.Targets = make(map[string]*Target)
+	}
+	for name, t := range s.Targets {
+		if target, exist := f.Targets[name]; exist {
+			errs.Add(fmt.Errorf("duplicated target %s defined in %s and %s",
+				name, target.Source, t.Source))
+		} else {
+			f.Targets[name] = t
+		}
+	}
+	if f.Settings == nil {
+		f.Settings = make(Settings)
+	}
+	f.Settings.Merge(s.Settings)
+
+	for _, inc := range s.Includes {
+		found := false
+		for _, item := range f.Includes {
+			if item == inc {
+				found = true
+				break
+			}
+		}
+		if !found {
+			f.Includes = append(f.Includes, inc)
+		}
+	}
+	return errs.Aggregate()
+}
+
+// Load loads and merges an additional files
+func (p *Project) Load(path string) (*File, error) {
+	for _, f := range p.Files {
+		if f.Source == path {
+			return f, nil
+		}
+	}
+	f, err := LoadFile(p.BaseDir, path)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	m := &mapper.Mapper{}
-	if asRc {
-		settings := &Settings{}
-		err = m.Map(settings, val)
-		if err == nil {
-			settings.Source = filename
-			settings.Scope = filepath.Dir(filename)
-			p.Settings = append(p.Settings, settings)
-		}
-	} else {
-		if format, ok := val["format"].(string); !ok || format != Format {
-			return fmt.Errorf("unsupported format: " + format)
-		}
-		schema := &Schema{}
-		err = m.Map(schema, val)
-		if err == nil {
-			schema.Source = filename
-			p.Schemas = append(p.Schemas, schema)
-		}
-	}
-	return err
+	p.Files = append(p.Files, f)
+	return f, p.MasterFile.Merge(f)
 }
 
-// Scan the whole project and load all available files
-func (p *Project) Scan() error {
-	errs := clix.AggregatedError{}
-	// always load root file
-	errs.Add(p.Load(RootFile, false))
-	// populate root settings
-	if len(p.Schemas) > 0 && p.Schemas[0].Settings != nil {
-		p.Settings = append(p.Settings, &Settings{
-			Properties: p.Schemas[0].Settings,
-			Source:     RootFile,
-			Scope:      "",
-		})
+// Resolve loads additional includes
+func (p *Project) Resolve() error {
+	errs := &clix.AggregatedError{}
+	for i := 0; i < len(p.MasterFile.Includes); i++ {
+		paths, err := filepath.Glob(filepath.Join(p.BaseDir, p.MasterFile.Includes[i]))
+		if errs.Add(err) {
+			continue
+		}
+		for _, fullpath := range paths {
+			path := fullpath[len(p.BaseDir):]
+			for len(path) > 0 && path[0] == filepath.Separator {
+				path = path[1:]
+			}
+			_, err = p.Load(path)
+			errs.Add(err)
+		}
 	}
+	return errs.Aggregate()
+}
 
-	// scan project
-	walker := &gms.RepoWalker{BreadthFirst: true, PathPrefix: p.BaseDir + "/"}
-	walker.Use(func(item *gms.WalkingItem) (bool, error) {
-		if item.FileInfo.IsDir() {
-			return !strings.HasPrefix(item.Name, ".") &&
-				!p.IsIgnored(filepath.Join(item.Path, item.Name)), nil
-		}
-		return item.Name == RcFile || strings.HasSuffix(item.Name, Suffix), nil
-	})
-	walker.WalkerFn = func(item gms.WalkingItem) error {
-		if item.FileInfo.IsDir() {
-			return nil
-		}
-		err := p.Load(filepath.Join(item.Path, item.Name), item.Name == RcFile)
-		errs.Add(err)
-		// always returns nil as error is aggregated
-		return nil
+// Finalize builds up the relationship between targets and settings
+// and also verifies any cyclic dependencies
+func (p *Project) Finalize() error {
+	errs := clix.AggregatedError{}
+	p.Targets = make(TargetNameMap)
+	for name, t := range p.MasterFile.Targets {
+		t.Initialize(name, []Settings{p.MasterFile.Settings})
+		errs.Add(p.Targets.Add(t))
 	}
-	errs.Add(walker.Visit("", p))
+	errs.AddMany(
+		p.Targets.BuildDeps(),
+		p.Targets.CheckCyclicDeps(),
+	)
 
 	return errs.Aggregate()
 }
 
-// IsIgnored determines whether the path should be ignored
-func (p *Project) IsIgnored(path string) bool {
-	// TODO
-	return false
+// Plan creates an ExecPlan for this project
+func (p *Project) Plan() *ExecPlan {
+	return NewExecPlan(p)
 }
 
-// BasePath implements gms.Repository
-func (p *Project) BasePath() string {
-	return ""
-}
-
-// Persist implements gms.Repository
-func (p *Project) Persist() (h gms.PersistentHandle) {
-	return
+// TargetNames returns sorted target names
+func (p *Project) TargetNames() []string {
+	targets := make([]string, 0, len(p.Targets))
+	for name := range p.Targets {
+		targets = append(targets, name)
+	}
+	sort.Strings(targets)
+	return targets
 }

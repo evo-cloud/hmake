@@ -4,7 +4,7 @@ package main
 
 import (
 	"fmt"
-	"sort"
+	"strings"
 
 	"github.com/codingbrain/clix.go/exts/bind"
 	"github.com/codingbrain/clix.go/exts/help"
@@ -16,7 +16,24 @@ import (
 type makeCmd struct {
 }
 
-func (c *makeCmd) Execute([]string) error {
+func (c *makeCmd) Execute(args []string) error {
+	project, err := make.LoadProject()
+	if len(args) == 0 {
+		return fmt.Errorf("at least one target is required from below:\n%s",
+			strings.Join(project.TargetNames(), "\n"))
+	}
+	plan := project.Plan()
+	err = plan.Require(args...)
+	if err != nil {
+		return err
+	}
+	err = plan.Execute(func(t *make.Target) (make.TaskResult, error) {
+		fmt.Println("Exec", t.Name)
+		return make.Success, nil
+	})
+	if err != nil {
+		return err
+	}
 	term.OK()
 	return nil
 }
@@ -25,23 +42,11 @@ type targetsCmd struct {
 }
 
 func (c *targetsCmd) Execute([]string) error {
-	project := &make.Project{}
-	err := project.Locate()
+	project, err := make.LoadProject()
 	if err != nil {
-		return fmt.Errorf("project not found: %v", err)
+		return err
 	}
-	err = project.Scan()
-	if err != nil {
-		return fmt.Errorf("project scan failed: %v", err)
-	}
-	var targets []string
-	for _, s := range project.Schemas {
-		for name := range s.Targets {
-			targets = append(targets, name)
-		}
-	}
-	sort.Strings(targets)
-	for _, name := range targets {
+	for _, name := range project.TargetNames() {
 		fmt.Println(name)
 	}
 	term.OK()
