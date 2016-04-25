@@ -3,9 +3,10 @@ package make
 import (
 	"fmt"
 	"runtime"
+	"strconv"
 	"strings"
 
-	"github.com/easeway/clix.go"
+	"github.com/easeway/langx.go/errors"
 )
 
 // ExecPlan describes the plan for execution
@@ -54,6 +55,18 @@ const (
 	Skipped
 )
 
+func (r TaskResult) String() string {
+	switch r {
+	case Success:
+		return "Success"
+	case Failure:
+		return "Failure"
+	case Skipped:
+		return "Skipped"
+	}
+	panic("invalid TaskResult " + strconv.Itoa(int(r)))
+}
+
 // TaskState indicates the state of task
 type TaskState int
 
@@ -85,7 +98,7 @@ func (p *ExecPlan) Require(targets ...string) error {
 	if p.WaitingTasks == nil {
 		p.WaitingTasks = make(map[string]*Task)
 	}
-	errs := &clix.AggregatedError{}
+	errs := &errors.AggregatedError{}
 	for _, name := range targets {
 		t := p.Project.Targets[name]
 		if t == nil {
@@ -124,7 +137,11 @@ func (p *ExecPlan) Execute(runner Runner) error {
 		concurrency = runtime.NumCPU()
 	}
 
-	errs := &clix.AggregatedError{}
+	if err := p.Project.ExecPrepare(); err != nil {
+		return err
+	}
+
+	errs := &errors.AggregatedError{}
 	p.finishCh = make(chan *Task)
 	p.RunningTasks = make(map[string]*Task)
 	for {

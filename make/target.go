@@ -3,16 +3,19 @@ package make
 import (
 	"fmt"
 
-	"github.com/easeway/clix.go"
+	"github.com/easeway/langx.go/errors"
+	"github.com/easeway/langx.go/mapper"
 )
 
 // Target defines a build target
 type Target struct {
 	Name   string                 `json:"name"`
+	Desc   string                 `json:"description"`
 	Before []string               `json:"before"`
 	After  []string               `json:"after"`
 	Envs   []string               `json:"envs"`
 	Cmds   []*Command             `json:"cmds"`
+	Script string                 `json:"script"`
 	Ext    map[string]interface{} `json:"*"`
 
 	// Source is the file defined the target
@@ -46,6 +49,15 @@ func (t *Target) Initialize(name string, settings []Settings) {
 	t.Activates = make(TargetNameMap)
 }
 
+// GetExt maps Ext to provided value
+func (t *Target) GetExt(v interface{}) error {
+	if t.Ext != nil {
+		m := &mapper.Mapper{}
+		return m.Map(v, t.Ext)
+	}
+	return nil
+}
+
 // Errorf formats an error related to the target
 func (t *Target) Errorf(format string, args ...interface{}) error {
 	args = append([]interface{}{t.Name, t.Source}, args...)
@@ -69,7 +81,7 @@ func (m TargetNameMap) Add(t *Target) error {
 
 // BuildDeps builds direct depends and activates
 func (m TargetNameMap) BuildDeps() error {
-	errs := &clix.AggregatedError{}
+	errs := &errors.AggregatedError{}
 	for _, t := range m {
 		// convert before to after in target
 		for _, name := range t.Before {
@@ -95,7 +107,7 @@ func (m TargetNameMap) BuildDeps() error {
 
 // CheckCyclicDeps detects cycles in depenencies
 func (m TargetNameMap) CheckCyclicDeps() error {
-	errs := &clix.AggregatedError{}
+	errs := &errors.AggregatedError{}
 	unresolved := make(TargetNameMap)
 	allDeps := make(map[string]TargetNameMap)
 	// build direct dependencies
@@ -120,7 +132,7 @@ func (m TargetNameMap) CheckCyclicDeps() error {
 
 func (m TargetNameMap) resolveDeps(t *Target,
 	unresolved TargetNameMap, allDeps map[string]TargetNameMap,
-	errs *clix.AggregatedError) {
+	errs *errors.AggregatedError) {
 	if unresolved[t.Name] != nil {
 		delete(unresolved, t.Name)
 		directDeps := make([]*Target, 0, len(allDeps[t.Name]))

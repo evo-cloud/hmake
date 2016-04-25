@@ -1,15 +1,14 @@
 package make
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 
-	"github.com/codingbrain/clix.go/clix"
-	"github.com/easeway/mapper.go/mapper"
+	"github.com/easeway/langx.go/errors"
+	"github.com/easeway/langx.go/mapper"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -18,10 +17,12 @@ const (
 	Format = "hypermake.v0"
 	// RootFile is hmake filename sits on root
 	RootFile = "HyperMake"
+	// WorkFolder is the name of project WorkFolder
+	WorkFolder = ".hmake"
 )
 
 // ErrUnsupportedFormat indicates the file is not recognized
-var ErrUnsupportedFormat = errors.New("unsupported format")
+var ErrUnsupportedFormat = fmt.Errorf("unsupported format")
 
 // File defines the content of HyperMake or .hmake file
 type File struct {
@@ -51,6 +52,9 @@ type Project struct {
 
 	// Tasks are built from resolved targets
 	Targets TargetNameMap
+
+	// WorkFolder is the folder for hmake stuff
+	WorkFolder string
 }
 
 func loadYaml(filename string) (map[string]interface{}, error) {
@@ -122,7 +126,7 @@ func LoadProject() (p *Project, err error) {
 
 // Merge merges content from another file
 func (f *File) Merge(s *File) error {
-	errs := &clix.AggregatedError{}
+	errs := &errors.AggregatedError{}
 	if f.Targets == nil {
 		f.Targets = make(map[string]*Target)
 	}
@@ -171,7 +175,7 @@ func (p *Project) Load(path string) (*File, error) {
 
 // Resolve loads additional includes
 func (p *Project) Resolve() error {
-	errs := &clix.AggregatedError{}
+	errs := &errors.AggregatedError{}
 	for i := 0; i < len(p.MasterFile.Includes); i++ {
 		paths, err := filepath.Glob(filepath.Join(p.BaseDir, p.MasterFile.Includes[i]))
 		if errs.Add(err) {
@@ -192,7 +196,7 @@ func (p *Project) Resolve() error {
 // Finalize builds up the relationship between targets and settings
 // and also verifies any cyclic dependencies
 func (p *Project) Finalize() error {
-	errs := clix.AggregatedError{}
+	errs := errors.AggregatedError{}
 	p.Targets = make(TargetNameMap)
 	for name, t := range p.MasterFile.Targets {
 		t.Initialize(name, []Settings{p.MasterFile.Settings})
@@ -219,4 +223,24 @@ func (p *Project) TargetNames() []string {
 	}
 	sort.Strings(targets)
 	return targets
+}
+
+// ExecPrepare prepares for execution
+func (p *Project) ExecPrepare() error {
+	p.WorkFolder = WorkFolder
+	return os.MkdirAll(p.WorkPath(), 0755)
+}
+
+// WorkPath returns the full path of WorkFolder
+func (p *Project) WorkPath() string {
+	return filepath.Join(p.BaseDir, p.WorkFolder)
+}
+
+// GetSettings maps settings into provided variable
+func (p *Project) GetSettings(v interface{}) error {
+	if p.MasterFile.Settings != nil {
+		m := &mapper.Mapper{}
+		return m.Map(v, p.MasterFile.Settings)
+	}
+	return nil
 }

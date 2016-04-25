@@ -2,8 +2,22 @@
 format: hypermake.v0
 
 targets:
+    hmake-linux-amd64:
+        description: static linked hmake binary for Linux AMD64
+        script: |
+            #!/bin/sh
+            ./build.sh linux amd64
+
+    hmake-darwin-amd64:
+        description: static linked hmake binary for Mac OS
+        script: |
+            #!/bin/sh
+            ./build.sh darwin amd64
+
     all:
-        after: [a, b, c]
-    a: {}
-    b: {}
-    c: {}
+        after: [hmake-linux-amd64, hmake-darwin-amd64]
+
+settings:
+    default-targets: [all]
+    image: golang:1.6-alpine
+    src-volume: /go/src/github.com/evo-cloud/hmake
