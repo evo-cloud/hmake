@@ -1,17 +1,16 @@
 package docker
 
 import (
-	"fmt"
-	"io/ioutil"
-	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"github.com/evo-cloud/hmake/make"
+	hm "github.com/evo-cloud/hmake/project"
+	"github.com/evo-cloud/hmake/shell"
 )
 
 const (
+	// ExecDriverName is name of exec-driver
+	ExecDriverName = "docker"
 	// DefaultSrcVolume is the default source path inside the container
 	DefaultSrcVolume = "/root/src"
 )
@@ -22,51 +21,39 @@ type dockerConfig struct {
 	Envs      []string `json:"envs"`
 }
 
-// NewRunner creates docker backed runner
-func NewRunner(project *make.Project) make.Runner {
-	return func(t *make.Target) (make.TaskResult, error) {
-		err := dockerRun(project, t)
-		if err != nil {
-			return make.Failure, err
-		}
-		return make.Success, nil
-	}
+type dockerRunner struct {
+	task *hm.Task
 }
 
-func dockerRun(project *make.Project, target *make.Target) error {
-	if target.Script == "" {
-		return nil
+// Runner wraps docker implementation
+func Runner(task *hm.Task) (hm.TaskResult, error) {
+	r := &dockerRunner{task: task}
+	conf, err := r.loadConfig()
+	if err == nil && conf.Image == "" {
+		// image not present, fallback to shell
+		return shell.Runner(task)
 	}
+	if err = r.run(conf); err != nil {
+		return hm.Failure, err
+	}
+	return hm.Success, nil
+}
 
-	scriptFile := target.Name + ".script"
-	err := ioutil.WriteFile(
-		filepath.Join(project.WorkPath(), scriptFile),
-		[]byte(target.Script), 0755)
-	if err != nil {
-		return err
-	}
-	dockerRun := []string{"docker", "run",
-		"-a", "STDOUT", "-a", "STDERR",
-		"--rm",
-	}
+func (r *dockerRunner) loadConfig() (conf *dockerConfig, err error) {
+	conf = &dockerConfig{}
 
-	var conf dockerConfig
-	if err = project.GetSettings(&conf); err != nil {
-		return err
+	project := r.task.Project()
+	target := r.task.Target
+
+	if err = project.GetSettings(conf); err != nil {
+		return
 	}
-	if err = target.GetExt(&conf); err != nil {
-		return err
-	}
-	if conf.Image == "" {
-		return target.Errorf("missing property image")
+	if err = target.GetExt(conf); err != nil {
+		return
 	}
 	if conf.SrcVolume == "" {
 		conf.SrcVolume = DefaultSrcVolume
 	}
-	dockerRun = append(dockerRun,
-		"-v", project.BaseDir+":"+conf.SrcVolume,
-		"-w", conf.SrcVolume,
-		"--entrypoint", filepath.Join(conf.SrcVolume, project.WorkFolder, scriptFile))
 	for _, env := range target.Envs {
 		pos := strings.Index(env, "=")
 		var name string
@@ -88,24 +75,32 @@ func dockerRun(project *make.Project, target *make.Target) error {
 			conf.Envs = append(conf.Envs, env)
 		}
 	}
+	return
+}
+
+func (r *dockerRunner) run(conf *dockerConfig) error {
+	project := r.task.Project()
+
+	dockerRun := []string{"docker", "run",
+		"-a", "STDOUT", "-a", "STDERR",
+		"--rm",
+		"-v", project.BaseDir + ":" + conf.SrcVolume,
+		"-w", conf.SrcVolume,
+		"--entrypoint", filepath.Join(conf.SrcVolume, project.WorkFolder, filepath.Base(r.task.ScriptFile())),
+	}
 	for _, env := range conf.Envs {
 		dockerRun = append(dockerRun, "-e", env)
 	}
-
 	dockerRun = append(dockerRun, conf.Image)
 
-	if dockerRun[0], err = exec.LookPath(dockerRun[0]); err != nil {
+	script, err := r.task.GenerateScript()
+	if err != nil || script == "" {
 		return err
 	}
 
-	fmt.Println(strings.Join(dockerRun, " "))
-	cmd := exec.Cmd{
-		Path:   dockerRun[0],
-		Args:   dockerRun,
-		Env:    os.Environ(),
-		Dir:    project.BaseDir,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-	}
-	return cmd.Run()
+	return r.task.Exec(dockerRun[0], dockerRun[1:]...)
+}
+
+func init() {
+	hm.RegisterExecDriver(ExecDriverName, Runner)
 }

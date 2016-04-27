@@ -26,6 +26,15 @@ Or if you know Go well enough
 go get github.com/evo-cloud/hmake
 ```
 
+Or if you want to build from source
+
+```
+# do a bootstrap
+go build -o bin/hmake .
+# do a full build
+bin/hmake
+```
+
 _hmake_ expects a `HyperMake` file in root of the project,
 and you can run `hmake` from any sub-directory inside the project,
 the command will figure out project root by locating `HyperMake` file.

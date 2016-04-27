@@ -1,4 +1,4 @@
-package make
+package project
 
 import (
 	"fmt"
@@ -9,14 +9,15 @@ import (
 
 // Target defines a build target
 type Target struct {
-	Name   string                 `json:"name"`
-	Desc   string                 `json:"description"`
-	Before []string               `json:"before"`
-	After  []string               `json:"after"`
-	Envs   []string               `json:"envs"`
-	Cmds   []*Command             `json:"cmds"`
-	Script string                 `json:"script"`
-	Ext    map[string]interface{} `json:"*"`
+	Name       string                 `json:"name"`
+	Desc       string                 `json:"description"`
+	Before     []string               `json:"before"`
+	After      []string               `json:"after"`
+	ExecDriver string                 `json:"exec-driver"`
+	Envs       []string               `json:"envs"`
+	Cmds       []*Command             `json:"cmds"`
+	Script     string                 `json:"script"`
+	Ext        map[string]interface{} `json:"*"`
 
 	// Source is the file defined the target
 	Source string `json:"-"`
@@ -68,6 +69,17 @@ func (t *Target) Errorf(format string, args ...interface{}) error {
 func (t *Target) AddDep(dep *Target) {
 	t.Depends[dep.Name] = dep
 	dep.Activates[t.Name] = t
+}
+
+// GetSetting extracts the value from settings stack
+func (t *Target) GetSetting(name string, v interface{}) error {
+	for _, settings := range t.Settings {
+		if s, exists := settings[name]; exists {
+			m := &mapper.Mapper{}
+			return m.Map(v, s)
+		}
+	}
+	return nil
 }
 
 // Add adds a target to name map
