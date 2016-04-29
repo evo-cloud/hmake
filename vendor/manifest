@@ -10,7 +10,13 @@
 		{
 			"importpath": "github.com/easeway/langx.go",
 			"repository": "https://github.com/easeway/langx.go",
-			"revision": "b83b36262c26d918a2ec2ab7eb9508b700ee6fd2",
+			"revision": "b2afe69b88640d1129c3ea06a1bd6cbbe1e9f5fb",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/mattn/go-zglob",
+			"repository": "https://github.com/mattn/go-zglob",
+			"revision": "249e8bceca8cd265110a08bbb63303fb9db47445",
 			"branch": "master"
 		},
 		{

@@ -17,10 +17,10 @@ import (
 )
 
 const (
-	faceGo  = ":>"
+	faceGo  = "=>"
 	faceOK  = ":)"
 	faceErr = ":("
-	faceNA  = ":|"
+	faceNA  = ":]"
 )
 
 type taskState struct {
@@ -34,8 +34,10 @@ type projectSettings struct {
 
 type makeCmd struct {
 	// command line options
-	Verbose bool
-	Color   bool
+	Parallel int
+	Rebuild  bool
+	Verbose  bool
+	Color    bool
 
 	settings  projectSettings
 	tasks     map[string]*taskState
@@ -87,6 +89,8 @@ func (c *makeCmd) Execute(args []string) error {
 	}
 
 	plan := p.Plan().OnEvent(c.onEvent)
+	plan.RebuildAll = c.Rebuild
+	plan.MaxConcurrency = c.Parallel
 
 	if err = plan.Require(args...); err != nil {
 		return err
@@ -102,7 +106,7 @@ func (c *makeCmd) Execute(args []string) error {
 func (c *makeCmd) onEvent(event interface{}) {
 	switch e := event.(type) {
 	case *hm.EvtTaskStart:
-		c.printTaskState(e.Task, faceGo, "lightcyan")
+		c.printTaskState(e.Task, faceGo, "lightblue")
 	case *hm.EvtTaskFinish:
 		switch e.Task.Result {
 		case hm.Success:

@@ -9,6 +9,19 @@ func cliDef() *args.CliDef {
 			Desc: "HyperMake builds your project using consistent environment",
 			Options: []*args.Option{
 				&args.Option{
+					Name:    "parallel",
+					Alias:   []string{"p"},
+					Desc:    "Set maximum number of targets executed in parallel, 0 for auto, -1 for unlimited",
+					Type:    "int",
+					Default: 0,
+				},
+				&args.Option{
+					Name:  "rebuild",
+					Alias: []string{"r"},
+					Desc:  "Rebuild everything regardless of cached state",
+					Type:  "bool",
+				},
+				&args.Option{
 					Name:  "verbose",
 					Alias: []string{"v"},
 					Desc:  "Display more information",

@@ -4,13 +4,39 @@ format: hypermake.v0
 targets:
     hmake-linux-amd64:
         description: static linked hmake binary for Linux AMD64
+        after: [vendor]
+        watches:
+            - '**/**/*.go'
         cmds:
-            - './build.sh linux amd64'
+            - >
+                env GOOS=linux GOARCH=amd64
+                go build -o bin/hmake-$GOOS-$GOARCH
+                -a -tags 'static_build netgo' -installsuffix netgo
+                -ldflags '-extldflags -static'
+                .
 
     hmake-darwin-amd64:
         description: static linked hmake binary for Mac OS
+        after: [vendor]
+        watches:
+            - '**/**/*.go'
         cmds:
-            - './build.sh darwin amd64'
+            - >
+                env GOOS=linux GOARCH=amd64
+                go build -o bin/hmake-$GOOS-$GOARCH
+                -a -tags 'static_build netgo' -installsuffix netgo
+                -ldflags '-extldflags -static'
+                .
+
+    vendor:
+        description: pull all vendor packages
+        watches:
+            - 'vendor/manifest'
+        cmds:
+            - 'apk update && apk add git'
+            - 'go get github.com/FiloSottile/gvt'
+            - 'gvt restore'
+            - 'mkdir -p bin'
 
     all:
         after: [hmake-linux-amd64, hmake-darwin-amd64]

@@ -1,7 +1,13 @@
 package project
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
+	"time"
 
 	"github.com/easeway/langx.go/errors"
 	"github.com/easeway/langx.go/mapper"
@@ -17,17 +23,16 @@ type Target struct {
 	Envs       []string               `json:"envs"`
 	Cmds       []*Command             `json:"cmds"`
 	Script     string                 `json:"script"`
+	Watches    []string               `json:"watches"`
 	Ext        map[string]interface{} `json:"*"`
 
-	// Source is the file defined the target
-	Source string `json:"-"`
+	// Runtime fields
 
-	// Settings is the stack of settings
-	Settings []Settings
-	// Depends is the dependencies
-	Depends TargetNameMap
-	// Activates is the opposite of Depends
-	Activates TargetNameMap
+	Project   *Project      `json:"-"`
+	Source    string        `json:"-"`
+	Settings  []Settings    `json:"-"`
+	Depends   TargetNameMap `json:"-"`
+	Activates TargetNameMap `json:"-"`
 }
 
 // TargetNameMap is targets mapping by name
@@ -42,9 +47,21 @@ type Command struct {
 // Settings applies to targets
 type Settings map[string]interface{}
 
+// WatchItem contains information the target watches
+type WatchItem struct {
+	// Path is relative path to the project root
+	Path string
+	// ModTime is the modification time of the item
+	ModTime time.Time
+}
+
+// WatchList is list of watched items
+type WatchList []*WatchItem
+
 // Initialize prepare fields in target
-func (t *Target) Initialize(name string, settings []Settings) {
+func (t *Target) Initialize(name string, settings []Settings, project *Project) {
 	t.Name = name
+	t.Project = project
 	t.Settings = settings
 	t.Depends = make(TargetNameMap)
 	t.Activates = make(TargetNameMap)
@@ -53,8 +70,7 @@ func (t *Target) Initialize(name string, settings []Settings) {
 // GetExt maps Ext to provided value
 func (t *Target) GetExt(v interface{}) error {
 	if t.Ext != nil {
-		m := &mapper.Mapper{}
-		return m.Map(v, t.Ext)
+		return mapper.Map(v, t.Ext)
 	}
 	return nil
 }
@@ -75,11 +91,51 @@ func (t *Target) AddDep(dep *Target) {
 func (t *Target) GetSetting(name string, v interface{}) error {
 	for _, settings := range t.Settings {
 		if s, exists := settings[name]; exists {
-			m := &mapper.Mapper{}
-			return m.Map(v, s)
+			return mapper.Map(v, s)
 		}
 	}
 	return nil
+}
+
+// BuildWatchList collects current state of all watched items
+func (t *Target) BuildWatchList() (list WatchList) {
+	files := make(map[string]*WatchItem)
+	for _, pattern := range t.Watches {
+		paths, err := t.Project.Glob(pattern)
+		if err != nil {
+			continue
+		}
+		for _, path := range paths {
+			fullpath := filepath.Join(t.Project.BaseDir, path)
+			st, err := os.Stat(fullpath)
+			if err != nil {
+				continue
+			}
+			if st.IsDir() {
+				filepath.Walk(fullpath, func(relpath string, info os.FileInfo, err error) error {
+					if err == nil {
+						relpath = path + relpath[len(fullpath):]
+						if !info.IsDir() {
+							files[path] = &WatchItem{Path: relpath, ModTime: st.ModTime()}
+						}
+					}
+					return nil
+				})
+			} else {
+				files[path] = &WatchItem{Path: path, ModTime: st.ModTime()}
+			}
+		}
+	}
+
+	names := make([]string, 0, len(files))
+	for name := range files {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		list = append(list, files[name])
+	}
+	return
 }
 
 // Add adds a target to name map
@@ -205,4 +261,21 @@ func (s Settings) mergeList(key string, val interface{}) bool {
 		s[key] = dList
 	}
 	return true
+}
+
+// IsEmpty indicates the watch list is empty
+func (w WatchList) IsEmpty() bool {
+	return len(w) == 0
+}
+
+// Digest calculates the digest based watched items
+func (w WatchList) Digest() string {
+	if w.IsEmpty() {
+		return ""
+	}
+	h := sha1.New()
+	for _, item := range w {
+		fmt.Fprintf(h, "%s %v\n", item.Path, item.ModTime.Unix())
+	}
+	return hex.EncodeToString(h.Sum(nil))
 }

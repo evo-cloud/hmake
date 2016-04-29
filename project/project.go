@@ -9,6 +9,7 @@ import (
 
 	"github.com/easeway/langx.go/errors"
 	"github.com/easeway/langx.go/mapper"
+	zglob "github.com/mattn/go-zglob"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -77,9 +78,8 @@ func LoadFile(baseDir, path string) (*File, error) {
 		return nil, fmt.Errorf("unsupported format: " + format)
 	}
 
-	m := &mapper.Mapper{}
 	f := &File{}
-	err = m.Map(f, val)
+	err = mapper.Map(f, val)
 	if err == nil {
 		f.Source = path
 	}
@@ -173,19 +173,30 @@ func (p *Project) Load(path string) (*File, error) {
 	return f, p.MasterFile.Merge(f)
 }
 
+// Glob matches files inside project with pattern
+func (p *Project) Glob(pattern string) (paths []string, err error) {
+	prefix := p.BaseDir + string(filepath.Separator)
+	fullPattern := prefix + pattern
+	paths, err = zglob.Glob(fullPattern)
+	if err != nil {
+		return
+	}
+	prefixLen := len(prefix)
+	for n, fullpath := range paths {
+		paths[n] = fullpath[prefixLen:]
+	}
+	return
+}
+
 // Resolve loads additional includes
 func (p *Project) Resolve() error {
 	errs := &errors.AggregatedError{}
 	for i := 0; i < len(p.MasterFile.Includes); i++ {
-		paths, err := filepath.Glob(filepath.Join(p.BaseDir, p.MasterFile.Includes[i]))
+		paths, err := p.Glob(p.MasterFile.Includes[i])
 		if errs.Add(err) {
 			continue
 		}
-		for _, fullpath := range paths {
-			path := fullpath[len(p.BaseDir):]
-			for len(path) > 0 && path[0] == filepath.Separator {
-				path = path[1:]
-			}
+		for _, path := range paths {
 			_, err = p.Load(path)
 			errs.Add(err)
 		}
@@ -199,7 +210,7 @@ func (p *Project) Finalize() error {
 	errs := errors.AggregatedError{}
 	p.Targets = make(TargetNameMap)
 	for name, t := range p.MasterFile.Targets {
-		t.Initialize(name, []Settings{p.MasterFile.Settings})
+		t.Initialize(name, []Settings{p.MasterFile.Settings}, p)
 		errs.Add(p.Targets.Add(t))
 	}
 	errs.AddMany(
@@ -239,8 +250,7 @@ func (p *Project) WorkPath() string {
 // GetSettings maps settings into provided variable
 func (p *Project) GetSettings(v interface{}) error {
 	if p.MasterFile.Settings != nil {
-		m := &mapper.Mapper{}
-		return m.Map(v, p.MasterFile.Settings)
+		return mapper.Map(v, p.MasterFile.Settings)
 	}
 	return nil
 }

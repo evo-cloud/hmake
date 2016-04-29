@@ -24,6 +24,8 @@ type ExecPlan struct {
 	// MaxConcurrency defines maximum number of tasks being executed in parallel
 	// if it's 0, the number of CPU cores are counted
 	MaxConcurrency int
+	// RebuildAll force rebuild everything regardless of success mark
+	RebuildAll bool
 	// WaitingTasks are tasks in waiting state
 	WaitingTasks map[string]*Task
 	// QueuedTasks are tasks in Queued state
@@ -77,6 +79,8 @@ type Task struct {
 	Result TaskResult
 	// Error represents any error happened during execution
 	Error error
+
+	currentDigest string
 }
 
 // TaskResult indicates the result of task execution
@@ -209,15 +213,24 @@ func (p *ExecPlan) Execute() error {
 	for {
 		tasks := p.dequeueTasks(concurrency)
 		if len(tasks) > 0 {
+			runningCount := len(p.RunningTasks)
 			for _, task := range tasks {
 				p.startTask(task, errs)
+			}
+			if len(p.RunningTasks) < runningCount+len(tasks) {
+				// not all tasks pushed to runningTasks
+				// means some tasks are skipped or failed immediately, thus
+				// other tasks may be activated, need to dequeue again
+				continue
 			}
 		} else if len(p.RunningTasks) == 0 {
 			// nothing to run
 			break
 		}
 
-		p.finishTask(<-p.finishCh, errs)
+		if len(p.RunningTasks) > 0 {
+			p.finishTask(<-p.finishCh, errs)
+		}
 	}
 	return errs.Aggregate()
 }
@@ -251,6 +264,20 @@ func (p *ExecPlan) startTask(task *Task, errs *errors.AggregatedError) {
 	task.State = Running
 	p.RunningTasks[task.Name()] = task
 	p.emit(&EvtTaskStart{Task: task})
+	skippable := task.CheckSuccessMark()
+	if skippable && !p.RebuildAll {
+		task.Result = Skipped
+		p.finishTask(task, errs)
+		return
+	}
+
+	os.Remove(task.SuccessMarkFile())
+	for name := range task.Target.Activates {
+		if t := p.Tasks[name]; t != nil {
+			os.Remove(t.SuccessMarkFile())
+		}
+	}
+
 	runner, err := task.Runner()
 	if err != nil {
 		task.Error = err
@@ -276,6 +303,7 @@ func (p *ExecPlan) finishTask(task *Task, errs *errors.AggregatedError) {
 	task.State = Finished
 	delete(p.RunningTasks, task.Name())
 	p.FinishedTasks = append(p.FinishedTasks, task)
+	task.BuildSuccessMark()
 
 	p.emit(&EvtTaskFinish{Task: task})
 
@@ -316,12 +344,38 @@ func (t *Task) Name() string {
 
 // Project returns the associated project
 func (t *Task) Project() *Project {
-	return t.Plan.Project
+	return t.Target.Project
 }
 
 // IsActivated indicates the task is ready to run
 func (t *Task) IsActivated() bool {
 	return len(t.Depends) == 0
+}
+
+// CheckSuccessMark calculates the watchlist digest and
+// checks if the task can be skipped
+func (t *Task) CheckSuccessMark() bool {
+	t.currentDigest = t.Target.BuildWatchList().Digest()
+	content, err := ioutil.ReadFile(t.SuccessMarkFile())
+	if err != nil {
+		return false
+	}
+	prevDigest := strings.TrimSpace(string(content))
+	if prevDigest == "" {
+		return false
+	}
+	return t.currentDigest == prevDigest
+}
+
+// BuildSuccessMark checks if the task can be skipped
+func (t *Task) BuildSuccessMark() error {
+	defer func() {
+		t.currentDigest = ""
+	}()
+	if t.Result == Success && t.currentDigest != "" {
+		return ioutil.WriteFile(t.SuccessMarkFile(), []byte(t.currentDigest), 0644)
+	}
+	return nil
 }
 
 // Runner gets runner according to exec-driver
@@ -340,6 +394,11 @@ func (t *Task) Runner() (Runner, error) {
 		return nil, fmt.Errorf("invalid exec-driver: %s", driver)
 	}
 	return runner, nil
+}
+
+// SuccessMarkFile returns the filename of success mark
+func (t *Task) SuccessMarkFile() string {
+	return filepath.Join(t.Project().WorkPath(), t.Name()+".success")
 }
 
 // ScriptFile returns the filename of script
