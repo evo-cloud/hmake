@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ttacon/emoji"
+
 	"github.com/codingbrain/clix.go/exts/bind"
 	"github.com/codingbrain/clix.go/exts/help"
 	"github.com/codingbrain/clix.go/term"
@@ -18,12 +20,27 @@ import (
 )
 
 const (
-	faceGo  = "=>"
-	faceOK  = ":)"
-	faceErr = ":("
-	faceNA  = ":]"
-
 	timeFmt = "15:04:05.000"
+)
+
+const (
+	faceGo int = iota
+	faceOK
+	faceErr
+	faceNA
+	faceGood
+)
+
+var (
+	facesNormal = []string{"=>", ":)", ":(", ":]", "OK"}
+	facesEmoji  = []string{
+		emoji.Emoji(":zap:"),
+		emoji.Emoji(":yum:"),
+		emoji.Emoji(":disappointed:"),
+		emoji.Emoji(":expressionless:"),
+		emoji.Emoji(":sunglasses:"),
+	}
+	faces = facesNormal
 )
 
 type taskState struct {
@@ -44,6 +61,7 @@ type makeCmd struct {
 	Verbose    bool
 	Color      bool
 	Debug      bool
+	Emoji      bool
 
 	settings  projectSettings
 	tasks     map[string]*taskState
@@ -94,6 +112,10 @@ func (c *makeCmd) Execute(args []string) error {
 		}
 	}
 
+	if c.Emoji {
+		faces = facesEmoji
+	}
+
 	plan := p.Plan().OnEvent(c.onEvent)
 	plan.Rebuild(c.Rebuild...)
 	plan.RebuildAll = c.RebuildAll
@@ -107,7 +129,7 @@ func (c *makeCmd) Execute(args []string) error {
 	if err = plan.Execute(); err != nil {
 		return err
 	}
-	term.OK()
+	term.NewPrinter(term.Std).Styles(term.StyleOK).Println(faces[faceGood])
 	return nil
 }
 
@@ -140,7 +162,7 @@ func (c *makeCmd) onEvent(event interface{}) {
 	}
 }
 
-func (c *makeCmd) printTaskState(task *hm.Task, face, style, extra string) {
+func (c *makeCmd) printTaskState(task *hm.Task, face int, style, extra string) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -149,7 +171,7 @@ func (c *makeCmd) printTaskState(task *hm.Task, face, style, extra string) {
 		c.noNewLine = ""
 		out.Println()
 	}
-	out.Styles(term.StyleB, style).Print(face+" ").Pop().
+	out.Styles(term.StyleB, style).Print(faces[face]+" ").Pop().
 		Styles(term.StyleB, term.StyleHi).Print(task.Name()).Pop()
 	if extra != "" {
 		out.Styles(term.StyleLo).Print(" " + extra).Pop()

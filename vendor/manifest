@@ -20,6 +20,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/ttacon/emoji",
+			"repository": "https://github.com/ttacon/emoji",
+			"revision": "e1647f8352b417e571524a292ea471f604334171",
+			"branch": "master"
+		},
+		{
 			"importpath": "golang.org/x/crypto/ssh/terminal",
 			"repository": "https://go.googlesource.com/crypto",
 			"revision": "7b428712abe956d0e9e1e9a01e163fb6c7171438",

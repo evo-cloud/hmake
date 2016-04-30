@@ -1,6 +1,17 @@
 package main
 
-import "github.com/codingbrain/clix.go/args"
+import (
+	"os"
+	"runtime"
+	"strings"
+
+	"github.com/codingbrain/clix.go/args"
+)
+
+func emojiSupported() bool {
+	return runtime.GOOS == "darwin" &&
+		strings.HasSuffix(strings.ToLower(os.Getenv("LANG")), "utf-8")
+}
 
 func cliDef() *args.CliDef {
 	d := &args.CliDef{
@@ -43,6 +54,12 @@ func cliDef() *args.CliDef {
 					Desc:    "Colored output",
 					Type:    "bool",
 					Default: true,
+				},
+				&args.Option{
+					Name:    "emoji",
+					Desc:    "Output emoji",
+					Type:    "bool",
+					Default: emojiSupported(),
 				},
 				&args.Option{
 					Name: "debug",
