@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/easeway/langx.go/errors"
 )
@@ -26,6 +28,10 @@ type ExecPlan struct {
 	MaxConcurrency int
 	// RebuildAll force rebuild everything regardless of success mark
 	RebuildAll bool
+	// RebuildTargets specify targets to rebuild regardless of success mark
+	RebuildTargets map[string]bool
+	// DebugLog enables logging debug info into .hmake/hmake.debug.log
+	DebugLog bool
 	// WaitingTasks are tasks in waiting state
 	WaitingTasks map[string]*Task
 	// QueuedTasks are tasks in Queued state
@@ -38,6 +44,7 @@ type ExecPlan struct {
 	EventHandler EventHandler
 
 	finishCh chan *Task
+	logger   *log.Logger
 }
 
 // EventHandler receives event notifications during execution of plan
@@ -79,6 +86,10 @@ type Task struct {
 	Result TaskResult
 	// Error represents any error happened during execution
 	Error error
+	// StartTime
+	StartTime time.Time
+	// FinishTime
+	FinishTime time.Time
 
 	currentDigest string
 }
@@ -88,13 +99,16 @@ type TaskResult int
 
 // Task results
 const (
-	Success TaskResult = iota
+	Unknown TaskResult = iota
+	Success
 	Failure
 	Skipped
 )
 
 func (r TaskResult) String() string {
 	switch r {
+	case Unknown:
+		return ""
 	case Success:
 		return "Success"
 	case Failure:
@@ -115,6 +129,20 @@ const (
 	Running
 	Finished
 )
+
+func (r TaskState) String() string {
+	switch r {
+	case Waiting:
+		return "Waiting"
+	case Queued:
+		return "Queued"
+	case Running:
+		return "Running"
+	case Finished:
+		return "Finished"
+	}
+	panic("invalid TaskState " + strconv.Itoa(int(r)))
+}
 
 // Runner is the handler execute a target
 type Runner func(*Task) (TaskResult, error)
@@ -139,15 +167,24 @@ func RegisterExecDriver(name string, runner Runner) {
 // NewExecPlan creates an ExecPlan for a Project
 func NewExecPlan(project *Project) *ExecPlan {
 	return &ExecPlan{
-		Project:      project,
-		Tasks:        make(map[string]*Task),
-		WaitingTasks: make(map[string]*Task),
+		Project:        project,
+		RebuildTargets: make(map[string]bool),
+		Tasks:          make(map[string]*Task),
+		WaitingTasks:   make(map[string]*Task),
 	}
 }
 
 // OnEvent subscribes the events
 func (p *ExecPlan) OnEvent(handler EventHandler) *ExecPlan {
 	p.EventHandler = handler
+	return p
+}
+
+// Rebuild specify specific targets to be rebuilt
+func (p *ExecPlan) Rebuild(targets ...string) *ExecPlan {
+	for _, target := range targets {
+		p.RebuildTargets[target] = true
+	}
 	return p
 }
 
@@ -193,20 +230,37 @@ func (p *ExecPlan) AddTarget(t *Target) *Task {
 
 // Execute start execution
 func (p *ExecPlan) Execute() error {
-	concurrency := p.MaxConcurrency
-	if concurrency == 0 {
-		concurrency = runtime.NumCPU()
-	}
-
 	if err := p.Project.ExecPrepare(); err != nil {
 		return err
+	}
+
+	if p.DebugLog {
+		f, err := os.OpenFile(filepath.Join(p.Project.WorkPath(), "hmake.debug.log"),
+			syscall.O_WRONLY|syscall.O_CREAT|syscall.O_TRUNC, 0644)
+		if err == nil {
+			defer f.Close()
+			p.logger = log.New(f, "hmake: ", log.Ltime)
+		}
+	}
+	if p.logger == nil {
+		p.logger = log.New(ioutil.Discard, "hmake: ", log.Ltime)
 	}
 
 	errs := &errors.AggregatedError{}
 	p.finishCh = make(chan *Task)
 	p.RunningTasks = make(map[string]*Task)
 
+	concurrency := p.MaxConcurrency
+	if concurrency == 0 {
+		concurrency = runtime.NumCPU()
+	}
+
+	p.logger.Printf("RebuildAll = %v\n", p.RebuildAll)
+	p.logger.Printf("Rebuild = %v\n", p.RebuildTargets)
+	p.logger.Printf("Concurrency = %v\n", concurrency)
+
 	for _, task := range p.QueuedTasks {
+		p.logger.Printf("Activate %s\n", task.Name())
 		p.emit(&EvtTaskActivated{Task: task})
 	}
 
@@ -261,12 +315,18 @@ func (p *ExecPlan) emit(event interface{}) {
 }
 
 func (p *ExecPlan) startTask(task *Task, errs *errors.AggregatedError) {
+	p.logger.Printf("Start %s\n", task.Name())
 	task.State = Running
 	p.RunningTasks[task.Name()] = task
+	task.StartTime = time.Now()
 	p.emit(&EvtTaskStart{Task: task})
 	skippable := task.CheckSuccessMark()
-	if skippable && !p.RebuildAll {
+	if p.RebuildAll || p.RebuildTargets[task.Name()] {
+		skippable = false
+	}
+	if skippable {
 		task.Result = Skipped
+		task.FinishTime = task.StartTime
 		p.finishTask(task, errs)
 		return
 	}
@@ -290,20 +350,30 @@ func (p *ExecPlan) startTask(task *Task, errs *errors.AggregatedError) {
 
 func (p *ExecPlan) run(task *Task, runner Runner) {
 	task.Result, task.Error = runner(task)
+	task.FinishTime = time.Now()
 	p.finishCh <- task
 }
 
 func (p *ExecPlan) finishTask(task *Task, errs *errors.AggregatedError) {
 	if _, exist := p.RunningTasks[task.Name()]; !exist {
 		// task is out-of-date, ignored
+		p.logger.Printf("OUT-OF-DATE %s Result = %s, Err = %v\n",
+			task.Name(), task.Result.String(), task.Error)
 		return
 	}
+
+	p.logger.Printf("Finish %s Result = %s, Err = %v\n",
+		task.Name(), task.Result.String(), task.Error)
 
 	// transit to finished state
 	task.State = Finished
 	delete(p.RunningTasks, task.Name())
 	p.FinishedTasks = append(p.FinishedTasks, task)
-	task.BuildSuccessMark()
+	err := task.BuildSuccessMark()
+	if err != nil {
+		p.logger.Printf("IGNORED: %s BuildSuccessMark Error: %v\n",
+			task.Name(), err)
+	}
 
 	p.emit(&EvtTaskFinish{Task: task})
 
@@ -327,6 +397,7 @@ func (p *ExecPlan) finishTask(task *Task, errs *errors.AggregatedError) {
 			delete(p.WaitingTasks, t.Name())
 			t.State = Queued
 			p.QueuedTasks = append(p.QueuedTasks, t)
+			p.logger.Printf("Activate %s", t.Name())
 			p.emit(&EvtTaskActivated{Task: t})
 		}
 	}
@@ -352,15 +423,25 @@ func (t *Task) IsActivated() bool {
 	return len(t.Depends) == 0
 }
 
+// Duration is how long the task executed
+func (t *Task) Duration() time.Duration {
+	return t.FinishTime.Sub(t.StartTime)
+}
+
 // CheckSuccessMark calculates the watchlist digest and
 // checks if the task can be skipped
 func (t *Task) CheckSuccessMark() bool {
-	t.currentDigest = t.Target.BuildWatchList().Digest()
+	wl := t.Target.BuildWatchList()
+	t.Plan.logger.Printf("%s WatchList:\n%s", t.Name(), wl.String())
+	t.currentDigest = wl.Digest()
+	t.Plan.logger.Printf("%s Digest: %s\n", t.Name(), t.currentDigest)
 	content, err := ioutil.ReadFile(t.SuccessMarkFile())
 	if err != nil {
+		t.Plan.logger.Printf("%s ExistDigest Error: %v", t.Name(), err)
 		return false
 	}
 	prevDigest := strings.TrimSpace(string(content))
+	t.Plan.logger.Printf("%s ExistDigest %s", t.Name(), prevDigest)
 	if prevDigest == "" {
 		return false
 	}

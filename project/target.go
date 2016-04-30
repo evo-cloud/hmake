@@ -268,14 +268,23 @@ func (w WatchList) IsEmpty() bool {
 	return len(w) == 0
 }
 
+// String formats the watch list as a string
+func (w WatchList) String() string {
+	if w.IsEmpty() {
+		return ""
+	}
+	str := ""
+	for _, item := range w {
+		str += fmt.Sprintf("%s %v\n", item.Path, item.ModTime.Unix())
+	}
+	return str
+}
+
 // Digest calculates the digest based watched items
 func (w WatchList) Digest() string {
 	if w.IsEmpty() {
 		return ""
 	}
-	h := sha1.New()
-	for _, item := range w {
-		fmt.Fprintf(h, "%s %v\n", item.Path, item.ModTime.Unix())
-	}
-	return hex.EncodeToString(h.Sum(nil))
+	h := sha1.Sum([]byte(w.String()))
+	return hex.EncodeToString(h[0:])
 }

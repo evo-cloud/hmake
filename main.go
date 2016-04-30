@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -21,6 +22,8 @@ const (
 	faceOK  = ":)"
 	faceErr = ":("
 	faceNA  = ":]"
+
+	timeFmt = "15:04:05.000"
 )
 
 type taskState struct {
@@ -34,10 +37,13 @@ type projectSettings struct {
 
 type makeCmd struct {
 	// command line options
-	Parallel int
-	Rebuild  bool
-	Verbose  bool
-	Color    bool
+	Parallel   int
+	RebuildAll bool `n:"rebuild-all"`
+	Rebuild    []string
+	JSON       bool
+	Verbose    bool
+	Color      bool
+	Debug      bool
 
 	settings  projectSettings
 	tasks     map[string]*taskState
@@ -89,8 +95,10 @@ func (c *makeCmd) Execute(args []string) error {
 	}
 
 	plan := p.Plan().OnEvent(c.onEvent)
-	plan.RebuildAll = c.Rebuild
+	plan.Rebuild(c.Rebuild...)
+	plan.RebuildAll = c.RebuildAll
 	plan.MaxConcurrency = c.Parallel
+	plan.DebugLog = c.Debug
 
 	if err = plan.Require(args...); err != nil {
 		return err
@@ -106,27 +114,33 @@ func (c *makeCmd) Execute(args []string) error {
 func (c *makeCmd) onEvent(event interface{}) {
 	switch e := event.(type) {
 	case *hm.EvtTaskStart:
-		c.printTaskState(e.Task, faceGo, "lightblue")
+		c.dumpEvent("start", e.Task)
+		c.printTaskState(e.Task, faceGo, "lightblue",
+			e.Task.StartTime.Format(timeFmt))
 	case *hm.EvtTaskFinish:
+		c.dumpEvent("finish", e.Task)
+		extra := e.Task.FinishTime.Format(timeFmt) +
+			" [+" + e.Task.Duration().String() + "]"
 		switch e.Task.Result {
 		case hm.Success:
-			c.printTaskState(e.Task, faceOK, term.StyleOK)
+			c.printTaskState(e.Task, faceOK, term.StyleOK, extra)
 		case hm.Failure:
-			c.printTaskState(e.Task, faceErr, term.StyleErr)
+			c.printTaskState(e.Task, faceErr, term.StyleErr, extra)
 			if !c.Verbose {
 				c.printFailedTaskOutput(e.Task)
 			}
 		case hm.Skipped:
-			c.printTaskState(e.Task, faceNA, term.StyleLo)
+			c.printTaskState(e.Task, faceNA, term.StyleLo, "")
 		}
 	case *hm.EvtTaskOutput:
+		c.dumpTaskOutput(e.Task, e.Output)
 		if c.Verbose {
 			c.printTaskOutput(e.Task, e.Output)
 		}
 	}
 }
 
-func (c *makeCmd) printTaskState(task *hm.Task, face, style string) {
+func (c *makeCmd) printTaskState(task *hm.Task, face, style, extra string) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -137,6 +151,9 @@ func (c *makeCmd) printTaskState(task *hm.Task, face, style string) {
 	}
 	out.Styles(term.StyleB, style).Print(face+" ").Pop().
 		Styles(term.StyleB, term.StyleHi).Print(task.Name()).Pop()
+	if extra != "" {
+		out.Styles(term.StyleLo).Print(" " + extra).Pop()
+	}
 	if task.Error != nil {
 		out.Print(" ").Styles(term.StyleErr).Print(task.Error.Error()).Pop()
 	}
@@ -198,6 +215,52 @@ func (c *makeCmd) printFailedTaskOutput(task *hm.Task) {
 	out := term.NewPrinter(term.Std).Styles(term.StyleErr)
 	io.Copy(out, f)
 	out.Println()
+}
+
+func (c *makeCmd) dumpEvent(event string, task *hm.Task) {
+	if !c.JSON {
+		return
+	}
+	e := map[string]interface{}{
+		"event":  event,
+		"target": task.Name(),
+		"state":  task.State.String(),
+	}
+	if task.State >= hm.Running {
+		e["start-at"] = task.StartTime
+	}
+	if task.State >= hm.Finished {
+		e["result"] = task.Result.String()
+		e["finish-at"] = task.FinishTime
+	}
+
+	encoded, err := json.Marshal(e)
+	if err != nil {
+		return
+	}
+	c.lock.Lock()
+	fmt.Println(string(encoded))
+	c.lock.Unlock()
+}
+
+func (c *makeCmd) dumpTaskOutput(task *hm.Task, out []byte) {
+	if !c.JSON {
+		return
+	}
+	e := map[string]interface{}{
+		"event":    "output",
+		"target":   task.Name(),
+		"state":    task.State.String(),
+		"start-at": task.StartTime,
+		"output":   out,
+	}
+	encoded, err := json.Marshal(e)
+	if err != nil {
+		return
+	}
+	c.lock.Lock()
+	fmt.Println(string(encoded))
+	c.lock.Unlock()
 }
 
 func init() {

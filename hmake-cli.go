@@ -16,10 +16,21 @@ func cliDef() *args.CliDef {
 					Default: 0,
 				},
 				&args.Option{
-					Name:  "rebuild",
-					Alias: []string{"r"},
+					Name:  "rebuild-all",
+					Alias: []string{"R"},
 					Desc:  "Rebuild everything regardless of cached state",
 					Type:  "bool",
+				},
+				&args.Option{
+					Name:  "rebuild",
+					Alias: []string{"r"},
+					Desc:  "Rebuild specified targets",
+					List:  true,
+				},
+				&args.Option{
+					Name: "json",
+					Desc: "Dump events in JSON to stdout",
+					Type: "bool",
 				},
 				&args.Option{
 					Name:  "verbose",
@@ -32,6 +43,11 @@ func cliDef() *args.CliDef {
 					Desc:    "Colored output",
 					Type:    "bool",
 					Default: true,
+				},
+				&args.Option{
+					Name: "debug",
+					Desc: "Write debug log into .hmake/hmake.debug.log",
+					Type: "bool",
 				},
 			},
 		},
