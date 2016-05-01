@@ -291,6 +291,7 @@ func init() {
 
 func main() {
 	cliDef().
+		Use(term.NewExt()).
 		Use(bind.NewExt().Bind(&makeCmd{})).
 		Use(help.NewExt()).
 		Parse().
