@@ -9,7 +9,7 @@ const (
 
 // Runner wraps docker implementation
 func Runner(task *hm.Task) (hm.TaskResult, error) {
-	script, err := task.GenerateScript()
+	script, err := task.BuildScriptFile()
 	if err == nil && script != "" {
 		err = task.ExecScript()
 	}

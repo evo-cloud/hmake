@@ -23,6 +23,10 @@ type ExecPlan struct {
 	Project *Project
 	// Tasks are the tasks need execution
 	Tasks map[string]*Task
+	// Env is pre-defined environment variables
+	Env map[string]string
+	// WorkPath is full path to hmake state dir ProjectDir/.hmake
+	WorkPath string
 	// MaxConcurrency defines maximum number of tasks being executed in parallel
 	// if it's 0, the number of CPU cores are counted
 	MaxConcurrency int
@@ -30,6 +34,8 @@ type ExecPlan struct {
 	RebuildAll bool
 	// RebuildTargets specify targets to rebuild regardless of success mark
 	RebuildTargets map[string]bool
+	// RequiredTargets are names of targets explicitly required
+	RequiredTargets []string
 	// DebugLog enables logging debug info into .hmake/hmake.debug.log
 	DebugLog bool
 	// WaitingTasks are tasks in waiting state
@@ -166,12 +172,22 @@ func RegisterExecDriver(name string, runner Runner) {
 
 // NewExecPlan creates an ExecPlan for a Project
 func NewExecPlan(project *Project) *ExecPlan {
-	return &ExecPlan{
+	plan := &ExecPlan{
 		Project:        project,
 		RebuildTargets: make(map[string]bool),
 		Tasks:          make(map[string]*Task),
+		Env:            make(map[string]string),
+		WorkPath:       filepath.Join(project.BaseDir, WorkFolder),
 		WaitingTasks:   make(map[string]*Task),
 	}
+	plan.Env["HMAKE_PROJECT_NAME"] = project.Name
+	plan.Env["HMAKE_PROJECT_DIR"] = project.BaseDir
+	plan.Env["HMAKE_PROJECT_FILE"] = project.MasterFile.Source
+	plan.Env["HMAKE_WORK_DIR"] = plan.WorkPath
+	plan.Env["HMAKE_LAUNCH_PATH"] = project.LaunchPath
+	plan.Env["HMAKE_OS"] = runtime.GOOS
+	plan.Env["HMAKE_ARCH"] = runtime.GOARCH
+	return plan
 }
 
 // OnEvent subscribes the events
@@ -201,21 +217,21 @@ func (p *ExecPlan) Require(targets ...string) error {
 		t := p.Project.Targets[name]
 		if t == nil {
 			errs.Add(fmt.Errorf("target %s not defined", name))
-		} else {
-			p.AddTarget(t)
+		} else if _, added := p.AddTarget(t); added {
+			p.RequiredTargets = append(p.RequiredTargets, name)
 		}
 	}
 	return errs.Aggregate()
 }
 
 // AddTarget adds a target into execution plan
-func (p *ExecPlan) AddTarget(t *Target) *Task {
+func (p *ExecPlan) AddTarget(t *Target) (*Task, bool) {
 	task, exists := p.Tasks[t.Name]
 	if !exists {
 		task = NewTask(p, t)
 		p.Tasks[t.Name] = task
 		for name, dep := range t.Depends {
-			task.Depends[name] = p.AddTarget(dep)
+			task.Depends[name], _ = p.AddTarget(dep)
 		}
 		if task.IsActivated() {
 			task.State = Queued
@@ -225,17 +241,21 @@ func (p *ExecPlan) AddTarget(t *Target) *Task {
 			p.WaitingTasks[t.Name] = task
 		}
 	}
-	return task
+	return task, !exists
 }
 
 // Execute start execution
 func (p *ExecPlan) Execute() error {
-	if err := p.Project.ExecPrepare(); err != nil {
-		return err
+	p.Env["HMAKE_REQUIRED_TARGETS"] = strings.Join(p.RequiredTargets, " ")
+
+	if err := os.MkdirAll(p.WorkPath, 0755); err != nil {
+		if !os.IsExist(err) {
+			return err
+		}
 	}
 
 	if p.DebugLog {
-		f, err := os.OpenFile(filepath.Join(p.Project.WorkPath(), "hmake.debug.log"),
+		f, err := os.OpenFile(filepath.Join(p.WorkPath, "hmake.debug.log"),
 			syscall.O_WRONLY|syscall.O_CREAT|syscall.O_TRUNC, 0644)
 		if err == nil {
 			defer f.Close()
@@ -479,21 +499,21 @@ func (t *Task) Runner() (Runner, error) {
 
 // SuccessMarkFile returns the filename of success mark
 func (t *Task) SuccessMarkFile() string {
-	return filepath.Join(t.Project().WorkPath(), t.Name()+".success")
+	return filepath.Join(t.Plan.WorkPath, t.Name()+".success")
 }
 
 // ScriptFile returns the filename of script
 func (t *Task) ScriptFile() string {
-	return filepath.Join(t.Project().WorkPath(), t.Name()+".script")
+	return filepath.Join(t.Plan.WorkPath, t.Name()+".script")
 }
 
 // LogFile returns the fullpath to log filename
 func (t *Task) LogFile() string {
-	return filepath.Join(t.Project().WorkPath(), t.Name()+".log")
+	return filepath.Join(t.Plan.WorkPath, t.Name()+".log")
 }
 
-// GenerateScript generates script file according to cmds/script in target
-func (t *Task) GenerateScript() (string, error) {
+// BuildScript generates script file according to cmds/script in target
+func (t *Task) BuildScript() string {
 	target := t.Target
 	script := target.Script
 	if script == "" && len(target.Cmds) > 0 {
@@ -508,25 +528,39 @@ func (t *Task) GenerateScript() (string, error) {
 			script = "#!/bin/sh\n" + strings.Join(lines, "\n") + "\n"
 		}
 	}
-	if script == "" {
-		return "", nil
-	}
+	return script
+}
 
-	return script, ioutil.WriteFile(t.ScriptFile(), []byte(script), 0755)
+// WriteScriptFile builds the script file with provided script
+func (t *Task) WriteScriptFile(script string) error {
+	t.Plan.logger.Printf("%s WriteScript:\n%s\n", t.Name(), script)
+	return ioutil.WriteFile(t.ScriptFile(), []byte(script), 0755)
+}
+
+// BuildScriptFile generates the script file using default generated script
+func (t *Task) BuildScriptFile() (string, error) {
+	script := t.BuildScript()
+	return script, t.WriteScriptFile(script)
 }
 
 // Exec executes an external command for a task
 func (t *Task) Exec(command string, args ...string) error {
+	t.Plan.logger.Printf("%s Exec: %s %v\n", t.Name(), command, args)
 	out, err := os.OpenFile(t.LogFile(),
 		syscall.O_WRONLY|syscall.O_CREAT|syscall.O_TRUNC,
 		0644)
 	if err != nil {
+		t.Plan.logger.Printf("%s Exec OpenLog Error: %v\n", t.Name(), err)
 		return err
 	}
 	defer out.Close()
 	w := io.MultiWriter(out, t)
 	cmd := exec.Command(command, args...)
-	cmd.Env = os.Environ()
+	cmd.Env = append([]string{}, os.Environ()...)
+	for name, value := range t.Plan.Env {
+		cmd.Env = append(cmd.Env, name+"="+value)
+	}
+	cmd.Env = append(cmd.Env, "HMAKE_TARGET="+t.Name())
 	cmd.Dir = t.Project().BaseDir
 	cmd.Stdout = w
 	cmd.Stderr = w

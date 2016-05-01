@@ -116,7 +116,9 @@ func (c *makeCmd) Execute(args []string) error {
 		faces = facesEmoji
 	}
 
-	plan := p.Plan().OnEvent(c.onEvent)
+	plan := p.Plan()
+	plan.Env["HMAKE_VERSION"] = Version
+	plan.OnEvent(c.onEvent)
 	plan.Rebuild(c.Rebuild...)
 	plan.RebuildAll = c.RebuildAll
 	plan.MaxConcurrency = c.Parallel

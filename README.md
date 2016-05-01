@@ -12,8 +12,6 @@ While HyperMake is built as a handy tool with a few special features:
   targets can be defined in one HyperMake file or multiple,
   and targets has dependencies, can be built selectively.
 - Concurrent builds, targets without explicit dependencies can be built concurrently.
-- Synchronized execution, the execution of individual command can be synchronized
-  across targets being built concurrently with help of _macros_
 
 ## Getting Started
 
@@ -29,6 +27,8 @@ go get github.com/evo-cloud/hmake
 Or if you want to build from source
 
 ```
+# fetch all dependencies
+gvt restore
 # do a bootstrap
 go build -o bin/hmake .
 # do a full build
@@ -56,42 +56,111 @@ Here's the schema in example:
 ---
 format: hypermake.v0 # this indicates this is a HyperMake file
 
-targets:
-    all:
-        after:
-            - web
-            - server
-    web:
-        image: evo-cloud/gobuilder:1.1
-        envs:
-            - ENV       # this requires a pre-defined environment
-            - APP=web   # this defines an environment variable
-        cmds:
-            - make $TARGET  # TARGET is pre-defined by hmake
-    server:
-        # image not specified, using that in configurations
-        cmds:
-            - make $TARGET
+# project name and description
+name: hmake
+description: HyperMake builds your project without pre-requisites
 
+# define targets
+targets:
+    hmake-linux-amd64:
+        description: static linked hmake binary for Linux AMD64
+        after: [vendor]
+        watches:
+            - '**/**/*.go'
+        cmds:
+            - env
+            - >
+                env GOOS=linux GOARCH=amd64
+                go build -o bin/hmake-$GOOS-$GOARCH
+                -a -tags 'static_build netgo' -installsuffix netgo
+                -ldflags '-extldflags -static'
+                .
+
+    hmake-darwin-amd64:
+        description: static linked hmake binary for Mac OS
+        after: [vendor]
+        watches:
+            - '**/**/*.go'
+        cmds:
+            - env
+            - >
+                env GOOS=linux GOARCH=amd64
+                go build -o bin/hmake-$GOOS-$GOARCH
+                -a -tags 'static_build netgo' -installsuffix netgo
+                -ldflags '-extldflags -static'
+                .
+
+    vendor:
+        description: pull all vendor packages
+        watches:
+            - 'vendor/manifest'
+        cmds:
+            - 'apk update && apk add git'
+            - 'go get github.com/FiloSottile/gvt'
+            - 'gvt restore'
+            - 'mkdir -p bin'
+
+    all:
+        after: [hmake-linux-amd64, hmake-darwin-amd64]
+
+# settings shared across targets
 settings:
-    default-image: evo-cloud/gobuilder:1
-    default-shell: ["/bin/bash", "-c"]
-    hmake-dir: .hmake
-    mapped-path: /root/src
-    volumes:
-        - local:inside-path
-        - ...
-    envs:
-        - ...
-    map-docker: true # or inside path of docker unix socket
-    privileged: true
-    caps-add:
-        - ...
-    caps-drop:
-        - ...
+    default-targets: [all]
+    image: golang:1.6-alpine
+    src-volume: /go/src/github.com/evo-cloud/hmake
 
 includes:
-    - src/**/*.hmake
+    - build/**/**/*.hmake
 ```
 
+#### Dependencies
+
+Dependencies can be specified using:
+
+- `after`: the target is executed when the depended tasks succeed or are skipped
+- `before`: the target must succeed or skip before the specified tasks get executed.
+
+In most cases, `after` is enough in a single file.
+`before` is mostly used to inject dependencies in the files included.
+
+#### Include files
+
+In `includes` section, specify files to be included.
+The files included can provide more targets and also override settings.
+
 #### Pre-defined Environment Variables
+
+- `HMAKE_PROJECT_NAME`: the name of the project
+- `HMAKE_PROJECT_DIR`: the directory containing `HyperMake` (aka. project root)
+- `HMAKE_PROJECT_FILE`: the full path to `HyperMake`
+- `HMAKE_WORK_DIR`: `$HMAKE_PROJECT_DIR/.hmake`
+- `HMAKE_LAUNCH_PATH`: the relative path under `$HMAKE_PROJECT_DIR` where `hmake` launches
+- `HMAKE_REQUIRED_TARGETS`: the names of targets explicitly required from command line, separate by space
+- `HMAKE_TARGET`: the name of the target currently in execution
+- `HMAKE_VERSION`: version of _hmake_
+- `HMAKE_OS`: operating system
+- `HMAKE_ARCH`: CPU architecture
+
+#### State Directory
+
+_hmake_ creates a state directory `$HMAKE_PROJECT_DIR/.hmake` to store logs and state files.
+The output (stdout and stderr combined) of each target is stored in files `TARGET.log`.
+
+## Command Usage
+
+#### Usage
+
+```
+hmake [OPTIONS] [TARGETS]
+```
+
+#### Options
+
+- `--parallel=N, -p N`: Set maximum number of targets executed in parallel, 0 for auto, -1 for unlimited
+- `--rebuild-all, -R`: Force rebuild all needed targets
+- `--rebuild TARGET, -r TARGET`: Force rebuild specified target, this can repeat
+- `--json`: Dump execution events to stdout each encoded in single line json
+- `--verbose, -v`: Show execution output to stderr for each target
+- `--color|--no-color`: Explicitly specify print with color/no-color
+- `--emoji|--no-emoji`: Explicitly specify print with emoji/no-emoji
+- `--debug`: write a debug log `hmake.debug.log` in hmake state directory

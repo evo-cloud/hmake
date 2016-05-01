@@ -29,6 +29,10 @@ var ErrUnsupportedFormat = fmt.Errorf("unsupported format")
 type File struct {
 	// Format indicates file format
 	Format string `json:"format"`
+	// Name is name of the project
+	Name string `json:"name"`
+	// Desc is description of the project
+	Desc string `json:"description"`
 	// Targets are targets defined in current file
 	Targets map[string]*Target `json:"targets"`
 	// Settings are properties
@@ -42,9 +46,12 @@ type File struct {
 
 // Project is the world view of hmake
 type Project struct {
+	// Name is name of the project
+	Name string
 	// BaseDir is the root directory of project
 	BaseDir string
-
+	// LaunchPath is relative path under BaseDir where hmake launches
+	LaunchPath string
 	// MasterFile is the file with everything merged
 	MasterFile File
 
@@ -53,9 +60,6 @@ type Project struct {
 
 	// Tasks are built from resolved targets
 	Targets TargetNameMap
-
-	// WorkFolder is the folder for hmake stuff
-	WorkFolder string
 }
 
 func loadYaml(filename string) (map[string]interface{}, error) {
@@ -92,9 +96,10 @@ func LocateProject() (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
+	launchPath := ""
 
 	for {
-		p := &Project{BaseDir: wd}
+		p := &Project{BaseDir: wd, LaunchPath: launchPath}
 		_, err := p.Load(RootFile)
 		if err == nil {
 			return p, nil
@@ -106,6 +111,7 @@ func LocateProject() (*Project, error) {
 		if dir == wd {
 			break
 		}
+		launchPath = filepath.Join(filepath.Base(wd), launchPath)
 		wd = dir
 	}
 
@@ -170,7 +176,14 @@ func (p *Project) Load(path string) (*File, error) {
 		return nil, err
 	}
 	p.Files = append(p.Files, f)
-	return f, p.MasterFile.Merge(f)
+	if err = p.MasterFile.Merge(f); err != nil {
+		return f, err
+	}
+	if len(p.Files) == 1 {
+		p.MasterFile.Source = f.Source
+		p.Name = f.Name
+	}
+	return f, nil
 }
 
 // Glob matches files inside project with pattern
@@ -234,17 +247,6 @@ func (p *Project) TargetNames() []string {
 	}
 	sort.Strings(targets)
 	return targets
-}
-
-// ExecPrepare prepares for execution
-func (p *Project) ExecPrepare() error {
-	p.WorkFolder = WorkFolder
-	return os.MkdirAll(p.WorkPath(), 0755)
-}
-
-// WorkPath returns the full path of WorkFolder
-func (p *Project) WorkPath() string {
-	return filepath.Join(p.BaseDir, p.WorkFolder)
 }
 
 // GetSettings maps settings into provided variable
