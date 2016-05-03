@@ -66,6 +66,11 @@ func cliDef() *flag.CliDef {
 					Desc: "Write debug log into .hmake/hmake.debug.log",
 					Type: "bool",
 				},
+				&flag.Option{
+					Name: "version",
+					Desc: "Display version and exit",
+					Type: "bool",
+				},
 			},
 		},
 	}

@@ -60,8 +60,9 @@ type makeCmd struct {
 	JSON       bool
 	Verbose    bool
 	Color      bool
-	Debug      bool
 	Emoji      bool
+	Debug      bool
+	Version    bool
 
 	settings  projectSettings
 	tasks     map[string]*taskState
@@ -83,6 +84,11 @@ func pad(str string, l int) string {
 }
 
 func (c *makeCmd) Execute(args []string) error {
+	if c.Version {
+		term.Println(Version)
+		return nil
+	}
+
 	p, err := hm.LoadProject()
 	if err != nil {
 		return err

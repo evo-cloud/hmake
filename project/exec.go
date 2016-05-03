@@ -525,7 +525,7 @@ func (t *Task) BuildScript() string {
 			lines = append(lines, cmd.Shell)
 		}
 		if len(lines) > 0 {
-			script = "#!/bin/sh\n" + strings.Join(lines, "\n") + "\n"
+			script = "#!/bin/sh\nset -e\n" + strings.Join(lines, "\n") + "\n"
 		}
 	}
 	return script

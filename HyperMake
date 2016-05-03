@@ -10,10 +10,12 @@ targets:
         after: [vendor]
         watches:
             - '**/**/*.go'
+        envs:
+            - GOOS=linux
+            - GOARCH=amd64
         cmds:
             - env
             - >
-                env GOOS=linux GOARCH=amd64
                 go build -o bin/hmake-$GOOS-$GOARCH
                 -a -tags 'static_build netgo' -installsuffix netgo
                 -ldflags '-extldflags -static'
@@ -24,10 +26,12 @@ targets:
         after: [vendor]
         watches:
             - '**/**/*.go'
+        envs:
+            - GOOS=darwin
+            - GOARCH=amd64
         cmds:
             - env
             - >
-                env GOOS=linux GOARCH=amd64
                 go build -o bin/hmake-$GOOS-$GOARCH
                 -a -tags 'static_build netgo' -installsuffix netgo
                 -ldflags '-extldflags -static'
@@ -48,5 +52,7 @@ targets:
 
 settings:
     default-targets: [all]
-    image: golang:1.6-alpine
-    src-volume: /go/src/github.com/evo-cloud/hmake
+    docker:
+        image: golang:1.6-alpine
+        src-volume: /go/src/github.com/evo-cloud/hmake
+        user: root

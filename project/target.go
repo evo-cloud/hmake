@@ -97,6 +97,17 @@ func (t *Target) GetSetting(name string, v interface{}) error {
 	return nil
 }
 
+// GetSettingWithExt extracts the value from Ext and settings stack
+func (t *Target) GetSettingWithExt(name string, v interface{}) error {
+	if err := t.GetSetting(name, v); err != nil {
+		return err
+	}
+	if t.Ext != nil {
+		return mapper.Map(v, t.Ext)
+	}
+	return nil
+}
+
 // BuildWatchList collects current state of all watched items
 func (t *Target) BuildWatchList() (list WatchList) {
 	files := make(map[string]*WatchItem)
