@@ -16,7 +16,7 @@ targets:
         cmds:
             - env
             - >
-                go build -o bin/hmake-$GOOS-$GOARCH
+                go build -o bin/hmake-$HMAKE_OS-$HMAKE_ARCH
                 -a -tags 'static_build netgo' -installsuffix netgo
                 -ldflags '-extldflags -static'
                 .
@@ -32,7 +32,7 @@ targets:
         cmds:
             - env
             - >
-                go build -o bin/hmake-$GOOS-$GOARCH
+                go build -o bin/hmake-$HMAKE_OS-$HMAKE_ARCH
                 -a -tags 'static_build netgo' -installsuffix netgo
                 -ldflags '-extldflags -static'
                 .
