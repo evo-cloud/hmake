@@ -47,6 +47,20 @@ targets:
             - 'gvt restore'
             - 'mkdir -p bin'
 
+    test:
+        description: run tests
+        after: [vendor]
+        watches:
+            - '**/**/*.go'
+        cmds:
+            - 'apk update && apk add git'
+            - go get github.com/onsi/ginkgo
+            - go get github.com/onsi/gomega
+            - >
+                go test -coverprofile cover.out
+                -coverpkg ./project,./docker,./shell
+                ./test
+
     all:
         after: [hmake-linux-amd64, hmake-darwin-amd64]
 

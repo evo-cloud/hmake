@@ -1,0 +1,12 @@
+---
+format: hypermake.v0
+name: cyclic-deps
+targets:
+  t0:
+    before: [t1]
+  t1: {}
+  t2:
+    after: [t1]
+  t3:
+    after: [t2]
+    before: [t0]

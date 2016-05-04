@@ -1,0 +1,11 @@
+---
+format: hypermake.v0
+
+name: project0
+
+includes:
+  - subproject/subproj.hmake
+
+settings:
+  t0:
+    toplevel: project0

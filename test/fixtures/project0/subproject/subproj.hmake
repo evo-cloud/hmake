@@ -1,0 +1,14 @@
+---
+format: hypermake.v0
+name: subproj
+
+targets:
+  t0:
+    watches:
+      - subdir
+      - subdir/**/**
+    toplevel1: t0
+
+settings:
+  t0:
+    toplevel1: subproj

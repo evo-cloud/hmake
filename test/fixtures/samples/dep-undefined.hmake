@@ -1,0 +1,7 @@
+---
+format: hypermake.v0
+name: dep-undefined
+targets:
+  t0:
+    after: [tx]
+    before: [tx]

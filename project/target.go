@@ -112,7 +112,7 @@ func (t *Target) GetSettingWithExt(name string, v interface{}) error {
 func (t *Target) BuildWatchList() (list WatchList) {
 	files := make(map[string]*WatchItem)
 	for _, pattern := range t.Watches {
-		paths, err := t.Project.Glob(pattern)
+		paths, err := t.Project.Glob(filepath.Join(filepath.Dir(t.Source), pattern))
 		if err != nil {
 			continue
 		}
@@ -127,7 +127,7 @@ func (t *Target) BuildWatchList() (list WatchList) {
 					if err == nil {
 						relpath = path + relpath[len(fullpath):]
 						if !info.IsDir() {
-							files[path] = &WatchItem{Path: relpath, ModTime: st.ModTime()}
+							files[relpath] = &WatchItem{Path: relpath, ModTime: st.ModTime()}
 						}
 					}
 					return nil
@@ -234,44 +234,11 @@ func (m TargetNameMap) resolveDeps(t *Target,
 }
 
 // Merge merges settings s1 into s
-func (s Settings) Merge(s1 Settings) {
+func (s Settings) Merge(s1 Settings) error {
 	if s1 == nil {
-		return
+		return nil
 	}
-
-	for k, val := range s1 {
-		if s.mergeList(k, val) {
-			continue
-		}
-		s[k] = val
-	}
-}
-
-func (s Settings) mergeList(key string, val interface{}) bool {
-	dest, exist := s[key]
-	if !exist {
-		return false
-	}
-	vList, ok := val.([]interface{})
-	if !ok {
-		return false
-	}
-	dList, ok := dest.([]interface{})
-	if !ok {
-		return false
-	}
-	if len(vList) == 0 {
-		return true
-	}
-	if str, ok := vList[0].(string); ok && str == "$new" {
-		s[key] = vList[1:]
-		return true
-	}
-	for _, v := range vList {
-		dList = append(dList, v)
-		s[key] = dList
-	}
-	return true
+	return mapper.Map(s, s1)
 }
 
 // IsEmpty indicates the watch list is empty

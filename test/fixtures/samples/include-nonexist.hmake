@@ -1,0 +1,6 @@
+---
+format: hypermake.v0
+
+includes:
+  - non-exist.hmake
+  - inc-a.hmake

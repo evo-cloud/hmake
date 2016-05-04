@@ -1,0 +1,11 @@
+---
+format: hypermake.v0
+name: target-names
+targets:
+  t3:
+    after: [t2]
+  t0:
+    before: [t1]
+  t2:
+    after: [t1]
+  t1: {}

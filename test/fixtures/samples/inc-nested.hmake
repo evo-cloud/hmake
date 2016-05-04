@@ -1,0 +1,8 @@
+---
+format: hypermake.v0
+
+targets:
+  nested: {}
+
+includes:
+  - includes.hmake

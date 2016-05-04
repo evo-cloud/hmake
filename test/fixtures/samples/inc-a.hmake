@@ -1,0 +1,11 @@
+---
+format: hypermake.v0
+
+targets:
+  inc-a: {}
+
+settings:
+  toplevel1: inc-a
+  dict:
+    key: inc-a
+    key1: inc-a

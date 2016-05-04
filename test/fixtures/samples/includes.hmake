@@ -1,0 +1,12 @@
+---
+format: hypermake.v0
+name: includes
+
+includes:
+  - includes/**/**/*.hmake
+  - inc-*.hmake
+
+settings:
+  toplevel: includes
+  dict:
+    key: includes

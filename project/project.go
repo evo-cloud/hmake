@@ -90,9 +90,9 @@ func LoadFile(baseDir, path string) (*File, error) {
 	return f, err
 }
 
-// LocateProject creates a project by locating the root file
-func LocateProject() (*Project, error) {
-	wd, err := os.Getwd()
+// LocateProjectFrom creates a project by locating the root file from startDir
+func LocateProjectFrom(startDir string) (*Project, error) {
+	wd, err := filepath.Abs(startDir)
 	if err != nil {
 		return nil, err
 	}
@@ -118,9 +118,18 @@ func LocateProject() (*Project, error) {
 	return nil, os.ErrNotExist
 }
 
-// LoadProject locates, resolves and finalizes project
-func LoadProject() (p *Project, err error) {
-	if p, err = LocateProject(); err != nil {
+// LocateProject creates a project by locating the root file
+func LocateProject() (*Project, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	return LocateProjectFrom(wd)
+}
+
+// LoadProjectFrom locates, resolves and finalizes project from startDir
+func LoadProjectFrom(startDir string) (p *Project, err error) {
+	if p, err = LocateProjectFrom(startDir); err != nil {
 		return
 	}
 	if err = p.Resolve(); err != nil {
@@ -128,6 +137,15 @@ func LoadProject() (p *Project, err error) {
 	}
 	err = p.Finalize()
 	return
+}
+
+// LoadProject locates, resolves and finalizes project
+func LoadProject() (p *Project, err error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	return LocateProjectFrom(wd)
 }
 
 // Merge merges content from another file
@@ -147,7 +165,7 @@ func (f *File) Merge(s *File) error {
 	if f.Settings == nil {
 		f.Settings = make(Settings)
 	}
-	f.Settings.Merge(s.Settings)
+	errs.Add(f.Settings.Merge(s.Settings))
 
 	for _, inc := range s.Includes {
 		found := false
@@ -174,6 +192,9 @@ func (p *Project) Load(path string) (*File, error) {
 	f, err := LoadFile(p.BaseDir, path)
 	if err != nil {
 		return nil, err
+	}
+	for _, t := range f.Targets {
+		t.Source = f.Source
 	}
 	p.Files = append(p.Files, f)
 	if err = p.MasterFile.Merge(f); err != nil {

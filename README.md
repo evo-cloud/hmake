@@ -35,6 +35,25 @@ go build -o bin/hmake .
 bin/hmake
 ```
 
+If you want to run tests, you can either simply:
+
+```
+hmake test
+```
+
+or in your local environment install
+[ginkgo](https://github.com/onsi/ginkgo) and
+[gomega](https://github.com/onsi/gomega) first
+
+```bash
+go get https://github.com/onsi/ginkgo/ginkgo
+go get https://github.com/onsi/gomega
+ginkgo test ./test
+# or
+go test ./test
+go test -coverprofile=cover.out -coverpkg=./project ./test
+```
+
 _hmake_ expects a `HyperMake` file in root of the project,
 and you can run `hmake` from any sub-directory inside the project,
 the command will figure out project root by locating `HyperMake` file.
