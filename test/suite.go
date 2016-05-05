@@ -1,9 +1,13 @@
 package test
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strconv"
 	"strings"
+	"sync"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -216,6 +220,182 @@ var _ = Describe("HyperMake", func() {
 	})
 
 	Describe("ExecPlan", func() {
+		BeforeEach(func() {
+			os.RemoveAll(Fixtures("project1", hm.WorkFolder))
+		})
 
+		It("generates env", func() {
+			proj, err := hm.LoadProjectFrom(Fixtures("project0", "subproject"))
+			Expect(err).Should(Succeed())
+			plan := proj.Plan()
+			Expect(plan.WorkPath).To(Equal(Fixtures("project0", hm.WorkFolder)))
+			Expect(plan.Project).To(Equal(proj))
+			Expect(plan.Env["HMAKE_PROJECT_DIR"]).To(Equal(Fixtures("project0")))
+			Expect(plan.Env["HMAKE_PROJECT_NAME"]).To(Equal("project0"))
+			Expect(plan.Env["HMAKE_PROJECT_FILE"]).To(Equal(hm.RootFile))
+			Expect(plan.Env["HMAKE_WORK_DIR"]).To(Equal(Fixtures("project0", hm.WorkFolder)))
+			Expect(plan.Env["HMAKE_LAUNCH_PATH"]).To(Equal("subproject"))
+			Expect(plan.Env["HMAKE_OS"]).To(Equal(runtime.GOOS))
+			Expect(plan.Env["HMAKE_ARCH"]).To(Equal(runtime.GOARCH))
+		})
+
+		execProject := func(project string, targets ...string) (plan *hm.ExecPlan, execOrder []string) {
+			proj, err := hm.LoadProjectFrom(Fixtures(project))
+			Expect(err).Should(Succeed())
+			plan = proj.Plan()
+			plan.DebugLog = true
+			execCh := make(chan string)
+			plan.RunnerFactory = func(task *hm.Task) (hm.Runner, error) {
+				runner, err := task.Runner()
+				Expect(err).Should(Succeed())
+				return func(task *hm.Task) (hm.TaskResult, error) {
+					execCh <- task.Name()
+					return runner(task)
+				}, nil
+			}
+			for _, t := range targets {
+				if t == "-R" {
+					plan.RebuildAll = true
+				} else if strings.HasPrefix(t, "-r:") {
+					plan.Rebuild(t[3:])
+				} else {
+					plan.Require(t)
+				}
+			}
+			var wg sync.WaitGroup
+			wg.Add(1)
+			go func() {
+				for {
+					name, ok := <-execCh
+					if !ok {
+						break
+					}
+					execOrder = append(execOrder, name)
+				}
+				wg.Done()
+			}()
+			Expect(plan.Execute()).Should(Succeed())
+			close(execCh)
+			wg.Wait()
+			return
+		}
+
+		It("executes tasks in right order", func() {
+			plan, execOrder := execProject("project1", "all")
+			names := plan.Project.TargetNames()
+			Expect(execOrder).Should(HaveLen(len(names)))
+			startNum := 0
+			for i := 0; i+1 < len(execOrder); i++ {
+				name := execOrder[i]
+				num, err := strconv.Atoi(name[1:2])
+				Expect(err).Should(Succeed())
+				Expect(num).ShouldNot(BeNumerically("<", startNum))
+				if num > startNum {
+					startNum = num
+				}
+			}
+		})
+
+		It("skips tasks without file changes", func() {
+			os.RemoveAll(Fixtures("project1", "touch.log"))
+			_, execOrder0 := execProject("project1", "all")
+			_, execOrder1 := execProject("project1", "all")
+			Expect(execOrder1).Should(HaveLen(len(execOrder0) - 3))
+			for i := 0; i < len(execOrder1); i++ {
+				name := execOrder1[i]
+				Expect(name).ShouldNot(Equal("t0"))
+				Expect(name).ShouldNot(HavePrefix("t1"))
+			}
+			Expect(ioutil.WriteFile(
+				Fixtures("project1", "touch.log"), []byte("touch"), 0644)).
+				Should(Succeed())
+			_, execOrder2 := execProject("project1", "all")
+			Expect(execOrder2).Should(HaveLen(len(execOrder0)))
+		})
+
+		It("rebuilds task when explicitly specified", func() {
+			os.RemoveAll(Fixtures("project1", "touch.log"))
+			_, execOrder0 := execProject("project1", "all")
+			_, execOrder1 := execProject("project1", "all")
+			Expect(execOrder1).Should(HaveLen(len(execOrder0) - 3))
+			_, execOrder2 := execProject("project1", "-r:t0", "all")
+			Expect(execOrder2).Should(HaveLen(len(execOrder0)))
+			_, execOrder3 := execProject("project1", "-R", "all")
+			Expect(execOrder3).Should(HaveLen(len(execOrder0)))
+		})
+
+		It("emits event and task failure", func() {
+			os.RemoveAll(Fixtures("project1", "touch.log"))
+			execProject("project1", "all")
+
+			taskFails := map[string]bool{
+				"t2": true,
+			}
+
+			taskResults := make(map[string]hm.TaskResult)
+
+			proj, err := hm.LoadProjectFrom(Fixtures("project1"))
+			Expect(err).Should(Succeed())
+			plan := proj.Plan()
+			plan.RunnerFactory = func(task *hm.Task) (hm.Runner, error) {
+				return func(task *hm.Task) (hm.TaskResult, error) {
+					if _, exists := taskFails[task.Name()]; exists {
+						return hm.Failure, nil
+					}
+					return hm.Success, nil
+				}, nil
+			}
+			plan.Require("all")
+			plan.OnEvent(func(event interface{}) {
+				switch evt := event.(type) {
+				case *hm.EvtTaskFinish:
+					taskResults[evt.Task.Name()] = evt.Task.Result
+				}
+			})
+			Expect(plan.Execute()).ShouldNot(Succeed())
+			Expect(taskResults).Should(HaveLen(4))
+			Expect(taskResults["t0"]).To(Equal(hm.Skipped))
+			Expect(taskResults["t1.0"]).To(Equal(hm.Skipped))
+			Expect(taskResults["t1.1"]).To(Equal(hm.Skipped))
+			Expect(taskResults["t2"]).To(Equal(hm.Failure))
+			Expect(plan.Tasks["t0"].Duration()).To(BeZero())
+		})
+
+		It("converts states into strings", func() {
+			Expect(hm.Unknown.String()).To(BeEmpty())
+			Expect(hm.Success.String()).To(Equal("Success"))
+			Expect(hm.Failure.String()).To(Equal("Failure"))
+			Expect(hm.Skipped.String()).To(Equal("Skipped"))
+			Expect(hm.Waiting.String()).To(Equal("Waiting"))
+			Expect(hm.Queued.String()).To(Equal("Queued"))
+			Expect(hm.Running.String()).To(Equal("Running"))
+			Expect(hm.Finished.String()).To(Equal("Finished"))
+		})
+
+		It("provides default script/log paths", func() {
+			proj, err := hm.LoadProjectFrom(Fixtures("project1"))
+			Expect(err).Should(Succeed())
+			plan := proj.Plan()
+			plan.Require("all", "t2", "t3.0")
+			os.MkdirAll(plan.WorkPath, 0755)
+			task := plan.Tasks["all"]
+			Expect(task.ScriptFile()).To(Equal(Fixtures("project1", hm.WorkFolder, "all.script")))
+			Expect(task.LogFile()).To(Equal(Fixtures("project1", hm.WorkFolder, "all.log")))
+			task = plan.Tasks["t3.0"]
+			script, err := task.BuildScriptFile()
+			Expect(err).Should(Succeed())
+			Expect(script).To(Equal("#!/usr/bin/interpreter"))
+			fileContent, err := ioutil.ReadFile(Fixtures("project1", hm.WorkFolder, "t3.0.script"))
+			Expect(err).Should(Succeed())
+			Expect(string(fileContent)).To(Equal(script))
+			task = plan.Tasks["t2"]
+			script, err = task.BuildScriptFile()
+			Expect(err).Should(Succeed())
+			Expect(script).To(HavePrefix("#!/bin/sh\n"))
+			Expect(task.ExecScript()).Should(Succeed())
+			fileContent, err = ioutil.ReadFile(Fixtures("project1", hm.WorkFolder, "t2.log"))
+			Expect(err).Should(Succeed())
+			Expect(string(fileContent)).To(Equal("hello"))
+		})
 	})
 })

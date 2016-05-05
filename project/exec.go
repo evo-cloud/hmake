@@ -36,6 +36,8 @@ type ExecPlan struct {
 	RebuildTargets map[string]bool
 	// RequiredTargets are names of targets explicitly required
 	RequiredTargets []string
+	// RunnerFactory specifies the custom runner factory
+	RunnerFactory RunnerFactory
 	// DebugLog enables logging debug info into .hmake/hmake.debug.log
 	DebugLog bool
 	// WaitingTasks are tasks in waiting state
@@ -153,6 +155,9 @@ func (r TaskState) String() string {
 // Runner is the handler execute a target
 type Runner func(*Task) (TaskResult, error)
 
+// RunnerFactory creates a runner from a task
+type RunnerFactory func(*Task) (Runner, error)
+
 // Setting Names
 const (
 	SettingExecDriver = "exec-driver"
@@ -179,6 +184,8 @@ func NewExecPlan(project *Project) *ExecPlan {
 		Env:            make(map[string]string),
 		WorkPath:       filepath.Join(project.BaseDir, WorkFolder),
 		WaitingTasks:   make(map[string]*Task),
+
+		logger: log.New(ioutil.Discard, "", log.Ltime),
 	}
 	plan.Env["HMAKE_PROJECT_NAME"] = project.Name
 	plan.Env["HMAKE_PROJECT_DIR"] = project.BaseDir
@@ -249,9 +256,7 @@ func (p *ExecPlan) Execute() error {
 	p.Env["HMAKE_REQUIRED_TARGETS"] = strings.Join(p.RequiredTargets, " ")
 
 	if err := os.MkdirAll(p.WorkPath, 0755); err != nil {
-		if !os.IsExist(err) {
-			return err
-		}
+		return err
 	}
 
 	if p.DebugLog {
@@ -261,9 +266,6 @@ func (p *ExecPlan) Execute() error {
 			defer f.Close()
 			p.logger = log.New(f, "hmake: ", log.Ltime)
 		}
-	}
-	if p.logger == nil {
-		p.logger = log.New(ioutil.Discard, "hmake: ", log.Ltime)
 	}
 
 	errs := &errors.AggregatedError{}
@@ -358,7 +360,7 @@ func (p *ExecPlan) startTask(task *Task, errs *errors.AggregatedError) {
 		}
 	}
 
-	runner, err := task.Runner()
+	runner, err := p.runner(task)
 	if err != nil {
 		task.Error = err
 		task.Result = Failure
@@ -366,6 +368,13 @@ func (p *ExecPlan) startTask(task *Task, errs *errors.AggregatedError) {
 	} else {
 		go p.run(task, runner)
 	}
+}
+
+func (p *ExecPlan) runner(task *Task) (Runner, error) {
+	if p.RunnerFactory != nil {
+		return p.RunnerFactory(task)
+	}
+	return task.Runner()
 }
 
 func (p *ExecPlan) run(task *Task, runner Runner) {
