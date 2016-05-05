@@ -63,6 +63,7 @@ type makeCmd struct {
 	Emoji       bool
 	Debug       bool
 	ShowTargets bool `n:"targets"`
+	DryRun	    bool `n:"dryrun"`
 	Version     bool
 
 	settings  projectSettings
@@ -140,6 +141,7 @@ func (c *makeCmd) Execute(args []string) error {
 	plan.RebuildAll = c.RebuildAll
 	plan.MaxConcurrency = c.Parallel
 	plan.DebugLog = c.Debug
+	plan.DryRun = c.DryRun
 
 	if err = plan.Require(args...); err != nil {
 		return err

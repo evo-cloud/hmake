@@ -1,3 +1,5 @@
+[![Build Status](https://drone.io/github.com/evo-cloud/hmake/status.png)](https://drone.io/github.com/evo-cloud/hmake/latest)
+
 # HyperMake
 
 HyperMake helps you build projects without installing pre-requisites in your
