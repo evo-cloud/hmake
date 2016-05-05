@@ -72,6 +72,11 @@ func cliDef() *flag.CliDef {
 					Type: "bool",
 				},
 				&flag.Option{
+					Name: "dryrun",
+					Desc: "Show the execution of targets without doing anything",
+					Type: "bool",
+				},
+				&flag.Option{
 					Name: "version",
 					Desc: "Display version and exit",
 					Type: "bool",
