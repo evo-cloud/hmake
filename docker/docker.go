@@ -20,6 +20,8 @@ const (
 )
 
 type dockerConfig struct {
+	Build             string   `json:"build"`
+	BuildFrom         string   `json:"build-from"`
 	Image             string   `json:"image"`
 	SrcVolume         string   `json:"src-volume"`
 	Envs              []string `json:"envs"`
@@ -89,7 +91,13 @@ func Runner(task *hm.Task) (hm.TaskResult, error) {
 		// image not present, fallback to shell
 		return shell.Runner(task)
 	}
-	if err = r.run(conf); err != nil {
+	if conf.Build != "" {
+		err = r.build(conf)
+	}
+	if err == nil {
+		err = r.run(conf)
+	}
+	if err != nil {
 		return hm.Failure, err
 	}
 	return hm.Success, nil
@@ -119,6 +127,18 @@ func (r *dockerRunner) loadConfig() (conf *dockerConfig, err error) {
 	return
 }
 
+func (r *dockerRunner) build(conf *dockerConfig) error {
+	project := r.task.Project()
+	dockerFile := filepath.Join(project.BaseDir, conf.Build)
+	buildPath := filepath.Dir(dockerFile)
+	dockerCmd := []string{"docker", "build",
+		"-f", dockerFile,
+		"-t", conf.Image,
+		buildPath,
+	}
+	return r.task.Exec(dockerCmd[0], dockerCmd[1:]...)
+}
+
 func (r *dockerRunner) run(conf *dockerConfig) error {
 	project := r.task.Project()
 
@@ -131,7 +151,7 @@ func (r *dockerRunner) run(conf *dockerConfig) error {
 	}
 	// by default, use non-root user
 	if conf.User == "" {
-		dockerRun = append(dockerRun, "-u", strconv.Itoa(os.Getuid()))
+		dockerRun = append(dockerRun, "-u", strconv.Itoa(os.Getuid())+":"+strconv.Itoa(os.Getgid()))
 	} else if conf.User != "root" && conf.User != "0" {
 		dockerRun = append(dockerRun, "-u", conf.User)
 	}

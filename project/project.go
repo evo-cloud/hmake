@@ -145,7 +145,7 @@ func LoadProject() (p *Project, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return LocateProjectFrom(wd)
+	return LoadProjectFrom(wd)
 }
 
 // Merge merges content from another file

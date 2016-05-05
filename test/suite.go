@@ -1,6 +1,7 @@
 package test
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -322,6 +323,17 @@ var _ = Describe("HyperMake", func() {
 			Expect(execOrder2).Should(HaveLen(len(execOrder0)))
 			_, execOrder3 := execProject("project1", "-R", "all")
 			Expect(execOrder3).Should(HaveLen(len(execOrder0)))
+		})
+
+		It("generates summary file", func() {
+			plan, _ := execProject("project1", "t0")
+			data, err := ioutil.ReadFile(plan.SummaryFile())
+			Expect(err).Should(Succeed())
+			var summary []map[string]interface{}
+			Expect(json.Unmarshal(data, &summary)).Should(Succeed())
+			Expect(summary).To(HaveLen(1))
+			Expect(summary[0]["target"]).To(Equal("t0"))
+			Expect(summary[0]["result"]).To(Equal("Success"))
 		})
 
 		It("emits event and task failure", func() {

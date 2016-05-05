@@ -123,10 +123,10 @@ func (t *Target) BuildWatchList() (list WatchList) {
 				continue
 			}
 			if st.IsDir() {
-				filepath.Walk(fullpath, func(relpath string, info os.FileInfo, err error) error {
+				filepath.Walk(fullpath, func(relpath string, st os.FileInfo, err error) error {
 					if err == nil {
 						relpath = path + relpath[len(fullpath):]
-						if !info.IsDir() {
+						if !st.IsDir() {
 							files[relpath] = &WatchItem{Path: relpath, ModTime: st.ModTime()}
 						}
 					}
@@ -253,7 +253,7 @@ func (w WatchList) String() string {
 	}
 	str := ""
 	for _, item := range w {
-		str += fmt.Sprintf("%s %v\n", item.Path, item.ModTime.Unix())
+		str += fmt.Sprintf("%s %d\n", item.Path, item.ModTime.Unix())
 	}
 	return str
 }

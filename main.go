@@ -54,15 +54,16 @@ type projectSettings struct {
 
 type makeCmd struct {
 	// command line options
-	Parallel   int
-	RebuildAll bool `n:"rebuild-all"`
-	Rebuild    []string
-	JSON       bool
-	Verbose    bool
-	Color      bool
-	Emoji      bool
-	Debug      bool
-	Version    bool
+	Parallel    int
+	RebuildAll  bool `n:"rebuild-all"`
+	Rebuild     []string
+	JSON        bool
+	Verbose     bool
+	Color       bool
+	Emoji       bool
+	Debug       bool
+	ShowTargets bool `n:"targets"`
+	Version     bool
 
 	settings  projectSettings
 	tasks     map[string]*taskState
@@ -85,7 +86,12 @@ func pad(str string, l int) string {
 
 func (c *makeCmd) Execute(args []string) error {
 	if c.Version {
-		term.Println(Version)
+		if c.JSON {
+			encoded, _ := json.Marshal(c.Version)
+			fmt.Println(string(encoded))
+		} else {
+			term.Println(Version)
+		}
 		return nil
 	}
 
@@ -101,6 +107,11 @@ func (c *makeCmd) Execute(args []string) error {
 			padLen = l
 		}
 	}
+	if c.ShowTargets {
+		c.showTargets(p, names, padLen)
+		return nil
+	}
+
 	c.tasks = make(map[string]*taskState)
 	for n, name := range names {
 		c.tasks[name] = &taskState{
@@ -139,6 +150,43 @@ func (c *makeCmd) Execute(args []string) error {
 	}
 	term.NewPrinter(term.Std).Styles(term.StyleOK).Println(faces[faceGood])
 	return nil
+}
+
+func (c *makeCmd) showTargets(p *hm.Project, names []string, padLen int) {
+	if c.JSON {
+		data := make([]map[string]string, 0, len(p.Targets))
+		for _, name := range names {
+			t := p.Targets[name]
+			data = append(data, map[string]string{
+				"name":        t.Name,
+				"description": t.Desc,
+			})
+		}
+		encoded, _ := json.Marshal(data)
+		fmt.Println(string(encoded))
+	} else {
+		settings := &projectSettings{}
+		p.GetSettings(settings)
+
+		out := term.NewPrinter(term.Std)
+		for _, name := range names {
+			t := p.Targets[name]
+			found := false
+			for _, n := range settings.DefaultTargets {
+				if n == name {
+					found = true
+					break
+				}
+			}
+			if found {
+				out.Styles(term.StyleOK, term.StyleB).Print(" * ").Pop()
+			} else {
+				out.Print("   ")
+			}
+			out.Styles(term.StyleHi, term.StyleB).
+				Print(pad(name, padLen+2)).Pop().Println(t.Desc)
+		}
+	}
 }
 
 func (c *makeCmd) onEvent(event interface{}) {

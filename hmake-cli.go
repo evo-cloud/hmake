@@ -67,6 +67,11 @@ func cliDef() *flag.CliDef {
 					Type: "bool",
 				},
 				&flag.Option{
+					Name: "targets",
+					Desc: "Print targets and exit",
+					Type: "bool",
+				},
+				&flag.Option{
 					Name: "version",
 					Desc: "Display version and exit",
 					Type: "bool",

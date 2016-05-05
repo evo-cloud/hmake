@@ -1,6 +1,7 @@
 package project
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -308,7 +309,37 @@ func (p *ExecPlan) Execute() error {
 			p.finishTask(<-p.finishCh, errs)
 		}
 	}
+	p.GenerateSummary()
 	return errs.Aggregate()
+}
+
+// GenerateSummary dumps summary to summary file
+func (p *ExecPlan) GenerateSummary() error {
+	var sum []map[string]interface{}
+	for _, t := range p.FinishedTasks {
+		sum = append(sum, t.Summary())
+	}
+	for _, t := range p.RunningTasks {
+		sum = append(sum, t.Summary())
+	}
+	for _, t := range p.QueuedTasks {
+		sum = append(sum, t.Summary())
+	}
+	for _, t := range p.WaitingTasks {
+		sum = append(sum, t.Summary())
+	}
+	encoded, _ := json.Marshal(sum)
+	p.logger.Printf("Summary\n%s\n", string(encoded))
+	err := ioutil.WriteFile(p.SummaryFile(), encoded, 0644)
+	if err != nil {
+		p.logger.Printf("Write summary failed: %v\n", err)
+	}
+	return err
+}
+
+// SummaryFile returns the fullpath to summary file
+func (p *ExecPlan) SummaryFile() string {
+	return filepath.Join(p.WorkPath, "hmake.summary.json")
 }
 
 func (p *ExecPlan) dequeueTasks(dequeueCnt int) (tasks []*Task) {
@@ -455,6 +486,25 @@ func (t *Task) IsActivated() bool {
 // Duration is how long the task executed
 func (t *Task) Duration() time.Duration {
 	return t.FinishTime.Sub(t.StartTime)
+}
+
+// Summary generates summary info of the task
+func (t *Task) Summary() map[string]interface{} {
+	info := map[string]interface{}{
+		"target": t.Name(),
+		"state":  t.State.String(),
+	}
+	if t.State == Finished {
+		info["start-at"] = t.StartTime
+		info["finish-at"] = t.FinishTime
+		info["result"] = t.Result.String()
+		if t.Error != nil {
+			info["error"] = t.Error.Error()
+		}
+	} else if t.State == Running {
+		info["start-at"] = t.StartTime
+	}
+	return info
 }
 
 // CheckSuccessMark calculates the watchlist digest and
