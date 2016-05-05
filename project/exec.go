@@ -41,6 +41,8 @@ type ExecPlan struct {
 	RunnerFactory RunnerFactory
 	// DebugLog enables logging debug info into .hmake/hmake.debug.log
 	DebugLog bool
+	// Dryrun will skip the actual execution of target, just return success
+	DryRun bool
 	// WaitingTasks are tasks in waiting state
 	WaitingTasks map[string]*Task
 	// QueuedTasks are tasks in Queued state
@@ -409,7 +411,11 @@ func (p *ExecPlan) runner(task *Task) (Runner, error) {
 }
 
 func (p *ExecPlan) run(task *Task, runner Runner) {
-	task.Result, task.Error = runner(task)
+	if task.Plan.DryRun {
+		task.Result = Success
+	} else {
+		task.Result, task.Error = runner(task)
+	}
 	task.FinishTime = time.Now()
 	p.finishCh <- task
 }
