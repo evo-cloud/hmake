@@ -371,7 +371,7 @@ var _ = Describe("HyperMake", func() {
 
 		It("generates summary file", func() {
 			plan, _ := execProject("project1", "t0")
-			data, err := ioutil.ReadFile(plan.SummaryFile())
+			data, err := ioutil.ReadFile(plan.Project.SummaryFile())
 			Expect(err).Should(Succeed())
 			var summary []map[string]interface{}
 			Expect(json.Unmarshal(data, &summary)).Should(Succeed())
