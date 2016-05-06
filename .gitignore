@@ -1,6 +1,7 @@
 _*
 *.log
 *.out
+*.gen.go
 bin
 .hmake
 /vendor/*

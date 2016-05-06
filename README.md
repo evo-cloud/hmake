@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/evo-cloud/hmake.svg?branch=master)](https://travis-ci.org/evo-cloud/hmake)
+
 # HyperMake
 
 HyperMake helps you build projects without installing pre-requisites in your
@@ -20,7 +22,7 @@ While HyperMake is built as a handy tool with a few special features:
 Download the binary from github release:
 
 ```
-curl -s https://github.com/evo-cloud/hmake/archive/hmake-1.0.0-linux-amd64.gz | gunzip >/usr/local/bin/hmake
+curl -s https://github.com/evo-cloud/hmake/archive/hmake-1.0.0-alpha1-linux-amd64.gz | gunzip >/usr/local/bin/hmake
 chmod a+rx /usr/local/bin/hmake
 ```
 
@@ -115,15 +117,10 @@ targets:
         watches:
             - '**/**/*.go'
         envs:
-            - GOOS=linux
-            - GOARCH=amd64
+            - HMAKE_VER_SUFFIX
+            - HMAKE_RELEASE
         cmds:
-            - env
-            - >
-                go build -o bin/hmake-$GOOS-$GOARCH
-                -a -tags 'static_build netgo' -installsuffix netgo
-                -ldflags '-extldflags -static'
-                .
+            - ./build.sh linux amd64
 
     hmake-darwin-amd64:
         description: static linked hmake binary for Mac OS
@@ -132,25 +129,20 @@ targets:
         watches:
             - '**/**/*.go'
         envs:
-            - GOOS=darwin
-            - GOARCH=amd64
+            - HMAKE_VER_SUFFIX
+            - HMAKE_RELEASE
         cmds:
-            - env
-            - >
-                go build -o bin/hmake-$GOOS-$GOARCH
-                -a -tags 'static_build netgo' -installsuffix netgo
-                -ldflags '-extldflags -static'
-                .
+            - ./build.sh darwin amd64
 
     vendor:
         description: pull all vendor packages
         after:
             - builder
         watches:
-            - 'vendor/manifest'
+            - vendor/manifest
         cmds:
-            - 'gvt restore'
-            - 'mkdir -p bin'
+            - gvt restore
+            - mkdir -p bin
 
     test:
         description: run tests

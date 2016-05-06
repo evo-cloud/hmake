@@ -25,6 +25,11 @@ import (
 )
 
 const (
+	// Release is the major release version
+	Release = "1.0.0"
+	// Version is full version string
+	Version = Release + VersionSuffix
+
 	timeFmt = "15:04:05.000"
 )
 
