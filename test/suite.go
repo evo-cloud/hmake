@@ -174,6 +174,41 @@ var _ = Describe("HyperMake", func() {
 			Expect(set.Dict.Key).To(Equal("inc-a"))
 			Expect(set.Dict.Key1).To(Equal("inc-a"))
 		})
+
+		It("merges settings from flat map", func() {
+			proj, err := hm.LoadProjectFrom(Fixtures("project0"))
+			Expect(err).Should(Succeed())
+
+			v := &testSetting{}
+			Expect(proj.GetSettingsIn("t0", v)).Should(Succeed())
+			Expect(v.TopLevel).To(Equal("project0"))
+
+			err = proj.MergeSettingsFlat(map[string]interface{}{
+				"t0": map[string]interface{}{
+					"dict": map[string]interface{}{
+						"key": "value",
+					},
+				},
+			})
+			Expect(err).Should(Succeed())
+			v = &testSetting{}
+			Expect(proj.GetSettingsIn("t0", v)).Should(Succeed())
+			Expect(v.TopLevel).To(Equal("project0"))
+			Expect(v.Dict.Key).To(Equal("value"))
+			err = proj.MergeSettingsFlat(map[string]interface{}{
+				"t0.dict.key": "value1",
+			})
+			Expect(err).Should(Succeed())
+			Expect(proj.GetSettingsIn("t0", v)).Should(Succeed())
+			Expect(v.Dict.Key).To(Equal("value1"))
+
+			err = proj.MergeSettingsFlat(map[string]interface{}{
+				"t1.dict.key": "valueX",
+			})
+			Expect(err).Should(Succeed())
+			Expect(proj.GetSettingsIn("t1", v)).Should(Succeed())
+			Expect(v.Dict.Key).To(Equal("valueX"))
+		})
 	})
 
 	Describe("Target", func() {
@@ -190,11 +225,11 @@ var _ = Describe("HyperMake", func() {
 			Expect(set.TopLevel).To(BeEmpty())
 			Expect(set.TopLevel1).To(Equal("t0"))
 			set = &testSetting{}
-			Expect(t.GetSetting("t0", set)).Should(Succeed())
+			Expect(t.GetSettings("t0", set)).Should(Succeed())
 			Expect(set.TopLevel).To(Equal("project0"))
 			Expect(set.TopLevel1).To(Equal("subproj"))
 			set = &testSetting{}
-			Expect(t.GetSettingWithExt("t0", set)).Should(Succeed())
+			Expect(t.GetSettingsWithExt("t0", set)).Should(Succeed())
 			Expect(set.TopLevel).To(Equal("project0"))
 			Expect(set.TopLevel1).To(Equal("t0"))
 		})
@@ -259,6 +294,8 @@ var _ = Describe("HyperMake", func() {
 					plan.RebuildAll = true
 				} else if strings.HasPrefix(t, "-r:") {
 					plan.Rebuild(t[3:])
+				} else if strings.HasPrefix(t, "-s:") {
+					plan.Skip(t[3:])
 				} else {
 					plan.Require(t)
 				}
@@ -323,6 +360,13 @@ var _ = Describe("HyperMake", func() {
 			Expect(execOrder2).Should(HaveLen(len(execOrder0)))
 			_, execOrder3 := execProject("project1", "-R", "all")
 			Expect(execOrder3).Should(HaveLen(len(execOrder0)))
+		})
+
+		It("skips task when explicitly specified", func() {
+			os.RemoveAll(Fixtures("project1", "touch.log"))
+			_, execOrder0 := execProject("project1", "all")
+			_, execOrder1 := execProject("project1", "all", "-s:t2")
+			Expect(execOrder1).Should(HaveLen(len(execOrder0) - 4))
 		})
 
 		It("generates summary file", func() {

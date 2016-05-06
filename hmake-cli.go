@@ -20,6 +20,23 @@ func cliDef() *flag.CliDef {
 			Desc: "HyperMake builds your project using consistent environment",
 			Options: []*flag.Option{
 				&flag.Option{
+					Name:  "chdir",
+					Alias: []string{"C"},
+					Desc:  "Change to specified directory before doing anything",
+				},
+				&flag.Option{
+					Name:  "include",
+					Alias: []string{"I"},
+					Desc:  "Include additional files inside project directory, relative path",
+					List:  true,
+				},
+				&flag.Option{
+					Name:  "define",
+					Alias: []string{"D"},
+					Desc:  "Define additional settings",
+					Type:  "dict",
+				},
+				&flag.Option{
 					Name:    "parallel",
 					Alias:   []string{"p"},
 					Desc:    "Set maximum number of targets executed in parallel, 0 for auto, -1 for unlimited",
@@ -39,9 +56,21 @@ func cliDef() *flag.CliDef {
 					List:  true,
 				},
 				&flag.Option{
+					Name:  "skip",
+					Alias: []string{"S"},
+					Desc:  "Skip the execution of specified target",
+					List:  true,
+				},
+				&flag.Option{
 					Name: "json",
 					Desc: "Dump events in JSON to stdout",
 					Type: "bool",
+				},
+				&flag.Option{
+					Name:  "summary",
+					Alias: []string{"s"},
+					Desc:  "Show summary when make completes",
+					Type:  "bool",
 				},
 				&flag.Option{
 					Name:  "verbose",
@@ -64,6 +93,11 @@ func cliDef() *flag.CliDef {
 				&flag.Option{
 					Name: "debug",
 					Desc: "Write debug log into .hmake/hmake.debug.log",
+					Type: "bool",
+				},
+				&flag.Option{
+					Name: "show-summary",
+					Desc: "Show summary of last build and exit",
 					Type: "bool",
 				},
 				&flag.Option{

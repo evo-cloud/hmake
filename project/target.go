@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/easeway/langx.go/errors"
@@ -30,7 +31,6 @@ type Target struct {
 
 	Project   *Project      `json:"-"`
 	Source    string        `json:"-"`
-	Settings  []Settings    `json:"-"`
 	Depends   TargetNameMap `json:"-"`
 	Activates TargetNameMap `json:"-"`
 }
@@ -59,10 +59,9 @@ type WatchItem struct {
 type WatchList []*WatchItem
 
 // Initialize prepare fields in target
-func (t *Target) Initialize(name string, settings []Settings, project *Project) {
+func (t *Target) Initialize(name string, project *Project) {
 	t.Name = name
 	t.Project = project
-	t.Settings = settings
 	t.Depends = make(TargetNameMap)
 	t.Activates = make(TargetNameMap)
 }
@@ -87,25 +86,17 @@ func (t *Target) AddDep(dep *Target) {
 	dep.Activates[t.Name] = t
 }
 
-// GetSetting extracts the value from settings stack
-func (t *Target) GetSetting(name string, v interface{}) error {
-	for _, settings := range t.Settings {
-		if s, exists := settings[name]; exists {
-			return mapper.Map(v, s)
-		}
-	}
-	return nil
+// GetSettings extracts the value from settings stack
+func (t *Target) GetSettings(name string, v interface{}) error {
+	return t.Project.GetSettingsIn(name, v)
 }
 
-// GetSettingWithExt extracts the value from Ext and settings stack
-func (t *Target) GetSettingWithExt(name string, v interface{}) error {
-	if err := t.GetSetting(name, v); err != nil {
-		return err
+// GetSettingsWithExt extracts the value from Ext and settings stack
+func (t *Target) GetSettingsWithExt(name string, v interface{}) (err error) {
+	if err = t.GetSettings(name, v); err == nil && t.Ext != nil {
+		err = mapper.Map(v, t.Ext)
 	}
-	if t.Ext != nil {
-		return mapper.Map(v, t.Ext)
-	}
-	return nil
+	return
 }
 
 // BuildWatchList collects current state of all watched items
@@ -239,6 +230,35 @@ func (s Settings) Merge(s1 Settings) error {
 		return nil
 	}
 	return mapper.Map(s, s1)
+}
+
+// MergeFlat merges settings from a flat key/value map
+// The key in flat map can be splitted by "." for a more complicated hierarchy
+func (s Settings) MergeFlat(flat map[string]interface{}) error {
+	for key, val := range flat {
+		valDict, isValDict := val.(map[string]interface{})
+		paths := strings.Split(key, ".")
+		dict := s
+		for n, path := range paths {
+			sub, ok := dict[path].(map[string]interface{})
+			if n+1 == len(paths) {
+				if isValDict && ok {
+					if err := mapper.Map(sub, valDict); err != nil {
+						return err
+					}
+				} else {
+					dict[path] = val
+				}
+			} else {
+				if !ok {
+					sub = make(Settings)
+					dict[path] = sub
+				}
+				dict = sub
+			}
+		}
+	}
+	return nil
 }
 
 // IsEmpty indicates the watch list is empty

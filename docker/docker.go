@@ -106,7 +106,7 @@ func Runner(task *hm.Task) (hm.TaskResult, error) {
 func (r *dockerRunner) loadConfig() (conf *dockerConfig, err error) {
 	conf = &dockerConfig{}
 
-	if err = r.task.Target.GetSettingWithExt(SettingName, conf); err != nil {
+	if err = r.task.Target.GetSettingsWithExt(SettingName, conf); err != nil {
 		return
 	}
 	if conf.SrcVolume == "" {

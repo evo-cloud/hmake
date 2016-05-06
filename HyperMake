@@ -62,13 +62,25 @@ targets:
             - vendor
         watches:
             - '**/**/*.go'
+            - test
+        cmds:
+            - ginkgo ./test
+
+    cover:
+        description: run tests with coverage
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+            - test
         cmds:
             - >
                 go test -coverprofile cover.out
-                -coverpkg ./project,./docker,./shell
+                -coverpkg ./project
                 ./test
 
     all:
+        description: the default make target
         after:
             - hmake-linux-amd64
             - hmake-darwin-amd64

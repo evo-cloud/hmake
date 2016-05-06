@@ -20,6 +20,10 @@ const (
 	RootFile = "HyperMake"
 	// WorkFolder is the name of project WorkFolder
 	WorkFolder = ".hmake"
+	// SummaryFileName is the filename of summary
+	SummaryFileName = "hmake.summary.json"
+	// LogFileName is the filename of hmake debug log
+	LogFileName = "hmake.debug.log"
 )
 
 // ErrUnsupportedFormat indicates the file is not recognized
@@ -68,7 +72,45 @@ func loadYaml(filename string) (map[string]interface{}, error) {
 		return nil, err
 	}
 	val := make(map[string]interface{})
-	return val, yaml.Unmarshal(data, val)
+	if err = yaml.Unmarshal(data, val); err != nil {
+		return nil, err
+	}
+
+	// normalize yaml by converting
+	// map[interface{}]interface{} to map[string]interface{}
+	return normalizeMap(val).(map[string]interface{}), nil
+}
+
+func normalizeMap(val interface{}) interface{} {
+	switch v := val.(type) {
+	case []interface{}:
+		for n, item := range v {
+			v[n] = normalizeMap(item)
+		}
+	case []map[interface{}]interface{}:
+		a := make([]interface{}, len(v))
+		for n, item := range v {
+			a[n] = normalizeMap(item)
+		}
+		val = a
+	case []map[string]interface{}:
+		a := make([]interface{}, len(v))
+		for n, item := range v {
+			a[n] = normalizeMap(item)
+		}
+		val = a
+	case map[interface{}]interface{}:
+		m := make(map[string]interface{})
+		for key, value := range v {
+			m[fmt.Sprintf("%v", key)] = normalizeMap(value)
+		}
+		val = m
+	case map[string]interface{}:
+		for key, value := range v {
+			v[key] = normalizeMap(value)
+		}
+	}
+	return val
 }
 
 // LoadFile loads from specified path
@@ -244,7 +286,7 @@ func (p *Project) Finalize() error {
 	errs := errors.AggregatedError{}
 	p.Targets = make(TargetNameMap)
 	for name, t := range p.MasterFile.Targets {
-		t.Initialize(name, []Settings{p.MasterFile.Settings}, p)
+		t.Initialize(name, p)
 		errs.Add(p.Targets.Add(t))
 	}
 	errs.AddMany(
@@ -276,4 +318,40 @@ func (p *Project) GetSettings(v interface{}) error {
 		return mapper.Map(v, p.MasterFile.Settings)
 	}
 	return nil
+}
+
+// GetSettingsIn maps settings[name] into provided variable
+func (p *Project) GetSettingsIn(name string, v interface{}) error {
+	if p.MasterFile.Settings == nil {
+		return nil
+	}
+	if val, exists := p.MasterFile.Settings[name]; exists {
+		return mapper.Map(v, val)
+	}
+	return nil
+}
+
+// MergeSettingsFlat merges settings from a flat key/value map
+func (p *Project) MergeSettingsFlat(flat map[string]interface{}) error {
+	sets := p.MasterFile.Settings
+	if sets == nil {
+		sets = make(Settings)
+		p.MasterFile.Settings = sets
+	}
+	return sets.MergeFlat(flat)
+}
+
+// WorkPath returns the internal state folder (.hmake) for hmake
+func (p *Project) WorkPath() string {
+	return filepath.Join(p.BaseDir, WorkFolder)
+}
+
+// DebugLogFile returns the fullpath to debug log file
+func (p *Project) DebugLogFile() string {
+	return filepath.Join(p.WorkPath(), LogFileName)
+}
+
+// SummaryFile returns the fullpath to summary file
+func (p *Project) SummaryFile() string {
+	return filepath.Join(p.WorkPath(), SummaryFileName)
 }

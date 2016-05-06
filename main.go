@@ -1,13 +1,18 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 	"sync"
+	"time"
 
+	cv "github.com/easeway/go-cliview"
+	"github.com/easeway/langx.go/errors"
 	"github.com/ttacon/emoji"
 
 	"github.com/codingbrain/clix.go/exts/bind"
@@ -54,16 +59,22 @@ type projectSettings struct {
 
 type makeCmd struct {
 	// command line options
+	Chdir       string
+	Include     []string
+	Define      map[string]interface{}
 	Parallel    int
 	RebuildAll  bool `n:"rebuild-all"`
 	Rebuild     []string
+	Skip        []string
 	JSON        bool
+	Summary     bool
 	Verbose     bool
 	Color       bool
 	Emoji       bool
 	Debug       bool
+	ShowSummary bool `n:"show-summary"`
 	ShowTargets bool `n:"targets"`
-	DryRun	    bool
+	DryRun      bool
 	Version     bool
 
 	settings  projectSettings
@@ -85,7 +96,7 @@ func pad(str string, l int) string {
 	return str
 }
 
-func (c *makeCmd) Execute(args []string) error {
+func (c *makeCmd) Execute(args []string) (err error) {
 	if c.Version {
 		if c.JSON {
 			encoded, _ := json.Marshal(c.Version)
@@ -93,12 +104,45 @@ func (c *makeCmd) Execute(args []string) error {
 		} else {
 			term.Println(Version)
 		}
-		return nil
+		return
 	}
 
-	p, err := hm.LoadProject()
-	if err != nil {
-		return err
+	if c.Chdir != "" {
+		if err = os.Chdir(c.Chdir); err != nil {
+			return
+		}
+	}
+
+	var p *hm.Project
+	if p, err = hm.LocateProject(); err != nil {
+		return
+	}
+
+	if c.ShowSummary {
+		err = c.showSummary(p, nil)
+		return
+	}
+
+	if err = p.Resolve(); err != nil {
+		return
+	}
+
+	incErrs := &errors.AggregatedError{}
+	for _, inc := range c.Include {
+		_, e := p.Load(inc)
+		incErrs.Add(e)
+	}
+	if err = incErrs.Aggregate(); err != nil {
+		return
+	}
+	if err = p.Finalize(); err != nil {
+		return
+	}
+
+	if c.Define != nil {
+		if err = p.MergeSettingsFlat(c.Define); err != nil {
+			return
+		}
 	}
 
 	names := p.TargetNames()
@@ -110,7 +154,7 @@ func (c *makeCmd) Execute(args []string) error {
 	}
 	if c.ShowTargets {
 		c.showTargets(p, names, padLen)
-		return nil
+		return
 	}
 
 	c.tasks = make(map[string]*taskState)
@@ -138,20 +182,27 @@ func (c *makeCmd) Execute(args []string) error {
 	plan.Env["HMAKE_VERSION"] = Version
 	plan.OnEvent(c.onEvent)
 	plan.Rebuild(c.Rebuild...)
+	plan.Skip(c.Skip...)
 	plan.RebuildAll = c.RebuildAll
 	plan.MaxConcurrency = c.Parallel
 	plan.DebugLog = c.Debug
 	plan.DryRun = c.DryRun
 
 	if err = plan.Require(args...); err != nil {
-		return err
+		return
 	}
 
-	if err = plan.Execute(); err != nil {
-		return err
+	err = plan.Execute()
+	if c.Summary {
+		c.showSummary(p, plan)
 	}
+
+	if err != nil {
+		return
+	}
+
 	term.NewPrinter(term.Std).Styles(term.StyleOK).Println(faces[faceGood])
-	return nil
+	return
 }
 
 func (c *makeCmd) showTargets(p *hm.Project, names []string, padLen int) {
@@ -341,6 +392,121 @@ func (c *makeCmd) dumpTaskOutput(task *hm.Task, out []byte) {
 	c.lock.Lock()
 	fmt.Println(string(encoded))
 	c.lock.Unlock()
+}
+
+func stylerPrint(text string, styles ...string) string {
+	var buf bytes.Buffer
+	term.NewPrinter(&buf).Styles(styles...).Print(text)
+	return buf.String()
+}
+
+func headStyler(class, text string, data interface{}) string {
+	if strings.HasPrefix(class, "table:head:") {
+		return stylerPrint(text, term.StyleHi, term.StyleB)
+	}
+	return text
+}
+
+func resultStyler(class, text string, data interface{}) string {
+	if strings.HasPrefix(class, "table:row:") {
+		switch text {
+		case hm.Success.String():
+			return stylerPrint(text, term.StyleOK)
+		case hm.Failure.String():
+			return stylerPrint(text, term.StyleErr)
+		case hm.Skipped.String():
+			return stylerPrint(text, term.StyleLo)
+		default:
+			return text
+		}
+	}
+	return headStyler(class, text, data)
+}
+
+func errorStyler(class, text string, data interface{}) string {
+	if strings.HasPrefix(class, "table:row:") {
+		return stylerPrint(text, term.StyleErr)
+	}
+	return headStyler(class, text, data)
+}
+
+func timeFetcher(col cv.Column, row map[string]interface{}) interface{} {
+	if strVal, ok := row[col.Field].(string); ok && strVal != "" {
+		var t time.Time
+		if t.UnmarshalText([]byte(strVal)) == nil {
+			return t.Format(timeFmt)
+		}
+	}
+	return ""
+}
+
+func durationFetcher(col cv.Column, row map[string]interface{}) interface{} {
+	var startAtStr, finishAtStr string
+	var startAt, finishAt time.Time
+	var ok bool
+	if startAtStr, ok = row["start-at"].(string); !ok || startAtStr == "" {
+		return ""
+	}
+	if finishAtStr, ok = row["finish-at"].(string); !ok || finishAtStr == "" {
+		return ""
+	}
+	if err := startAt.UnmarshalText([]byte(startAtStr)); err != nil {
+		return ""
+	}
+	if err := finishAt.UnmarshalText([]byte(finishAtStr)); err != nil {
+		return ""
+	}
+	duration := finishAt.Sub(startAt)
+	if duration == 0 {
+		return ""
+	}
+	return duration.String()
+}
+
+func (c *makeCmd) showSummary(p *hm.Project, plan *hm.ExecPlan) error {
+	var sum []map[string]interface{}
+	if plan != nil {
+		sum = plan.Summary
+	} else {
+		data, err := ioutil.ReadFile(p.SummaryFile())
+		if err != nil {
+			return err
+		}
+
+		err = json.Unmarshal(data, &sum)
+		if err != nil {
+			return err
+		}
+	}
+
+	if c.JSON {
+		encoded, _ := json.Marshal(sum)
+		fmt.Println(string(encoded))
+	}
+
+	table := &cv.Table{
+		Output: cv.Output{
+			Writer: term.Std,
+			Styler: headStyler,
+		},
+		Border: cv.BorderCompact,
+		Columns: []cv.Column{
+			{Title: "Target", Field: "target"},
+			{Title: "Result", Field: "result", Styler: resultStyler},
+			{Title: "Duration", Align: cv.AlignRight, Fetcher: durationFetcher},
+			{Title: "Start", Field: "start-at", Fetcher: timeFetcher},
+			{Title: "Finish", Field: "finish-at", Fetcher: timeFetcher},
+			{Title: "Error", Field: "error", Styler: errorStyler},
+		},
+	}
+
+	w, _, e := term.Size()
+	if e != nil || w <= 0 {
+		w = 80
+	}
+	table.MaxWidth = w
+	table.Print(sum)
+	return nil
 }
 
 func init() {

@@ -35,6 +35,8 @@ type ExecPlan struct {
 	RebuildAll bool
 	// RebuildTargets specify targets to rebuild regardless of success mark
 	RebuildTargets map[string]bool
+	// SkippedTargets specify targets to be marked as Skipped
+	SkippedTargets map[string]bool
 	// RequiredTargets are names of targets explicitly required
 	RequiredTargets []string
 	// RunnerFactory specifies the custom runner factory
@@ -53,6 +55,8 @@ type ExecPlan struct {
 	FinishedTasks []*Task
 	// EventHandler handles the events during execution
 	EventHandler EventHandler
+	// Summary is the report of all executed targets
+	Summary []map[string]interface{}
 
 	finishCh chan *Task
 	logger   *log.Logger
@@ -102,6 +106,7 @@ type Task struct {
 	// FinishTime
 	FinishTime time.Time
 
+	alwaysBuild   bool
 	currentDigest string
 }
 
@@ -161,8 +166,8 @@ type Runner func(*Task) (TaskResult, error)
 // RunnerFactory creates a runner from a task
 type RunnerFactory func(*Task) (Runner, error)
 
-// Setting Names
 const (
+	// SettingExecDriver is the property name of exec-driver
 	SettingExecDriver = "exec-driver"
 )
 
@@ -183,6 +188,7 @@ func NewExecPlan(project *Project) *ExecPlan {
 	plan := &ExecPlan{
 		Project:        project,
 		RebuildTargets: make(map[string]bool),
+		SkippedTargets: make(map[string]bool),
 		Tasks:          make(map[string]*Task),
 		Env:            make(map[string]string),
 		WorkPath:       filepath.Join(project.BaseDir, WorkFolder),
@@ -210,6 +216,14 @@ func (p *ExecPlan) OnEvent(handler EventHandler) *ExecPlan {
 func (p *ExecPlan) Rebuild(targets ...string) *ExecPlan {
 	for _, target := range targets {
 		p.RebuildTargets[target] = true
+	}
+	return p
+}
+
+// Skip specify the targets to be skipped
+func (p *ExecPlan) Skip(targets ...string) *ExecPlan {
+	for _, target := range targets {
+		p.SkippedTargets[target] = true
 	}
 	return p
 }
@@ -258,16 +272,19 @@ func (p *ExecPlan) AddTarget(t *Target) (*Task, bool) {
 func (p *ExecPlan) Execute() error {
 	p.Env["HMAKE_REQUIRED_TARGETS"] = strings.Join(p.RequiredTargets, " ")
 
-	if err := os.MkdirAll(p.WorkPath, 0755); err != nil {
-		return err
-	}
+	// DryRun should not make any changes
+	if !p.DryRun {
+		if err := os.MkdirAll(p.WorkPath, 0755); err != nil {
+			return err
+		}
 
-	if p.DebugLog {
-		f, err := os.OpenFile(filepath.Join(p.WorkPath, "hmake.debug.log"),
-			syscall.O_WRONLY|syscall.O_CREAT|syscall.O_TRUNC, 0644)
-		if err == nil {
-			defer f.Close()
-			p.logger = log.New(f, "hmake: ", log.Ltime)
+		if p.DebugLog {
+			f, err := os.OpenFile(p.Project.DebugLogFile(),
+				syscall.O_WRONLY|syscall.O_CREAT|syscall.O_TRUNC, 0644)
+			if err == nil {
+				defer f.Close()
+				p.logger = log.New(f, "hmake: ", log.Ltime)
+			}
 		}
 	}
 
@@ -311,12 +328,14 @@ func (p *ExecPlan) Execute() error {
 			p.finishTask(<-p.finishCh, errs)
 		}
 	}
+
 	p.GenerateSummary()
+
 	return errs.Aggregate()
 }
 
 // GenerateSummary dumps summary to summary file
-func (p *ExecPlan) GenerateSummary() error {
+func (p *ExecPlan) GenerateSummary() (err error) {
 	var sum []map[string]interface{}
 	for _, t := range p.FinishedTasks {
 		sum = append(sum, t.Summary())
@@ -330,18 +349,16 @@ func (p *ExecPlan) GenerateSummary() error {
 	for _, t := range p.WaitingTasks {
 		sum = append(sum, t.Summary())
 	}
+	p.Summary = sum
 	encoded, _ := json.Marshal(sum)
 	p.logger.Printf("Summary\n%s\n", string(encoded))
-	err := ioutil.WriteFile(p.SummaryFile(), encoded, 0644)
-	if err != nil {
-		p.logger.Printf("Write summary failed: %v\n", err)
+	if !p.DryRun {
+		err = ioutil.WriteFile(p.Project.SummaryFile(), encoded, 0644)
+		if err != nil {
+			p.logger.Printf("Write summary failed: %v\n", err)
+		}
 	}
 	return err
-}
-
-// SummaryFile returns the fullpath to summary file
-func (p *ExecPlan) SummaryFile() string {
-	return filepath.Join(p.WorkPath, "hmake.summary.json")
 }
 
 func (p *ExecPlan) dequeueTasks(dequeueCnt int) (tasks []*Task) {
@@ -375,10 +392,14 @@ func (p *ExecPlan) startTask(task *Task, errs *errors.AggregatedError) {
 	p.RunningTasks[task.Name()] = task
 	task.StartTime = time.Now()
 	p.emit(&EvtTaskStart{Task: task})
-	skippable := task.CheckSuccessMark()
-	if p.RebuildAll || p.RebuildTargets[task.Name()] {
+
+	skippable := task.CalcSuccessMark()
+	if p.SkippedTargets[task.Name()] {
+		skippable = true
+	} else if p.RebuildAll || p.RebuildTargets[task.Name()] {
 		skippable = false
 	}
+
 	if skippable {
 		task.Result = Skipped
 		task.FinishTime = task.StartTime
@@ -386,10 +407,10 @@ func (p *ExecPlan) startTask(task *Task, errs *errors.AggregatedError) {
 		return
 	}
 
-	os.Remove(task.SuccessMarkFile())
+	task.ClearSuccessMark()
 	for name := range task.Target.Activates {
 		if t := p.Tasks[name]; t != nil {
-			os.Remove(t.SuccessMarkFile())
+			t.ClearSuccessMark()
 		}
 	}
 
@@ -411,7 +432,7 @@ func (p *ExecPlan) runner(task *Task) (Runner, error) {
 }
 
 func (p *ExecPlan) run(task *Task, runner Runner) {
-	if task.Plan.DryRun {
+	if p.DryRun {
 		task.Result = Success
 	} else {
 		task.Result, task.Error = runner(task)
@@ -435,10 +456,12 @@ func (p *ExecPlan) finishTask(task *Task, errs *errors.AggregatedError) {
 	task.State = Finished
 	delete(p.RunningTasks, task.Name())
 	p.FinishedTasks = append(p.FinishedTasks, task)
-	err := task.BuildSuccessMark()
-	if err != nil {
-		p.logger.Printf("IGNORED: %s BuildSuccessMark Error: %v\n",
-			task.Name(), err)
+	if !p.DryRun {
+		err := task.BuildSuccessMark()
+		if err != nil {
+			p.logger.Printf("IGNORED: %s BuildSuccessMark Error: %v\n",
+				task.Name(), err)
+		}
 	}
 
 	p.emit(&EvtTaskFinish{Task: task})
@@ -494,32 +517,50 @@ func (t *Task) Duration() time.Duration {
 	return t.FinishTime.Sub(t.StartTime)
 }
 
+func timeToString(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	encoded, err := t.MarshalText()
+	if err != nil {
+		return ""
+	}
+	return string(encoded)
+}
+
 // Summary generates summary info of the task
 func (t *Task) Summary() map[string]interface{} {
 	info := map[string]interface{}{
 		"target": t.Name(),
 		"state":  t.State.String(),
 	}
+	if s := timeToString(t.StartTime); s != "" {
+		info["start-at"] = s
+	}
+	if s := timeToString(t.FinishTime); s != "" {
+		info["finish-at"] = s
+	}
 	if t.State == Finished {
-		info["start-at"] = t.StartTime
-		info["finish-at"] = t.FinishTime
 		info["result"] = t.Result.String()
 		if t.Error != nil {
 			info["error"] = t.Error.Error()
 		}
-	} else if t.State == Running {
-		info["start-at"] = t.StartTime
 	}
 	return info
 }
 
-// CheckSuccessMark calculates the watchlist digest and
+// CalcSuccessMark calculates the watchlist digest and
 // checks if the task can be skipped
-func (t *Task) CheckSuccessMark() bool {
+func (t *Task) CalcSuccessMark() bool {
 	wl := t.Target.BuildWatchList()
 	t.Plan.logger.Printf("%s WatchList:\n%s", t.Name(), wl.String())
 	t.currentDigest = wl.Digest()
 	t.Plan.logger.Printf("%s Digest: %s\n", t.Name(), t.currentDigest)
+
+	if t.alwaysBuild {
+		return false
+	}
+
 	content, err := ioutil.ReadFile(t.SuccessMarkFile())
 	if err != nil {
 		t.Plan.logger.Printf("%s ExistDigest Error: %v", t.Name(), err)
@@ -531,6 +572,15 @@ func (t *Task) CheckSuccessMark() bool {
 		return false
 	}
 	return t.currentDigest == prevDigest
+}
+
+// ClearSuccessMark removes the success mark
+func (t *Task) ClearSuccessMark() error {
+	t.alwaysBuild = true
+	if t.Plan.DryRun {
+		return nil
+	}
+	return os.Remove(t.SuccessMarkFile())
 }
 
 // BuildSuccessMark checks if the task can be skipped
@@ -548,7 +598,7 @@ func (t *Task) BuildSuccessMark() error {
 func (t *Task) Runner() (Runner, error) {
 	driver := t.Target.ExecDriver
 	if driver == "" {
-		if err := t.Target.GetSetting(SettingExecDriver, &driver); err != nil {
+		if err := t.Target.GetSettings(SettingExecDriver, &driver); err != nil {
 			return nil, err
 		}
 	}

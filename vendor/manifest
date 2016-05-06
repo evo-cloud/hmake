@@ -4,7 +4,13 @@
 		{
 			"importpath": "github.com/codingbrain/clix.go",
 			"repository": "https://github.com/codingbrain/clix.go",
-			"revision": "03aca2b0c63f775653eeca0093d0c96d0054db47",
+			"revision": "a473b3ff4f2c26096d6fb64c170d1ff8b4a6fbb6",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/easeway/go-cliview",
+			"repository": "https://github.com/easeway/go-cliview",
+			"revision": "5471ce69a076622a779c9de0440d38e2ca755ab5",
 			"branch": "master"
 		},
 		{

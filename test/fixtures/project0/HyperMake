@@ -5,6 +5,7 @@ name: project0
 
 includes:
   - subproject/subproj.hmake
+  - subproject/subproj.hmake
 
 settings:
   t0:
