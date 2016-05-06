@@ -1,5 +1,3 @@
-[![Build Status](https://drone.io/github.com/evo-cloud/hmake/status.png)](https://drone.io/github.com/evo-cloud/hmake/latest)
-
 # HyperMake
 
 HyperMake helps you build projects without installing pre-requisites in your
@@ -12,66 +10,86 @@ While HyperMake is built as a handy tool with a few special features:
 
 - Brings in the _target_ concept from traditional _GNU make_,
   targets can be defined in one HyperMake file or multiple,
-  and targets has dependencies, can be built selectively.
+  and targets have dependencies, can be built selectively.
 - Concurrent builds, targets without explicit dependencies can be built concurrently.
 
 ## Getting Started
 
-Download the binary from github release and place it in a folder which can be
-searched in `PATH`.
+#### The Simplest Way
 
-Or if you know Go well enough
+Download the binary from github release:
+
+```
+curl -s https://github.com/evo-cloud/hmake/archive/hmake-1.0.0-linux-amd64.gz | gunzip >/usr/local/bin/hmake
+chmod a+rx /usr/local/bin/hmake
+```
+
+#### With Go installed
 
 ```
 go get github.com/evo-cloud/hmake
 ```
 
-Or if you want to build from source
+#### Build from source
 
 ```
-# fetch all dependencies
-gvt restore
-# do a bootstrap
-go build -o bin/hmake .
+git clone https://github.com/evo-cloud/hmake
+cd hmake
+# first do a bootstrap
+go get
+go install
 # do a full build
-bin/hmake
+hmake
 ```
 
-If you want to run tests, you can either simply:
+Note: if you want to use `hmake` to do a full build, make sure [docker](https://www.docker.com) is running.
 
-```
-hmake test
-```
+#### You want tests?
 
-or in your local environment install
-[ginkgo](https://github.com/onsi/ginkgo) and
-[gomega](https://github.com/onsi/gomega) first
+After build, `hmake test`.
+If you want run test with coverage, `hmake cover`.
+
+## Setup Development Environment
+
+_In fact with `hmake` installed, you don't this local development environment._
+
+Install
+- [gvt](github.com/FiloSottile/gvt)
+- [ginkgo](https://github.com/onsi/ginkgo)
+- [gomega](https://github.com/onsi/gomega)
 
 ```bash
+go get https://github.com/FiloSottile/gvt
 go get https://github.com/onsi/ginkgo/ginkgo
 go get https://github.com/onsi/gomega
+gvt restore
 ginkgo test ./test
 # or
 go test ./test
 go test -coverprofile=cover.out -coverpkg=./project ./test
 ```
 
+## How it works
+
 _hmake_ expects a `HyperMake` file in root of the project,
 and you can run `hmake` from any sub-directory inside the project,
 the command will figure out project root by locating `HyperMake` file.
 
-In any sub-directory, files called `*.hmake` can be included in `HyperMake` in
-the root directory or any other `*.hmake` files.
+From the top-level `HyperMake` file, use `includes` section to include any
+`*.hmake` files inside project tree.
+It can't access any files outside project tree.
 
-## File Format
+### File Format
 
 In `HyperMake` or `*.hmake`, define any of the following things:
 
-- Targets: the target to build, including dependencies and commands.
-- Settings: the settings applies to _hmake_.
+- Format: the format presents the current file, should always be `hypermake.v0`;
+- Name and description: only defined in top-level `HyperMake` file;
+- Targets: the target to build, including dependencies and commands;
+- Settings: the settings applies to _hmake_;
 - Includes: include more `*.hmake` files.
 
-Here's the schema in example:
+Here's the schema in example (this is actually the `HyperMake` file of `hmake` project):
 
 ```yaml
 ---
@@ -83,15 +101,25 @@ description: HyperMake builds your project without pre-requisites
 
 # define targets
 targets:
+    builder:
+        description: build the docker image including toolchain
+        build: builder/Dockerfile
+        image: hmake-builder:latest
+        watches:
+            - builder
+
     hmake-linux-amd64:
         description: static linked hmake binary for Linux AMD64
-        after: [vendor]
+        after:
+            - vendor
         watches:
             - '**/**/*.go'
+        envs:
+            - GOOS=linux
+            - GOARCH=amd64
         cmds:
             - env
             - >
-                env GOOS=linux GOARCH=amd64
                 go build -o bin/hmake-$GOOS-$GOARCH
                 -a -tags 'static_build netgo' -installsuffix netgo
                 -ldflags '-extldflags -static'
@@ -99,13 +127,16 @@ targets:
 
     hmake-darwin-amd64:
         description: static linked hmake binary for Mac OS
-        after: [vendor]
+        after:
+            - vendor
         watches:
             - '**/**/*.go'
+        envs:
+            - GOOS=darwin
+            - GOARCH=amd64
         cmds:
             - env
             - >
-                env GOOS=linux GOARCH=amd64
                 go build -o bin/hmake-$GOOS-$GOARCH
                 -a -tags 'static_build netgo' -installsuffix netgo
                 -ldflags '-extldflags -static'
@@ -113,22 +144,50 @@ targets:
 
     vendor:
         description: pull all vendor packages
+        after:
+            - builder
         watches:
             - 'vendor/manifest'
         cmds:
-            - 'apk update && apk add git'
-            - 'go get github.com/FiloSottile/gvt'
             - 'gvt restore'
             - 'mkdir -p bin'
 
+    test:
+        description: run tests
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+            - test
+        cmds:
+            - ginkgo ./test
+
+    cover:
+        description: run tests with coverage
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+            - test
+        cmds:
+            - >
+                go test -coverprofile cover.out
+                -coverpkg ./project
+                ./test
+
     all:
-        after: [hmake-linux-amd64, hmake-darwin-amd64]
+        description: the default make target
+        after:
+            - hmake-linux-amd64
+            - hmake-darwin-amd64
 
 # settings shared across targets
 settings:
-    default-targets: [all]
-    image: golang:1.6-alpine
-    src-volume: /go/src/github.com/evo-cloud/hmake
+    default-targets:
+        - all
+    docker:
+        image: hmake-builder:latest
+        src-volume: /go/src/github.com/evo-cloud/hmake
 
 includes:
     - build/**/**/*.hmake
@@ -162,10 +221,96 @@ The files included can provide more targets and also override settings.
 - `HMAKE_OS`: operating system
 - `HMAKE_ARCH`: CPU architecture
 
+#### Global Setting Properties
+
+- `default-targets`: a list of targets to build when no targets are specified in `hmake` command
+- `exec-driver`: the name of driver which parses properties in target and executes the target,
+  the default value is `docker`, and supported drivers are `docker` and `shell`.
+  This property can also be specified in target instead of global `settings` section.
+
+#### Common Properties in Target
+
+- `description`: description of the target
+- `before`: a list of names of targets which can only execute after this target
+- `after`: a list of names of targets on which this targets depends
+- `exec-driver`: same as in `settings` section, but only specify the driver for this target
+- `envs`: a list of environment variables (the form `NAME=VALUE`) to be used for execution
+- `script`: a multi-line string represents a full script to execute for the target
+- `cmds`: when `script` is not specified, this is a list of commands to execute for the target
+- `watches`: a list of path/filenames (wildcard supported) whose mtime will be checked to determine if the target is out-of-date,
+  without specifying this property, the target is always executed (the `.PHONY` target in `make`).
+
+Other properties are driver specific, and will be parsed by driver.
+
 #### State Directory
 
 _hmake_ creates a state directory `$HMAKE_PROJECT_DIR/.hmake` to store logs and state files.
 The output (stdout and stderr combined) of each target is stored in files `TARGET.log`.
+
+### Execution Drivers
+
+#### The `shell` driver
+
+This is simplest driver which inteprets `script` or `cmds` as shell script/commands.
+The list of `cmds` will be merged as a shell script.
+And the intepreter is `/bin/sh`.
+`set -e` is inserted as the first line to fail-fast.
+
+#### The `docker` driver
+
+This driver generates the same script as `shell` driver but run it inside a docker container.
+The following properties are supported:
+
+- `build`: path to `Dockerfile`, when specified, this target builds a docker image first.
+   `image` property specifies the image name and tag.
+   It's strongly recommended to put `Dockerfile` and any related files to `watches` list.
+- `build-from`: the build path for `docker build`.
+  Without this property, the build path is derived from path of `Dockerfile` specified in `build`.
+- `image`: with `build` it's the image name and tag to build,
+  without `build`, it's the image used to create the container.
+- `src-volume`: the full path inside container where project root is mapped to.
+  Default is `/root/src`.
+- `envs`: list environment variables passed to container, can be `NAME=VALUE` or `NAME`.
+- `env-files`: list of files providing environment variables, see `--env-files` of `docker run`
+- `privileged`: run container in privileged mode, default is `false`
+- `net`: when specified, only allowed value is `host`, when specified, run container with `--net=host --uts=host`
+- `user`: passed to `docker run --user...`, by default, current `uid:gid` are passed
+  It must be explicitly specified `root` if the script is executed as root inside container.
+- `volumes`: a list of volume mappings passed to `-v` option of `docker run`.
+
+The following properties maps to `docker run` options:
+
+- `cap-add`, `cap-drop`
+- `devices`
+- `hosts`: mapped to `--add-host`
+- `dns`, `dns-opts`, `dns-search`
+- `blkio-weight`, `blkio-weight-devices`
+- `device-read-bps`, `device-write-bps`, `device-read-iops`, `device-write-iops`
+- `cpu-shares`, `cpu-period`, `cpu-quota`, `cpuset-cpus`, `cpuset-mems`
+- `kernel-memory`, `memory`, `memory-swap`, `memory-swappiness`, `shm-size`
+
+All above properties can also be specified in global `settings` under `docker` section:
+
+```yaml
+settings:
+    docker:
+        property: value
+```
+
+##### About volume mapping
+
+By default the current project root is mapped into container at `src-volume`,
+default value is `/root/src`.
+And it's also the current working directory when script starts.
+As the script is a shell script, the executable `/bin/sh` must be present in the container.
+
+##### About user
+
+By default `hmake` uses current user (NOT root) to run inside container,
+which make sure any file change has the same permission as the environment outside.
+If root is required, it can be explicitly specified `user: root`,
+however, all files created inside container will show up being owned by `root` outside,
+and you may end up seeing some error messages like `permission denied` when you do something later.
 
 ## Command Usage
 
@@ -177,11 +322,24 @@ hmake [OPTIONS] [TARGETS]
 
 #### Options
 
+- `--chdir=PATH, -C PATH`: Chdir to specified PATH first before doing anything
+- `--include=FILE, -I FILE`: Include additional files (must be relative path under project root), can be specified multiple times
+- `--define=key:value, -D key:value`: Define property in global `settings` section, `key` may include `.` to specify the hierarchy
 - `--parallel=N, -p N`: Set maximum number of targets executed in parallel, 0 for auto, -1 for unlimited
 - `--rebuild-all, -R`: Force rebuild all needed targets
 - `--rebuild TARGET, -r TARGET`: Force rebuild specified target, this can repeat
+- `--skip TARGET, -S TARGET`: Skip specified target (mark as Skipped), this can repeat
 - `--json`: Dump execution events to stdout each encoded in single line json
+- `--summary, -s`: Show execution summary before exit
 - `--verbose, -v`: Show execution output to stderr for each target
 - `--color|--no-color`: Explicitly specify print with color/no-color
 - `--emoji|--no-emoji`: Explicitly specify print with emoji/no-emoji
-- `--debug`: write a debug log `hmake.debug.log` in hmake state directory
+- `--debug`: Write a debug log `hmake.debug.log` in hmake state directory
+- `--show-summary`: When specified, print previous execution summary and exit
+- `--targets`: When specified, print list of target names and exit
+- `--dryrun`: When specified, run targets as normal but without invoking execution drivers (simply mark task Success)
+- `--version`: When specified, print version and exit
+
+## License
+
+MIT

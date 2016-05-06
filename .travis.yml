@@ -1,0 +1,14 @@
+sudo: required
+
+language: go
+go:
+    - 1.6
+    - tip
+
+services:
+    - docker
+
+script:
+    - go get
+    - go build
+    - ./hmake all test -sv
