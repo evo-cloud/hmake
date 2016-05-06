@@ -18,9 +18,6 @@ targets:
             - vendor
         watches:
             - '**/**/*.go'
-        envs:
-            - HMAKE_VER_SUFFIX
-            - HMAKE_RELEASE
         cmds:
             - ./build.sh linux amd64
 
@@ -30,9 +27,6 @@ targets:
             - vendor
         watches:
             - '**/**/*.go'
-        envs:
-            - HMAKE_VER_SUFFIX
-            - HMAKE_RELEASE
         cmds:
             - ./build.sh darwin amd64
 
@@ -42,9 +36,13 @@ targets:
             - builder
         watches:
             - 'vendor/manifest'
+        envs:
+            - HMAKE_VER_SUFFIX
+            - HMAKE_RELEASE
         cmds:
             - gvt restore
             - mkdir -p bin
+            - ./build.sh genver
 
     test:
         description: run tests

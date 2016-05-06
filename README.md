@@ -116,9 +116,6 @@ targets:
             - vendor
         watches:
             - '**/**/*.go'
-        envs:
-            - HMAKE_VER_SUFFIX
-            - HMAKE_RELEASE
         cmds:
             - ./build.sh linux amd64
 
@@ -128,9 +125,6 @@ targets:
             - vendor
         watches:
             - '**/**/*.go'
-        envs:
-            - HMAKE_VER_SUFFIX
-            - HMAKE_RELEASE
         cmds:
             - ./build.sh darwin amd64
 
@@ -140,9 +134,13 @@ targets:
             - builder
         watches:
             - vendor/manifest
+        envs:
+            - HMAKE_VER_SUFFIX
+            - HMAKE_RELEASE            
         cmds:
             - gvt restore
             - mkdir -p bin
+            - ./build.sh genver
 
     test:
         description: run tests
@@ -316,7 +314,7 @@ hmake [OPTIONS] [TARGETS]
 
 - `--chdir=PATH, -C PATH`: Chdir to specified PATH first before doing anything
 - `--include=FILE, -I FILE`: Include additional files (must be relative path under project root), can be specified multiple times
-- `--define=key:value, -D key:value`: Define property in global `settings` section, `key` may include `.` to specify the hierarchy
+- `--define=key=value, -D key=value`: Define property in global `settings` section, `key` may include `.` to specify the hierarchy
 - `--parallel=N, -p N`: Set maximum number of targets executed in parallel, 0 for auto, -1 for unlimited
 - `--rebuild-all, -R`: Force rebuild all needed targets
 - `--rebuild TARGET, -r TARGET`: Force rebuild specified target, this can repeat
