@@ -46,8 +46,9 @@ build() {
         -a -tags "$TAGS" -installsuffix netgo \
         -ldflags '-extldflags -static' \
         .
-    gzip -c $OUT >$OUT.gz
-    cat $OUT.gz | sha1sum >$OUT.gz.sha1sum
+    tar --posix --owner=0 --group=0 --no-acls --no-xattrs \
+        -C $(dirname $OUT) -czf $OUT.tar.gz $(basename $OUT)
+    cat $OUT.tar.gz | sha1sum >$OUT.tar.gz.sha1sum
 }
 
 case "$1" in

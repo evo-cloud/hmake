@@ -18,6 +18,8 @@ const (
 	Format = "hypermake.v0"
 	// RootFile is hmake filename sits on root
 	RootFile = "HyperMake"
+	// RcFile is the filename of local setting file to override some settings
+	RcFile = ".hmakerc"
 	// WorkFolder is the name of project WorkFolder
 	WorkFolder = ".hmake"
 	// SummaryFileName is the filename of summary
@@ -247,6 +249,33 @@ func (p *Project) Load(path string) (*File, error) {
 		p.Name = f.Name
 	}
 	return f, nil
+}
+
+// LoadRcFiles load .hmakerc files inside project directories
+func (p *Project) LoadRcFiles() error {
+	var files []string
+	path := p.LaunchPath
+	for {
+		files = append(files, filepath.Join(path, RcFile))
+		if path == "" {
+			break
+		}
+		dir := filepath.Dir(path)
+		if dir == "." {
+			path = ""
+		} else {
+			path = dir
+		}
+	}
+
+	errs := &errors.AggregatedError{}
+	for i := len(files) - 1; i >= 0; i-- {
+		_, err := p.Load(files[i])
+		if err != nil && !os.IsNotExist(err) {
+			errs.Add(err)
+		}
+	}
+	return errs.Aggregate()
 }
 
 // Glob matches files inside project with pattern

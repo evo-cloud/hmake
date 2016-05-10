@@ -21,6 +21,7 @@ type Target struct {
 	Before     []string               `json:"before"`
 	After      []string               `json:"after"`
 	ExecDriver string                 `json:"exec-driver"`
+	WorkDir    string                 `json:"workdir"`
 	Envs       []string               `json:"envs"`
 	Cmds       []*Command             `json:"cmds"`
 	Script     string                 `json:"script"`
@@ -102,7 +103,13 @@ func (t *Target) GetSettingsWithExt(name string, v interface{}) (err error) {
 // BuildWatchList collects current state of all watched items
 func (t *Target) BuildWatchList() (list WatchList) {
 	files := make(map[string]*WatchItem)
+	excludes := make(map[string]*WatchItem)
 	for _, pattern := range t.Watches {
+		dict := files
+		if strings.HasPrefix(pattern, "!") {
+			dict = excludes
+			pattern = pattern[1:]
+		}
 		paths, err := t.Project.Glob(filepath.Join(filepath.Dir(t.Source), pattern))
 		if err != nil {
 			continue
@@ -118,15 +125,19 @@ func (t *Target) BuildWatchList() (list WatchList) {
 					if err == nil {
 						relpath = path + relpath[len(fullpath):]
 						if !st.IsDir() {
-							files[relpath] = &WatchItem{Path: relpath, ModTime: st.ModTime()}
+							dict[relpath] = &WatchItem{Path: relpath, ModTime: st.ModTime()}
 						}
 					}
 					return nil
 				})
 			} else {
-				files[path] = &WatchItem{Path: path, ModTime: st.ModTime()}
+				dict[path] = &WatchItem{Path: path, ModTime: st.ModTime()}
 			}
 		}
+	}
+
+	for path := range excludes {
+		delete(files, path)
 	}
 
 	names := make([]string, 0, len(files))

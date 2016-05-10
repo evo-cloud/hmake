@@ -67,6 +67,18 @@ targets:
                 -coverpkg ./project
                 ./test
 
+    e2e:
+        description: end-to-end tests
+        after:
+            - vendor
+        expose-docker: true
+        watches:
+            - '**/**/*.go'
+            - test/e2e
+            - !test/e2e/**/**/.hmake
+        cmds:
+            - ginkgo ./test/e2e
+
     all:
         description: the default make target
         after:

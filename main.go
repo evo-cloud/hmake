@@ -71,6 +71,7 @@ type makeCmd struct {
 	RebuildAll  bool `n:"rebuild-all"`
 	Rebuild     []string
 	Skip        []string
+	RcFile      bool
 	JSON        bool
 	Summary     bool
 	Verbose     bool
@@ -133,6 +134,9 @@ func (c *makeCmd) Execute(args []string) (err error) {
 	}
 
 	incErrs := &errors.AggregatedError{}
+	if c.RcFile {
+		incErrs.Add(p.LoadRcFiles())
+	}
 	for _, inc := range c.Include {
 		_, e := p.Load(inc)
 		incErrs.Add(e)

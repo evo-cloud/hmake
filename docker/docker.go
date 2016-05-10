@@ -14,9 +14,11 @@ const (
 	// ExecDriverName is name of exec-driver
 	ExecDriverName = "docker"
 	// DefaultSrcVolume is the default source path inside the container
-	DefaultSrcVolume = "/root/src"
+	DefaultSrcVolume = "/src"
 	// SettingName is the name of section of settings
 	SettingName = "docker"
+	// Dockerfile is default name of Dockerfile
+	Dockerfile = "Dockerfile"
 )
 
 type dockerConfig struct {
@@ -24,6 +26,7 @@ type dockerConfig struct {
 	BuildFrom         string   `json:"build-from"`
 	Image             string   `json:"image"`
 	SrcVolume         string   `json:"src-volume"`
+	ExposeDocker      bool     `json:"expose-docker"`
 	Envs              []string `json:"envs"`
 	EnvFiles          []string `json:"env-files"`
 	CapAdd            []string `json:"cap-add"`
@@ -36,6 +39,7 @@ type dockerConfig struct {
 	DNSSearch         string   `json:"dns-search"`
 	DNSOpts           []string `json:"dns-opts"`
 	User              string   `json:"user"`
+	Groups            []string `json:"groups"`
 	Volumes           []string `json:"volumes"`
 	BlkIoWeight       *int     `json:"blkio-weight"`
 	BlkIoWeightDevs   []string `json:"blkio-weight-devices"`
@@ -54,10 +58,15 @@ type dockerConfig struct {
 	MemoryReservation string   `json:"memory-reservation"`
 	MemorySwappiness  *int     `json:"memory-swappiness"`
 	ShmSize           string   `json:"shm-size"`
+
+	projectDir string
 }
 
 func (c *dockerConfig) addEnv(envs ...string) {
 	for _, env := range envs {
+		if env == "" {
+			continue
+		}
 		pos := strings.Index(env, "=")
 		var name string
 		if pos > 0 {
@@ -76,6 +85,19 @@ func (c *dockerConfig) addEnv(envs ...string) {
 		if !found {
 			c.Envs = append(c.Envs, env)
 		}
+	}
+}
+
+func (c *dockerConfig) exposeDockerEnv() {
+	if val := os.Getenv("DOCKER_HOST"); val != "" {
+		c.addEnv(val)
+	}
+	if certPath := os.Getenv("DOCKER_CERT_PATH"); certPath != "" {
+		c.addEnv(certPath)
+		c.Volumes = append(c.Volumes, certPath+":"+certPath)
+	}
+	if val := os.Getenv("DOCKER_TLS_VERIFY"); val != "" {
+		c.addEnv(val)
 	}
 }
 
@@ -112,6 +134,9 @@ func (r *dockerRunner) loadConfig() (conf *dockerConfig, err error) {
 	if conf.SrcVolume == "" {
 		conf.SrcVolume = DefaultSrcVolume
 	}
+	if conf.ExposeDocker {
+		conf.exposeDocker(r)
+	}
 	conf.addEnv(r.task.Target.Envs...)
 	for name, value := range r.task.Plan.Env {
 		conf.addEnv(name + "=" + value)
@@ -124,36 +149,77 @@ func (r *dockerRunner) loadConfig() (conf *dockerConfig, err error) {
 		filepath.Join(conf.SrcVolume,
 			filepath.Base(r.task.Plan.WorkPath)))
 	conf.addEnv("HMAKE_TARGET=" + r.task.Name())
+
+	conf.projectDir = filepath.Clean(r.task.Project().BaseDir)
+	volHost := os.Getenv("HMAKE_DOCKER_VOL_HOST")
+	volCntr := os.Getenv("HMAKE_DOCKER_VOL_CNTR")
+	// in nested situation
+	if volHost != "" && volCntr != "" {
+		prefix := filepath.Clean(volCntr) + "/"
+		if strings.HasPrefix(conf.projectDir, prefix) {
+			conf.projectDir = filepath.Join(volHost, conf.projectDir[len(prefix):])
+		}
+	}
+	conf.addEnv("HMAKE_DOCKER_VOL_HOST=" + conf.projectDir)
+	conf.addEnv("HMAKE_DOCKER_VOL_CNTR=" + conf.SrcVolume)
 	return
 }
 
 func (r *dockerRunner) build(conf *dockerConfig) error {
-	project := r.task.Project()
-	dockerFile := filepath.Join(project.BaseDir, conf.Build)
-	buildPath := filepath.Dir(dockerFile)
-	dockerCmd := []string{"docker", "build",
-		"-f", dockerFile,
-		"-t", conf.Image,
-		buildPath,
+	dockerCmd := []string{"docker", "build", "-t", conf.Image}
+
+	dockerFile := filepath.Join(conf.projectDir, conf.Build)
+
+	info, err := os.Stat(dockerFile)
+	if err != nil {
+		return err
 	}
+
+	if info.IsDir() {
+		if conf.BuildFrom == "" {
+			dockerCmd = append(dockerCmd, dockerFile)
+		} else {
+			dockerCmd = append(dockerCmd,
+				"-f", filepath.Join(dockerFile, Dockerfile),
+				conf.BuildFrom)
+		}
+	} else if conf.BuildFrom == "" {
+		dockerCmd = append(dockerCmd,
+			"-f", dockerFile, filepath.Dir(dockerFile))
+	} else {
+		dockerCmd = append(dockerCmd,
+			"-f", dockerFile, conf.BuildFrom)
+	}
+
 	return r.task.Exec(dockerCmd[0], dockerCmd[1:]...)
 }
 
 func (r *dockerRunner) run(conf *dockerConfig) error {
-	project := r.task.Project()
-
+	workDir := conf.SrcVolume
+	if r.task.Target.WorkDir != "" {
+		workDir = filepath.Join(workDir, r.task.Target.WorkDir)
+	}
 	dockerRun := []string{"docker", "run",
 		"-a", "STDOUT", "-a", "STDERR",
 		"--rm",
-		"-v", project.BaseDir + ":" + conf.SrcVolume,
-		"-w", conf.SrcVolume,
+		"-v", conf.projectDir + ":" + conf.SrcVolume,
+		"-w", workDir,
 		"--entrypoint", filepath.Join(conf.SrcVolume, hm.WorkFolder, filepath.Base(r.task.ScriptFile())),
 	}
 	// by default, use non-root user
 	if conf.User == "" {
 		dockerRun = append(dockerRun, "-u", strconv.Itoa(os.Getuid())+":"+strconv.Itoa(os.Getgid()))
+		if len(conf.Groups) == 0 {
+			grps, _ := os.Getgroups()
+			for _, grp := range grps {
+				dockerRun = append(dockerRun, "--group-add", strconv.Itoa(grp))
+			}
+		}
 	} else if conf.User != "root" && conf.User != "0" {
 		dockerRun = append(dockerRun, "-u", conf.User)
+	}
+	for _, grp := range conf.Groups {
+		dockerRun = append(dockerRun, "--group-add", grp)
 	}
 
 	for _, envFile := range conf.EnvFiles {

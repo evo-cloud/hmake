@@ -677,6 +677,9 @@ func (t *Task) Exec(command string, args ...string) error {
 	}
 	cmd.Env = append(cmd.Env, "HMAKE_TARGET="+t.Name())
 	cmd.Dir = t.Project().BaseDir
+	if t.Target.WorkDir != "" {
+		cmd.Dir = filepath.Join(cmd.Dir, t.Target.WorkDir)
+	}
 	cmd.Stdout = w
 	cmd.Stderr = w
 	return cmd.Run()

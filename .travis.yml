@@ -11,4 +11,4 @@ services:
 script:
     - go get
     - go build
-    - ./hmake all test -sv
+    - ./hmake all test e2e -sv

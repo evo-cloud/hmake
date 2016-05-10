@@ -1,0 +1,22 @@
+---
+format: hypermake.v0
+
+targets:
+  builder:
+    description: create builder image
+    build: Dockerfile
+    watches:
+      - Dockerfile
+
+  test:
+    description: test docker client
+    after:
+      - builder
+    cmds:
+      - docker version
+
+settings:
+  default-targets: [test]
+  docker:
+    image: hmake-test-builder:latest
+    expose-docker: true

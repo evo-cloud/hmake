@@ -71,6 +71,12 @@ func cliDef() *flag.CliDef {
 					Tags:  map[string]interface{}{"help-var": "TARGET"},
 				},
 				&flag.Option{
+					Name:    "rcfile",
+					Desc:    "Load .hmakerc files inside project directories",
+					Type:    "bool",
+					Default: true,
+				},
+				&flag.Option{
 					Name: "json",
 					Desc: "Dump events in JSON to stdout",
 					Type: "bool",

@@ -2,10 +2,22 @@
 
 # HyperMake
 
-HyperMake helps you build projects without installing pre-requisites in your
-local environment.
-It uses containers to build projects, all pre-requisites can be pre-installed
+- Are you feeling bored and upset with spending days on preparing development
+environment to build some project from source?
+- Are you tired of writing a long list of building steps when you ships your work
+to others?
+- Are you crazy struggling with environment issues and try to make something work?
+
+Forget about environment setup,
+HyperMake helps you build projects instantly and consistently without installing
+pre-requisites in your local environment.
+It uses containers to build projects, all pre-requisites are pre-installed
 inside the container.
+
+To build _ANY_ HyperMake project, the _ONLY_ software needed are:
+
+- A running [docker](https://www.docker.com)
+- `hmake` executable in `PATH`
 
 A similar project is [drone](http://readme.drone.io) which is built to be a service.
 While HyperMake is built as a handy tool with a few special features:
@@ -22,7 +34,7 @@ While HyperMake is built as a handy tool with a few special features:
 Download the binary from github release:
 
 ```
-curl -s https://github.com/evo-cloud/hmake/archive/hmake-1.0.0-alpha1-linux-amd64.gz | gunzip >/usr/local/bin/hmake
+curl -s https://github.com/evo-cloud/hmake/releases/download/v1.0.0rc1/hmake-1.0.0rc1-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 chmod a+rx /usr/local/bin/hmake
 ```
 
@@ -80,6 +92,9 @@ the command will figure out project root by locating `HyperMake` file.
 From the top-level `HyperMake` file, use `includes` section to include any
 `*.hmake` files inside project tree.
 It can't access any files outside project tree.
+
+By default, it will search for `.hmakerc` files inside project directories, and
+load them in the order from parent to child folders.
 
 ### File Format
 
@@ -236,6 +251,8 @@ Other properties are driver specific, and will be parsed by driver.
 
 _hmake_ creates a state directory `$HMAKE_PROJECT_DIR/.hmake` to store logs and state files.
 The output (stdout and stderr combined) of each target is stored in files `TARGET.log`.
+Debug log (with `--debug`) is stored as `hmake.debug.log`.
+Summary file is stored as `hmake.summary.json`.
 
 ### Execution Drivers
 
@@ -260,12 +277,17 @@ The following properties are supported:
   without `build`, it's the image used to create the container.
 - `src-volume`: the full path inside container where project root is mapped to.
   Default is `/root/src`.
+- `expose-docker`: when set `true`, expose the host docker server connectivity into container to allow
+  docker client run from inside the container.
+  This is very useful when docker is required for build but to avoid problematic docker-in-docker.
 - `envs`: list environment variables passed to container, can be `NAME=VALUE` or `NAME`.
 - `env-files`: list of files providing environment variables, see `--env-files` of `docker run`
 - `privileged`: run container in privileged mode, default is `false`
 - `net`: when specified, only allowed value is `host`, when specified, run container with `--net=host --uts=host`
 - `user`: passed to `docker run --user...`, by default, current `uid:gid` are passed
   It must be explicitly specified `root` if the script is executed as root inside container.
+  When a non-root user is explicitly specified, all group IDs are passed using `--group-add`.
+- `groups`: explicitly specify group IDs to pass into container, instead of passing all of them.
 - `volumes`: a list of volume mappings passed to `-v` option of `docker run`.
 
 The following properties maps to `docker run` options:
@@ -322,6 +344,7 @@ hmake [OPTIONS] [TARGETS]
 - `--json`: Dump execution events to stdout each encoded in single line json
 - `--summary, -s`: Show execution summary before exit
 - `--verbose, -v`: Show execution output to stderr for each target
+- `--rcfile|--no-rcfile`: Load .hmakerc inside project directories, default is true
 - `--color|--no-color`: Explicitly specify print with color/no-color
 - `--emoji|--no-emoji`: Explicitly specify print with emoji/no-emoji
 - `--debug`: Write a debug log `hmake.debug.log` in hmake state directory
@@ -329,6 +352,12 @@ hmake [OPTIONS] [TARGETS]
 - `--targets`: When specified, print list of target names and exit
 - `--dryrun`: When specified, run targets as normal but without invoking execution drivers (simply mark task Success)
 - `--version`: When specified, print version and exit
+
+## Supported Platform and Software
+
+- docker 1.9 and above (1.9 - 1.11 tested)
+- Linux (Ubuntu 14.04 tested)
+- Mac OS X 10.9 and above (10.9, 10.11 tested)
 
 ## License
 

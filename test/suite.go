@@ -209,6 +209,21 @@ var _ = Describe("HyperMake", func() {
 			Expect(proj.GetSettingsIn("t1", v)).Should(Succeed())
 			Expect(v.Dict.Key).To(Equal("valueX"))
 		})
+
+		It("loads rcfiles", func() {
+			proj, err := hm.LoadProjectFrom(Fixtures("project2"))
+			Expect(err).Should(Succeed())
+			Expect(proj.LoadRcFiles()).Should(Succeed())
+			set := &testSetting{}
+			Expect(proj.GetSettings(set)).Should(Succeed())
+			Expect(set.TopLevel).To(Equal("value1"))
+
+			proj, err = hm.LoadProjectFrom(Fixtures("project2", "subdir"))
+			Expect(err).Should(Succeed())
+			Expect(proj.LoadRcFiles()).Should(Succeed())
+			Expect(proj.GetSettings(set)).Should(Succeed())
+			Expect(set.TopLevel).To(Equal("value2"))
+		})
 	})
 
 	Describe("Target", func() {
