@@ -34,7 +34,7 @@ While HyperMake is built as a handy tool with a few special features:
 Download the binary from github release:
 
 ```
-curl -s https://github.com/evo-cloud/hmake/releases/download/v1.0.0rc1/hmake-1.0.0rc1-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
+curl -s https://github.com/evo-cloud/hmake/releases/download/v1.0.0rc2/hmake-1.0.0rc2-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 chmod a+rx /usr/local/bin/hmake
 ```
 
@@ -65,7 +65,7 @@ If you want run test with coverage, `hmake cover`.
 
 ## Setup Development Environment
 
-_In fact with `hmake` installed, you don't this local development environment._
+_In fact with `hmake` installed, you don't need this local development environment._
 
 Install
 - [gvt](github.com/FiloSottile/gvt)
@@ -239,6 +239,7 @@ The files included can provide more targets and also override settings.
 - `before`: a list of names of targets which can only execute after this target
 - `after`: a list of names of targets on which this targets depends
 - `exec-driver`: same as in `settings` section, but only specify the driver for this target
+- `workdir`: the current working directory for commands in the target, relative to project root
 - `envs`: a list of environment variables (the form `NAME=VALUE`) to be used for execution
 - `script`: a multi-line string represents a full script to execute for the target
 - `cmds`: when `script` is not specified, this is a list of commands to execute for the target

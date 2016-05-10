@@ -1,17 +1,6 @@
 package main
 
-import (
-	"os"
-	"runtime"
-	"strings"
-
-	"github.com/codingbrain/clix.go/flag"
-)
-
-func emojiSupported() bool {
-	return runtime.GOOS == "darwin" &&
-		strings.HasSuffix(strings.ToLower(os.Getenv("LANG")), "utf-8")
-}
+import "github.com/codingbrain/clix.go/flag"
 
 func cliDef() *flag.CliDef {
 	d := &flag.CliDef{
@@ -103,7 +92,7 @@ func cliDef() *flag.CliDef {
 					Name:    "emoji",
 					Desc:    "Output emoji",
 					Type:    "bool",
-					Default: emojiSupported(),
+					Default: false,
 				},
 				&flag.Option{
 					Name: "debug",

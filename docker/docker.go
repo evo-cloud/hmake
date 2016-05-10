@@ -90,14 +90,14 @@ func (c *dockerConfig) addEnv(envs ...string) {
 
 func (c *dockerConfig) exposeDockerEnv() {
 	if val := os.Getenv("DOCKER_HOST"); val != "" {
-		c.addEnv(val)
+		c.addEnv("DOCKER_HOST=" + val)
 	}
 	if certPath := os.Getenv("DOCKER_CERT_PATH"); certPath != "" {
-		c.addEnv(certPath)
+		c.addEnv("DOCKER_CERT_PATH=" + certPath)
 		c.Volumes = append(c.Volumes, certPath+":"+certPath)
 	}
 	if val := os.Getenv("DOCKER_TLS_VERIFY"); val != "" {
-		c.addEnv(val)
+		c.addEnv("DOCKER_TLS_VERIFY=" + val)
 	}
 }
 
@@ -214,11 +214,16 @@ func (r *dockerRunner) run(conf *dockerConfig) error {
 	}
 	// by default, use non-root user
 	if conf.User == "" {
-		dockerRun = append(dockerRun, "-u", strconv.Itoa(os.Getuid())+":"+strconv.Itoa(os.Getgid()))
+		uid, gid, grps, err := currentUserIds()
+		if err != nil {
+			return err
+		}
+		dockerRun = append(dockerRun, "-u", strconv.Itoa(uid)+":"+strconv.Itoa(gid))
 		if len(conf.Groups) == 0 {
-			grps, _ := os.Getgroups()
 			for _, grp := range grps {
-				dockerRun = append(dockerRun, "--group-add", strconv.Itoa(grp))
+				if grp != gid {
+					dockerRun = append(dockerRun, "--group-add", strconv.Itoa(grp))
+				}
 			}
 		}
 	} else if conf.User != "root" && conf.User != "0" {

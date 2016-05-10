@@ -21,3 +21,10 @@ func (c *dockerConfig) exposeDocker(r *dockerRunner) {
 		c.Volumes = append(c.Volumes, sockPath+":"+sockPath)
 	}
 }
+
+func currentUserIds() (uid, gid int, grps []int, err error) {
+	uid = os.Getuid()
+	gid = os.Getgid()
+	grps, err = os.Getgroups()
+	return
+}

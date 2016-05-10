@@ -47,6 +47,7 @@ build() {
         -ldflags '-extldflags -static' \
         .
     tar --posix --owner=0 --group=0 --no-acls --no-xattrs \
+        --transform="s/$(basename $OUT)/hmake/" \
         -C $(dirname $OUT) -czf $OUT.tar.gz $(basename $OUT)
     cat $OUT.tar.gz | sha1sum >$OUT.tar.gz.sha1sum
 }
