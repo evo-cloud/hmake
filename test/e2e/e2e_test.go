@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -35,7 +36,7 @@ var _ = Describe("docker", func() {
 		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker"), "-v", "--debug")
 		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 		Expect(err).Should(Succeed())
-		session.Wait()
+		session.Wait(15 * time.Minute)
 		Eventually(session).Should(gexec.Exit(0))
 	})
 })
