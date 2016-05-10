@@ -7,7 +7,7 @@ description: HyperMake builds your project without pre-requisites
 targets:
     builder:
         description: build the docker image including toolchain
-        build: builder/Dockerfile
+        build: builder
         image: hmake-builder:latest
         watches:
             - builder

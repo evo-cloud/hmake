@@ -4,7 +4,7 @@ format: hypermake.v0
 targets:
   builder:
     description: create builder image
-    build: Dockerfile
+    build: .
     watches:
       - Dockerfile
 

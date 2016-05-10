@@ -168,7 +168,11 @@ func (r *dockerRunner) loadConfig() (conf *dockerConfig, err error) {
 func (r *dockerRunner) build(conf *dockerConfig) error {
 	dockerCmd := []string{"docker", "build", "-t", conf.Image}
 
-	dockerFile := filepath.Join(conf.projectDir, conf.Build)
+	dockerFile := filepath.Join(r.task.Project().BaseDir, conf.Build)
+	buildFrom := conf.BuildFrom
+	if buildFrom != "" {
+		buildFrom = filepath.Join(r.task.Project().BaseDir, buildFrom)
+	}
 
 	info, err := os.Stat(dockerFile)
 	if err != nil {
@@ -176,19 +180,21 @@ func (r *dockerRunner) build(conf *dockerConfig) error {
 	}
 
 	if info.IsDir() {
-		if conf.BuildFrom == "" {
+		if buildFrom == "" {
 			dockerCmd = append(dockerCmd, dockerFile)
 		} else {
 			dockerCmd = append(dockerCmd,
 				"-f", filepath.Join(dockerFile, Dockerfile),
-				conf.BuildFrom)
+				buildFrom)
 		}
-	} else if conf.BuildFrom == "" {
+	} else if buildFrom == "" {
 		dockerCmd = append(dockerCmd,
-			"-f", dockerFile, filepath.Dir(dockerFile))
+			"-f", dockerFile,
+			filepath.Dir(dockerFile))
 	} else {
 		dockerCmd = append(dockerCmd,
-			"-f", dockerFile, conf.BuildFrom)
+			"-f", dockerFile,
+			buildFrom)
 	}
 
 	return r.task.Exec(dockerCmd[0], dockerCmd[1:]...)
