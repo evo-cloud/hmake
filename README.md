@@ -29,22 +29,29 @@ While HyperMake is built as a handy tool with a few special features:
 
 ## Getting Started
 
-#### The Simplest Way
+#### With Homebrew
 
-Download the binary from github release:
+```
+brew tap evo-cloud/toolkit  # only do this once
+brew install hypermake
+```
+
+#### Download from Github release page
 
 ```
 curl -s https://github.com/evo-cloud/hmake/releases/download/v1.0.0rc2/hmake-1.0.0rc2-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 chmod a+rx /usr/local/bin/hmake
 ```
 
-#### With Go installed
+#### Build from source
+
+Using `go get ...`
 
 ```
 go get github.com/evo-cloud/hmake
 ```
 
-#### Build from source
+Or do a full build
 
 ```
 git clone https://github.com/evo-cloud/hmake
@@ -62,6 +69,8 @@ Note: if you want to use `hmake` to do a full build, make sure [docker](https://
 
 After build, `hmake test`.
 If you want run test with coverage, `hmake cover`.
+End-to-End test runs with `hmake e2e` which builds `hmake` and invokes from a HyperMake target.
+This shows how to invoke docker client from a target.
 
 ## Setup Development Environment
 
@@ -359,6 +368,10 @@ hmake [OPTIONS] [TARGETS]
 - docker 1.9 and above (1.9 - 1.11 tested)
 - Linux (Ubuntu 14.04 tested)
 - Mac OS X 10.9 and above (10.9, 10.11 tested)
+
+## Known issues
+
+- Don't use `docker-machine` on Linux
 
 ## License
 
