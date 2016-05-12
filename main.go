@@ -29,6 +29,8 @@ const (
 	Release = "1.0.0"
 	// Version is full version string
 	Version = Release + VersionSuffix
+	// Website is the URL to project website
+	Website = "https://github.com/evo-cloud/hmake"
 
 	timeFmt = "15:04:05.000"
 )
@@ -75,6 +77,7 @@ type makeCmd struct {
 	JSON        bool
 	Summary     bool
 	Verbose     bool
+	Banner      bool
 	Color       bool
 	Emoji       bool
 	Debug       bool
@@ -119,8 +122,15 @@ func (c *makeCmd) Execute(args []string) (err error) {
 		}
 	}
 
+	if c.Banner {
+		c.showBanner()
+	}
+
 	var p *hm.Project
 	if p, err = hm.LocateProject(); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("Unable to find HyperMake")
+		}
 		return
 	}
 
@@ -178,8 +188,8 @@ func (c *makeCmd) Execute(args []string) (err error) {
 		p.GetSettings(&c.settings)
 		args = c.settings.DefaultTargets
 		if len(args) == 0 {
-			return fmt.Errorf("at least one target is required from below:\n%s",
-				strings.Join(names, "\n"))
+			c.showTargets(p, names, padLen)
+			return fmt.Errorf("No targets selected, please choose at least one from above")
 		}
 	}
 
@@ -212,6 +222,14 @@ func (c *makeCmd) Execute(args []string) (err error) {
 
 	term.NewPrinter(term.Std).Styles(term.StyleOK).Println(faces[faceGood])
 	return
+}
+
+func (c *makeCmd) showBanner() {
+	out := term.NewPrinter(term.Std)
+	out.Styles("lightyellow", term.StyleB).Print("HyperMake").Pop().
+		Styles(term.StyleHi).Print(" v"+Version+" ").Pop().
+		Styles("lightblue", "underline").Println(Website).Pop().
+		Println()
 }
 
 func (c *makeCmd) showTargets(p *hm.Project, names []string, padLen int) {

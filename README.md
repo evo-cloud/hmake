@@ -29,11 +29,17 @@ While HyperMake is built as a handy tool with a few special features:
 
 ## Getting Started
 
+Knowledge required as a user:
+
+- YAML: [http://yaml.org](http://yaml.org)
+- Docker: [http://www.docker.com](http://www.docker.com)
+- Very basic Unix shell and command line tools
+
 #### With Homebrew
 
 ```
 brew tap evo-cloud/toolkit  # only do this once
-brew install hypermake
+brew install hmake
 ```
 
 #### Download from Github release page

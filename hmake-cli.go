@@ -6,7 +6,7 @@ func cliDef() *flag.CliDef {
 	d := &flag.CliDef{
 		Cli: &flag.Command{
 			Name: "hmake",
-			Desc: "HyperMake builds your project using consistent environment",
+			Desc: "HyperMake builds projects without pre-requisites\n" + Website,
 			Options: []*flag.Option{
 				&flag.Option{
 					Name:  "chdir",
@@ -81,6 +81,12 @@ func cliDef() *flag.CliDef {
 					Alias: []string{"v"},
 					Desc:  "Display more information",
 					Type:  "bool",
+				},
+				&flag.Option{
+					Name:    "banner",
+					Desc:    "Show banner",
+					Type:    "bool",
+					Default: true,
 				},
 				&flag.Option{
 					Name:    "color",
