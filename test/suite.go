@@ -234,6 +234,7 @@ var _ = Describe("HyperMake", func() {
 			t := proj.Targets["t0"]
 			Expect(t).NotTo(BeNil())
 			Expect(t.Source).To(Equal("subproject/subproj.hmake"))
+			Expect(t.WorkingDir()).To(Equal("subproject/subdir"))
 
 			set := &testSetting{}
 			Expect(t.GetExt(set)).Should(Succeed())

@@ -168,10 +168,10 @@ func (r *dockerRunner) loadConfig() (conf *dockerConfig, err error) {
 func (r *dockerRunner) build(conf *dockerConfig) error {
 	dockerCmd := []string{"docker", "build", "-t", conf.Image}
 
-	dockerFile := filepath.Join(r.task.Project().BaseDir, conf.Build)
+	dockerFile := r.task.WorkingDir(conf.Build)
 	buildFrom := conf.BuildFrom
 	if buildFrom != "" {
-		buildFrom = filepath.Join(r.task.Project().BaseDir, buildFrom)
+		buildFrom = r.task.WorkingDir(buildFrom)
 	}
 
 	info, err := os.Stat(dockerFile)
@@ -201,10 +201,7 @@ func (r *dockerRunner) build(conf *dockerConfig) error {
 }
 
 func (r *dockerRunner) run(conf *dockerConfig) error {
-	workDir := conf.SrcVolume
-	if r.task.Target.WorkDir != "" {
-		workDir = filepath.Join(workDir, r.task.Target.WorkDir)
-	}
+	workDir := filepath.Join(conf.SrcVolume, r.task.Target.WorkingDir())
 	dockerRun := []string{"docker", "run",
 		"-a", "STDOUT", "-a", "STDERR",
 		"--rm",
@@ -234,7 +231,8 @@ func (r *dockerRunner) run(conf *dockerConfig) error {
 	}
 
 	for _, envFile := range conf.EnvFiles {
-		dockerRun = append(dockerRun, "--env-file", envFile)
+		dockerRun = append(dockerRun, "--env-file",
+			filepath.Join(conf.SrcVolume, r.task.Target.WorkingDir(envFile)))
 	}
 
 	for _, env := range conf.Envs {
@@ -274,7 +272,11 @@ func (r *dockerRunner) run(conf *dockerConfig) error {
 	}
 
 	for _, vol := range conf.Volumes {
-		dockerRun = append(dockerRun, "-v", vol)
+		hostVol := vol
+		if !filepath.IsAbs(hostVol) {
+			hostVol = filepath.Join(conf.projectDir, r.task.Target.WorkingDir(vol))
+		}
+		dockerRun = append(dockerRun, "-v", hostVol)
 	}
 
 	if conf.BlkIoWeight != nil {

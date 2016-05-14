@@ -1,0 +1,19 @@
+---
+format: hypermake.v0
+
+targets:
+  test-wd:
+    description: test working dir
+    after:
+      - builder
+    cmds:
+      - test -f sub.hmake
+
+  test-vol:
+    description: test volume mapping
+    after:
+      - builder
+    volumes:
+      - 'vol:/vol'
+    cmds:
+      - test -f /vol/somefile

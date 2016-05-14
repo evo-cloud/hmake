@@ -627,6 +627,11 @@ func (t *Task) LogFile() string {
 	return filepath.Join(t.Plan.WorkPath, t.Name()+".log")
 }
 
+// WorkingDir is absolute path of working dir to execute the task
+func (t *Task) WorkingDir(dirs ...string) string {
+	return filepath.Join(t.Project().BaseDir, t.Target.WorkingDir(dirs...))
+}
+
 // BuildScript generates script file according to cmds/script in target
 func (t *Task) BuildScript() string {
 	target := t.Target
@@ -676,10 +681,7 @@ func (t *Task) Exec(command string, args ...string) error {
 		cmd.Env = append(cmd.Env, name+"="+value)
 	}
 	cmd.Env = append(cmd.Env, "HMAKE_TARGET="+t.Name())
-	cmd.Dir = t.Project().BaseDir
-	if t.Target.WorkDir != "" {
-		cmd.Dir = filepath.Join(cmd.Dir, t.Target.WorkDir)
-	}
+	cmd.Dir = filepath.Join(t.Project().BaseDir, t.Target.WorkingDir())
 	cmd.Stdout = w
 	cmd.Stderr = w
 	return cmd.Run()

@@ -1,0 +1,24 @@
+---
+format: hypermake.v0
+
+targets:
+  builder:
+    description: create builder image
+    build: ../docker
+    watches:
+      - ../docker/Dockerfile
+
+  test:
+    description: test all
+    after:
+      - test-wd
+      - test-vol
+
+settings:
+  default-targets: [test]
+  docker:
+    image: hmake-test-builder:latest
+    expose-docker: true
+
+includes:
+  - '**/**/*.hmake'

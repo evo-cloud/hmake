@@ -39,4 +39,15 @@ var _ = Describe("docker", func() {
 		session.Wait(15 * time.Minute)
 		Eventually(session).Should(gexec.Exit(0))
 	})
+
+	It("makes with correct dir", func() {
+		wd, err := os.Getwd()
+		Expect(err).Should(Succeed())
+		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker-dir"), "-v", "--debug")
+		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+		Expect(err).Should(Succeed())
+		session.Wait(15 * time.Minute)
+		Eventually(session).Should(gexec.Exit(0))
+	})
+
 })

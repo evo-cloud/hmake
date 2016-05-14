@@ -100,6 +100,17 @@ func (t *Target) GetSettingsWithExt(name string, v interface{}) (err error) {
 	return
 }
 
+// ProjectPath translate a source relative path to project relative path
+func (t *Target) ProjectPath(path string) string {
+	return RelPath(t.Source, path)
+}
+
+// WorkingDir returns the project relative working dir for executing the target
+func (t *Target) WorkingDir(dirs ...string) string {
+	dirs = append([]string{t.ProjectPath(t.WorkDir)}, dirs...)
+	return filepath.Join(dirs...)
+}
+
 // BuildWatchList collects current state of all watched items
 func (t *Target) BuildWatchList() (list WatchList) {
 	files := make(map[string]*WatchItem)
@@ -110,7 +121,7 @@ func (t *Target) BuildWatchList() (list WatchList) {
 			dict = excludes
 			pattern = pattern[1:]
 		}
-		paths, err := t.Project.Glob(filepath.Join(filepath.Dir(t.Source), pattern))
+		paths, err := t.Project.Glob(t.ProjectPath(pattern))
 		if err != nil {
 			continue
 		}

@@ -7,6 +7,7 @@ targets:
     watches:
       - subdir
       - subdir/**/**
+    workdir: subdir
     toplevel1: t0
 
 settings:

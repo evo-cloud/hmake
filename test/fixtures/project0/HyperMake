@@ -3,6 +3,10 @@ format: hypermake.v0
 
 name: project0
 
+targets:
+  t:
+    after: [t0]
+
 includes:
   - subproject/subproj.hmake
   - subproject/subproj.hmake

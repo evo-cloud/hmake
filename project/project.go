@@ -46,7 +46,7 @@ type File struct {
 	// Includes are patterns for sourcing external files
 	Includes []string `json:"includes"`
 
-	// Source is the relative path to the file
+	// Source is the relative path to the project
 	Source string `json:"-"`
 }
 
@@ -75,6 +75,9 @@ func loadYaml(filename string) (map[string]interface{}, error) {
 	}
 	val := make(map[string]interface{})
 	if err = yaml.Unmarshal(data, val); err != nil {
+		if !os.IsNotExist(err) {
+			err = fmt.Errorf("%s: %v", filename, err)
+		}
 		return nil, err
 	}
 
@@ -192,6 +195,15 @@ func LoadProject() (p *Project, err error) {
 	return LoadProjectFrom(wd)
 }
 
+// RelPath translate a source relative path to project relative path
+func RelPath(source, path string) string {
+	srcDir := filepath.Dir(source)
+	if srcDir != "." {
+		return filepath.Join(srcDir, path)
+	}
+	return path
+}
+
 // Merge merges content from another file
 func (f *File) Merge(s *File) error {
 	errs := &errors.AggregatedError{}
@@ -212,15 +224,16 @@ func (f *File) Merge(s *File) error {
 	errs.Add(f.Settings.Merge(s.Settings))
 
 	for _, inc := range s.Includes {
+		path := RelPath(s.Source, inc)
 		found := false
 		for _, item := range f.Includes {
-			if item == inc {
+			if item == path {
 				found = true
 				break
 			}
 		}
 		if !found {
-			f.Includes = append(f.Includes, inc)
+			f.Includes = append(f.Includes, path)
 		}
 	}
 	return errs.Aggregate()
@@ -302,6 +315,10 @@ func (p *Project) Resolve() error {
 			continue
 		}
 		for _, path := range paths {
+			st, err := os.Stat(filepath.Join(p.BaseDir, path))
+			if errs.Add(err) || st.IsDir() {
+				continue
+			}
 			_, err = p.Load(path)
 			errs.Add(err)
 		}
