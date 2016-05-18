@@ -31,7 +31,7 @@ type Target struct {
 	// Runtime fields
 
 	Project   *Project      `json:"-"`
-	Source    string        `json:"-"`
+	File      *File         `json:"-"`
 	Depends   TargetNameMap `json:"-"`
 	Activates TargetNameMap `json:"-"`
 }
@@ -77,7 +77,7 @@ func (t *Target) GetExt(v interface{}) error {
 
 // Errorf formats an error related to the target
 func (t *Target) Errorf(format string, args ...interface{}) error {
-	args = append([]interface{}{t.Name, t.Source}, args...)
+	args = append([]interface{}{t.Name, t.File.Source}, args...)
 	return fmt.Errorf("%s(%s): "+format, args...)
 }
 
@@ -88,8 +88,12 @@ func (t *Target) AddDep(dep *Target) {
 }
 
 // GetSettings extracts the value from settings stack
-func (t *Target) GetSettings(name string, v interface{}) error {
-	return t.Project.GetSettingsIn(name, v)
+func (t *Target) GetSettings(name string, v interface{}) (err error) {
+	err = t.Project.GetSettingsIn(name, v)
+	if err == nil {
+		err = t.File.Local.GetBy(name, v)
+	}
+	return
 }
 
 // GetSettingsWithExt extracts the value from Ext and settings stack
@@ -102,7 +106,7 @@ func (t *Target) GetSettingsWithExt(name string, v interface{}) (err error) {
 
 // ProjectPath translate a source relative path to project relative path
 func (t *Target) ProjectPath(path string) string {
-	return RelPath(t.Source, path)
+	return RelPath(t.File.Source, path)
 }
 
 // WorkingDir returns the project relative working dir for executing the target
@@ -165,7 +169,7 @@ func (t *Target) BuildWatchList() (list WatchList) {
 // Add adds a target to name map
 func (m TargetNameMap) Add(t *Target) error {
 	if target, exists := m[t.Name]; exists {
-		return t.Errorf("target name duplicated in %s", target.Source)
+		return t.Errorf("target name duplicated in %s", target.File.Source)
 	}
 	m[t.Name] = t
 	return nil
@@ -240,10 +244,29 @@ func (m TargetNameMap) resolveDeps(t *Target,
 		for _, dep := range allDeps[t.Name] {
 			if dep.Name == t.Name {
 				errs.Add(t.Errorf("cyclic dependency %s(%s)",
-					dep.Name, dep.Source))
+					dep.Name, dep.File.Source))
 			}
 		}
 	}
+}
+
+// Get maps settings into provided variable
+func (s Settings) Get(v interface{}) error {
+	if s != nil {
+		return mapper.Map(v, s)
+	}
+	return nil
+}
+
+// GetBy maps settings into provided variable by specified key
+func (s Settings) GetBy(name string, v interface{}) error {
+	if s == nil {
+		return nil
+	}
+	if val, exists := s[name]; exists {
+		return mapper.Map(v, val)
+	}
+	return nil
 }
 
 // Merge merges settings s1 into s

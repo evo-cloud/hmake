@@ -43,6 +43,8 @@ type File struct {
 	Targets map[string]*Target `json:"targets"`
 	// Settings are properties
 	Settings Settings `json:"settings"`
+	// Local are properties only applied to file
+	Local Settings `json:"local"`
 	// Includes are patterns for sourcing external files
 	Includes []string `json:"includes"`
 
@@ -213,7 +215,7 @@ func (f *File) Merge(s *File) error {
 	for name, t := range s.Targets {
 		if target, exist := f.Targets[name]; exist {
 			errs.Add(fmt.Errorf("duplicated target %s defined in %s and %s",
-				name, target.Source, t.Source))
+				name, target.File.Source, s.Source))
 		} else {
 			f.Targets[name] = t
 		}
@@ -251,7 +253,7 @@ func (p *Project) Load(path string) (*File, error) {
 		return nil, err
 	}
 	for _, t := range f.Targets {
-		t.Source = f.Source
+		t.File = f
 	}
 	p.Files = append(p.Files, f)
 	if err = p.MasterFile.Merge(f); err != nil {
@@ -360,21 +362,12 @@ func (p *Project) TargetNames() []string {
 
 // GetSettings maps settings into provided variable
 func (p *Project) GetSettings(v interface{}) error {
-	if p.MasterFile.Settings != nil {
-		return mapper.Map(v, p.MasterFile.Settings)
-	}
-	return nil
+	return p.MasterFile.Settings.Get(v)
 }
 
 // GetSettingsIn maps settings[name] into provided variable
 func (p *Project) GetSettingsIn(name string, v interface{}) error {
-	if p.MasterFile.Settings == nil {
-		return nil
-	}
-	if val, exists := p.MasterFile.Settings[name]; exists {
-		return mapper.Map(v, val)
-	}
-	return nil
+	return p.MasterFile.Settings.GetBy(name, v)
 }
 
 // MergeSettingsFlat merges settings from a flat key/value map

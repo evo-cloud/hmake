@@ -50,6 +50,7 @@ func Runner(task *hm.Task) (hm.TaskResult, error) {
 type testSetting struct {
 	TopLevel  string `json:"toplevel"`
 	TopLevel1 string `json:"toplevel1"`
+	Local1    string `json:"local1"`
 	Dict      struct {
 		Key  string `json:"key"`
 		Key1 string `json:"key1"`
@@ -233,7 +234,7 @@ var _ = Describe("HyperMake", func() {
 			Expect(proj.Targets).NotTo(BeEmpty())
 			t := proj.Targets["t0"]
 			Expect(t).NotTo(BeNil())
-			Expect(t.Source).To(Equal("subproject/subproj.hmake"))
+			Expect(t.File.Source).To(Equal("subproject/subproj.hmake"))
 			Expect(t.WorkingDir()).To(Equal("subproject/subdir"))
 
 			set := &testSetting{}
@@ -244,10 +245,19 @@ var _ = Describe("HyperMake", func() {
 			Expect(t.GetSettings("t0", set)).Should(Succeed())
 			Expect(set.TopLevel).To(Equal("project0"))
 			Expect(set.TopLevel1).To(Equal("subproj"))
+			Expect(set.Local1).To(Equal("subproj"))
 			set = &testSetting{}
 			Expect(t.GetSettingsWithExt("t0", set)).Should(Succeed())
 			Expect(set.TopLevel).To(Equal("project0"))
 			Expect(set.TopLevel1).To(Equal("t0"))
+			Expect(set.Local1).To(Equal("subproj"))
+
+			t = proj.Targets["t"]
+			set = &testSetting{}
+			Expect(t.GetSettings("t0", set)).Should(Succeed())
+			Expect(set.TopLevel).To(Equal("project0"))
+			Expect(set.TopLevel1).To(Equal("subproj"))
+			Expect(set.Local1).To(BeEmpty())
 		})
 
 		Describe("WatchList", func() {

@@ -13,3 +13,7 @@ targets:
 settings:
   t0:
     toplevel1: subproj
+
+local:
+  t0:
+    local1: subproj
