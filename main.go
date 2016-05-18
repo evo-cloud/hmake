@@ -200,14 +200,19 @@ func (c *makeCmd) Execute(args []string) (err error) {
 	plan := p.Plan()
 	plan.Env["HMAKE_VERSION"] = Version
 	plan.OnEvent(c.onEvent)
-	plan.Rebuild(c.Rebuild...)
-	plan.Skip(c.Skip...)
+	errs := &errors.AggregatedError{}
+	plan.Rebuild(p.Targets.CompleteNames(c.Rebuild, errs)...)
+	plan.Skip(p.Targets.CompleteNames(c.Skip, errs)...)
+	requires := p.Targets.CompleteNames(args, errs)
+	if err = errs.Aggregate(); err != nil {
+		return
+	}
 	plan.RebuildAll = c.RebuildAll
 	plan.MaxConcurrency = c.Parallel
 	plan.DebugLog = c.Debug
 	plan.DryRun = c.DryRun
 
-	if err = plan.Require(args...); err != nil {
+	if err = plan.Require(requires...); err != nil {
 		return
 	}
 
