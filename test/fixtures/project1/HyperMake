@@ -30,4 +30,5 @@ targets:
   t3.3:
     after: [t2]
   all:
-    after: [t3.0, t3.1, t3.2, t3.3]
+    after:
+      - 't3*'

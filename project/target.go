@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -175,12 +176,56 @@ func (m TargetNameMap) Add(t *Target) error {
 	return nil
 }
 
+// CompleteName resolve pattern as a single name
+func (m TargetNameMap) CompleteName(name string) ([]string, error) {
+	var out []string
+	if strings.HasPrefix(name, "/") {
+		if len(name) <= 1 || !strings.HasSuffix(name, "/") {
+			return nil, fmt.Errorf("incomplete regexp: %s", name)
+		}
+		rexStr := name[1 : len(name)-1]
+		rex, err := regexp.Compile(rexStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid regexp: %s: %v", rexStr, err)
+		}
+		for n := range m {
+			if rex.MatchString(n) {
+				out = append(out, n)
+			}
+		}
+	} else if strings.ContainsAny(name, "*?\\[") {
+		for n := range m {
+			if match, err := filepath.Match(name, n); err != nil {
+				return nil, fmt.Errorf("malformed pattern: %s: %v", name, err)
+			} else if match {
+				out = append(out, n)
+			}
+		}
+	} else {
+		out = append(out, name)
+	}
+	return out, nil
+}
+
+// CompleteNames resolves pattern in name list
+func (m TargetNameMap) CompleteNames(in []string, errs *errors.AggregatedError) (out []string) {
+	for _, name := range in {
+		completed, err := m.CompleteName(name)
+		if errs.Add(err) {
+			continue
+		}
+		out = append(out, completed...)
+	}
+	return
+}
+
 // BuildDeps builds direct depends and activates
 func (m TargetNameMap) BuildDeps() error {
 	errs := &errors.AggregatedError{}
 	for _, t := range m {
+		names := m.CompleteNames(t.Before, errs)
 		// convert before to after in target
-		for _, name := range t.Before {
+		for _, name := range names {
 			dest, ok := m[name]
 			if !ok {
 				errs.Add(t.Errorf("before %s which is not defined", name))
@@ -188,8 +233,9 @@ func (m TargetNameMap) BuildDeps() error {
 				dest.AddDep(t)
 			}
 		}
+		names = m.CompleteNames(t.After, errs)
 		// add depends for all after
-		for _, name := range t.After {
+		for _, name := range names {
 			dest, ok := m[name]
 			if !ok {
 				errs.Add(t.Errorf("after %s which is not defined", name))

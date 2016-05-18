@@ -140,6 +140,26 @@ var _ = Describe("HyperMake", func() {
 			Expect(proj.TargetNames()).To(Equal([]string{"t0", "t1", "t2", "t3"}))
 		})
 
+		It("matches target names", func() {
+			proj, err := hm.LoadProjectFrom(Fixtures("project1"))
+			Expect(err).Should(Succeed())
+			names, err := proj.TargetNamesMatch("t?")
+			Expect(err).Should(Succeed())
+			Expect(names).To(Equal([]string{"t0", "t2"}))
+			names, err = proj.TargetNamesMatch("t3*")
+			Expect(err).Should(Succeed())
+			Expect(names).To(Equal([]string{"t3.0", "t3.1", "t3.2", "t3.3"}))
+			names, err = proj.TargetNamesMatch(`/[^\.]+\.[^\.]+/`)
+			Expect(err).Should(Succeed())
+			Expect(names).To(Equal([]string{"t1.0", "t1.1", "t3.0", "t3.1", "t3.2", "t3.3"}))
+			_, err = proj.TargetNamesMatch("t[")
+			Expect(err).To(HaveOccurred())
+			_, err = proj.TargetNamesMatch("/.")
+			Expect(err).To(HaveOccurred())
+			_, err = proj.TargetNamesMatch("/[./")
+			Expect(err).To(HaveOccurred())
+		})
+
 		It("includes", func() {
 			proj := LoadProject(Samples(), "includes.hmake")
 			Expect(proj.Files).Should(HaveLen(6))

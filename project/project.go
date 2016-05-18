@@ -360,6 +360,15 @@ func (p *Project) TargetNames() []string {
 	return targets
 }
 
+// TargetNamesMatch returns sorted and matched target names
+func (p *Project) TargetNamesMatch(pattern string) (names []string, err error) {
+	names, err = p.Targets.CompleteName(pattern)
+	if err == nil {
+		sort.Strings(names)
+	}
+	return
+}
+
 // GetSettings maps settings into provided variable
 func (p *Project) GetSettings(v interface{}) error {
 	return p.MasterFile.Settings.Get(v)
