@@ -45,7 +45,7 @@ brew install hmake
 #### Download from Github release page
 
 ```
-curl -s https://github.com/evo-cloud/hmake/releases/download/v1.0.0rc2/hmake-1.0.0rc2-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
+curl -s https://github.com/evo-cloud/hmake/releases/download/v1.0.0rc3/hmake-1.0.0rc3-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 chmod a+rx /usr/local/bin/hmake
 ```
 
@@ -209,6 +209,10 @@ settings:
         image: hmake-builder:latest
         src-volume: /go/src/github.com/evo-cloud/hmake
 
+# same as settings, but only apply to targets in the same file
+local:
+    key: value
+
 includes:
     - build/**/**/*.hmake
 ```
@@ -227,6 +231,18 @@ In most cases, `after` is enough in a single file.
 
 In `includes` section, specify files to be included.
 The files included can provide more targets and also override settings.
+
+Any path used in `HyperMake` or `*.hmake` files are relative to current file.
+When a target gets executed, the default working directory is where the file
+defining the target exists.
+
+#### Matching targets names with wildcards
+
+The places (`before`, `after`, `-r`, `-S`, command line targets, etc) requiring
+target names accept wildcards:
+
+- Wildcards used in file names: `*`, `?`, `\` and `[chars]`, they are matched using `filepath.Match`
+- Regular Expression: the name starts and ends with `/`
 
 #### Pre-defined Environment Variables
 
