@@ -29,6 +29,14 @@ type Runner struct {
 
 	Build             string   `json:"build"`
 	BuildFrom         string   `json:"build-from"`
+	BuildArgs         []string `json:"build-args"`
+	Tags              []string `json:"tags"`
+	Labels            []string `json:"labels"`
+	LabelFiles        []string `json:"label-files"`
+	ForceRm           bool     `json:"force-rm"`
+	Pull              bool     `json:"pull"`
+	Cache             *bool    `json:"cache"`
+	ContentTrust      *bool    `json:"content-trust"`
 	Image             string   `json:"image"`
 	SrcVolume         string   `json:"src-volume"`
 	ExposeDocker      bool     `json:"expose-docker"`
@@ -63,6 +71,7 @@ type Runner struct {
 	MemoryReservation string   `json:"memory-reservation"`
 	MemorySwappiness  *int     `json:"memory-swappiness"`
 	ShmSize           string   `json:"shm-size"`
+	ULimit            []string `json:"ulimit"`
 
 	projectDir string
 }
@@ -154,6 +163,46 @@ func (r *Runner) removeContainer() {
 	}
 }
 
+func (r *Runner) commonOpts(args []string) []string {
+	if r.CPUShares != nil {
+		args = append(args, "--cpu-shares", strconv.Itoa(*r.CPUShares))
+	}
+	if r.CPUPeriod != nil {
+		args = append(args, "--cpu-period", strconv.Itoa(*r.CPUPeriod))
+	}
+	if r.CPUQuota != nil {
+		args = append(args, "--cpu-quota", strconv.Itoa(*r.CPUQuota))
+	}
+	if r.CPUSetCPUs != "" {
+		args = append(args, "--cpuset-cpus", r.CPUSetCPUs)
+	}
+	if r.CPUSetMems != "" {
+		args = append(args, "--cpuset-mems", r.CPUSetMems)
+	}
+	if r.Memory != "" {
+		args = append(args, "-m", r.Memory)
+	}
+	if r.MemorySwap != "" {
+		args = append(args, "--memory-swap", r.MemorySwap)
+	}
+	if r.ShmSize != "" {
+		args = append(args, "--shm-size", r.ShmSize)
+	}
+	for _, lim := range r.ULimit {
+		args = append(args, "--ulimit", lim)
+	}
+	for _, label := range r.Labels {
+		args = append(args, "--label", label)
+	}
+	for _, labelFile := range r.LabelFiles {
+		args = append(args, "--label-file", labelFile)
+	}
+	if r.ContentTrust != nil && !*r.ContentTrust {
+		args = append(args, "--disable-content-trust")
+	}
+	return args
+}
+
 // Run implements Runner
 func (r *Runner) Run(sigCh <-chan os.Signal) (result hm.TaskResult, err error) {
 	result = hm.Success
@@ -174,6 +223,24 @@ func (r *Runner) Run(sigCh <-chan os.Signal) (result hm.TaskResult, err error) {
 
 func (r *Runner) build(sigCh <-chan os.Signal) error {
 	dockerCmd := []string{"build", "-t", r.Image}
+
+	for _, arg := range r.BuildArgs {
+		dockerCmd = append(dockerCmd, "--build-arg", arg)
+	}
+	for _, tag := range r.Tags {
+		dockerCmd = append(dockerCmd, "-t", tag)
+	}
+	if r.ForceRm {
+		dockerCmd = append(dockerCmd, "--force-rm")
+	}
+	if r.Pull {
+		dockerCmd = append(dockerCmd, "--pull")
+	}
+	if r.Cache != nil && !*r.Cache {
+		dockerCmd = append(dockerCmd, "--no-cache")
+	}
+
+	dockerCmd = r.commonOpts(dockerCmd)
 
 	dockerFile := r.Task.WorkingDir(r.Build)
 	buildFrom := r.BuildFrom
@@ -306,38 +373,17 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 	for _, iops := range r.DevWriteIops {
 		dockerRun = append(dockerRun, "--device-write-iops", iops)
 	}
-	if r.CPUShares != nil {
-		dockerRun = append(dockerRun, "-c", strconv.Itoa(*r.CPUShares))
-	}
-	if r.CPUPeriod != nil {
-		dockerRun = append(dockerRun, "--cpu-period", strconv.Itoa(*r.CPUPeriod))
-	}
-	if r.CPUQuota != nil {
-		dockerRun = append(dockerRun, "--cpu-quota", strconv.Itoa(*r.CPUQuota))
-	}
-	if r.CPUSetCPUs != "" {
-		dockerRun = append(dockerRun, "--cpuset-cpus", r.CPUSetCPUs)
-	}
-	if r.CPUSetMems != "" {
-		dockerRun = append(dockerRun, "--cpuset-mems", r.CPUSetMems)
-	}
+
+	dockerRun = r.commonOpts(dockerRun)
+
 	if r.KernelMemory != "" {
 		dockerRun = append(dockerRun, "--kernel-memory", r.KernelMemory)
-	}
-	if r.Memory != "" {
-		dockerRun = append(dockerRun, "-m", r.Memory)
-	}
-	if r.MemorySwap != "" {
-		dockerRun = append(dockerRun, "--memory-swap", r.MemorySwap)
 	}
 	if r.MemorySwappiness != nil {
 		dockerRun = append(dockerRun, "--memory-swappiness", strconv.Itoa(*r.MemorySwappiness))
 	}
 	if r.MemoryReservation != "" {
 		dockerRun = append(dockerRun, "--memory-reservation", r.MemoryReservation)
-	}
-	if r.ShmSize != "" {
-		dockerRun = append(dockerRun, "--shm-size", r.ShmSize)
 	}
 
 	dockerRun = append(dockerRun, r.Image)

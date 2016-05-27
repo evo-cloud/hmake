@@ -309,8 +309,12 @@ The following properties are supported in additional to `script` and `cmds`:
    It's strongly recommended to put `Dockerfile` and any related files to `watches` list.
 - `build-from`: the build path for `docker build`.
   Without this property, the build path is derived from path of `Dockerfile` specified in `build`.
+- `build-args`: list of args, corresponding to `docker build` option.
 - `image`: with `build` it's the image name and tag to build,
   without `build`, it's the image used to create the container.
+- `tags`: a list of tags in addition to `image` when do `docker build`.
+- `cache`: only used to specify `false` which adds `--no-cache` to `docker build`.
+- `content-trust`: only used to specify `false` which adds `--disable-content-trust` to `docker build/run`
 - `src-volume`: the full path inside container where project root is mapped to.
   Default is `/root/src`.
 - `expose-docker`: when set `true`, expose the host docker server connectivity into container to allow
@@ -326,7 +330,7 @@ The following properties are supported in additional to `script` and `cmds`:
 - `groups`: explicitly specify group IDs to pass into container, instead of passing all of them.
 - `volumes`: a list of volume mappings passed to `-v` option of `docker run`.
 
-The following properties maps to `docker run` options:
+The following properties maps to `docker build/run` options:
 
 - `cap-add`, `cap-drop`
 - `devices`
@@ -336,6 +340,9 @@ The following properties maps to `docker run` options:
 - `device-read-bps`, `device-write-bps`, `device-read-iops`, `device-write-iops`
 - `cpu-shares`, `cpu-period`, `cpu-quota`, `cpuset-cpus`, `cpuset-mems`
 - `kernel-memory`, `memory`, `memory-swap`, `memory-swappiness`, `shm-size`
+- `ulimit`
+- `labels`, `label-files`
+- `pull`, `force-rm`
 
 All above properties can also be specified in global `settings` under `docker` section:
 
