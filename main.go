@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
 	"time"
@@ -21,7 +22,7 @@ import (
 
 	"github.com/evo-cloud/hmake/docker"
 	hm "github.com/evo-cloud/hmake/project"
-	_ "github.com/evo-cloud/hmake/shell"
+	sh "github.com/evo-cloud/hmake/shell"
 )
 
 const (
@@ -38,18 +39,22 @@ const (
 const (
 	faceGo int = iota
 	faceOK
-	faceErr
 	faceNA
+	faceErr
+	faceAbt
+	faceAbd
 	faceGood
 )
 
 var (
-	facesNormal = []string{"=>", ":)", ":(", ":]", "OK"}
+	facesNormal = []string{"=>", ":)", ":]", ":(", "^C", "!!", "OK"}
 	facesEmoji  = []string{
 		emoji.Emoji(":zap:"),
 		emoji.Emoji(":yum:"),
-		emoji.Emoji(":disappointed:"),
 		emoji.Emoji(":expressionless:"),
+		emoji.Emoji(":disappointed:"),
+		emoji.Emoji(":x:"),
+		emoji.Emoji(":bangbang:"),
 		emoji.Emoji(":sunglasses:"),
 	}
 	faces = facesNormal
@@ -216,7 +221,9 @@ func (c *makeCmd) Execute(args []string) (err error) {
 		return
 	}
 
-	err = plan.Execute()
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt)
+	err = plan.Execute(ch)
 	if c.Summary {
 		c.showSummary(p, plan)
 	}
@@ -287,18 +294,29 @@ func (c *makeCmd) onEvent(event interface{}) {
 		switch e.Task.Result {
 		case hm.Success:
 			c.printTaskState(e.Task, faceOK, term.StyleOK, extra)
-		case hm.Failure:
+		case hm.Skipped:
+			c.printTaskState(e.Task, faceNA, term.StyleLo, "")
+		case hm.Failure, hm.Aborted:
 			c.printTaskState(e.Task, faceErr, term.StyleErr, extra)
 			if !c.Verbose {
 				c.printFailedTaskOutput(e.Task)
 			}
-		case hm.Skipped:
-			c.printTaskState(e.Task, faceNA, term.StyleLo, "")
 		}
 	case *hm.EvtTaskOutput:
 		c.dumpTaskOutput(e.Task, e.Output)
 		if c.Verbose {
 			c.printTaskOutput(e.Task, e.Output)
+		}
+	case *hm.EvtTaskAbort:
+		c.dumpEvent("abort", e.Task)
+		if e.Abandon {
+			c.printTaskState(e.Task, faceAbd, term.StyleErr, "")
+		} else {
+			c.printTaskState(e.Task, faceAbt, term.StyleWarn, "")
+		}
+	case *hm.EvtAbortRequested:
+		if len(e.Tasks) > 0 {
+			c.promptAbort(e.Abandon)
 		}
 	}
 }
@@ -367,7 +385,7 @@ func (c *makeCmd) printTaskOutput(task *hm.Task, p []byte) {
 }
 
 func (c *makeCmd) printFailedTaskOutput(task *hm.Task) {
-	f, err := os.Open(task.LogFile())
+	f, err := os.Open(sh.LogFile(task))
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	if err != nil {
@@ -378,6 +396,15 @@ func (c *makeCmd) printFailedTaskOutput(task *hm.Task) {
 	out := term.NewPrinter(term.Std).Styles(term.StyleErr)
 	io.Copy(out, f)
 	out.Println()
+}
+
+func (c *makeCmd) promptAbort(abandon bool) {
+	out := term.NewPrinter(term.Std)
+	if abandon {
+		out.Styles(term.StyleErr).Println("Running targets abandoned!")
+	} else {
+		out.Styles(term.StyleWarn).Println("Ctrl-C again to terminate immediately.")
+	}
 }
 
 func (c *makeCmd) dumpEvent(event string, task *hm.Task) {
@@ -392,8 +419,10 @@ func (c *makeCmd) dumpEvent(event string, task *hm.Task) {
 	if task.State >= hm.Running {
 		e["start-at"] = task.StartTime
 	}
-	if task.State >= hm.Finished {
+	if task.State >= hm.Abadoned {
 		e["result"] = task.Result.String()
+	}
+	if task.State >= hm.Finished {
 		e["finish-at"] = task.FinishTime
 	}
 
@@ -444,10 +473,10 @@ func resultStyler(class, text string, data interface{}) string {
 		switch text {
 		case hm.Success.String():
 			return stylerPrint(text, term.StyleOK)
-		case hm.Failure.String():
-			return stylerPrint(text, term.StyleErr)
 		case hm.Skipped.String():
 			return stylerPrint(text, term.StyleLo)
+		case hm.Failure.String(), hm.Aborted.String():
+			return stylerPrint(text, term.StyleErr)
 		default:
 			return text
 		}

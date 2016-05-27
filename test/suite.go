@@ -14,6 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	hm "github.com/evo-cloud/hmake/project"
+	sh "github.com/evo-cloud/hmake/shell"
 )
 
 // Test environment related
@@ -42,8 +43,16 @@ func LoadProject(base, file string) *hm.Project {
 	return proj
 }
 
-// Runner is the test exec-driver
-func Runner(task *hm.Task) (hm.TaskResult, error) {
+type testRunner struct {
+	task *hm.Task
+	run  func(task *hm.Task) (hm.TaskResult, error)
+}
+
+// Run implements Runner
+func (r *testRunner) Run(sigCh <-chan os.Signal) (hm.TaskResult, error) {
+	if r.run != nil {
+		return r.run(r.task)
+	}
 	return hm.Success, nil
 }
 
@@ -69,9 +78,6 @@ var _ = BeforeSuite(func() {
 	TestDir = filepath.Join(ProjectDir, "test")
 	FixturesDir = filepath.Join(TestDir, "fixtures")
 	Expect(FixturesDir).To(BeADirectory())
-
-	hm.DefaultExecDriver = "test"
-	hm.RegisterExecDriver("test", Runner)
 })
 
 var _ = Describe("HyperMake", func() {
@@ -328,11 +334,12 @@ var _ = Describe("HyperMake", func() {
 			plan.DebugLog = true
 			execCh := make(chan string)
 			plan.RunnerFactory = func(task *hm.Task) (hm.Runner, error) {
-				runner, err := task.Runner()
-				Expect(err).Should(Succeed())
-				return func(task *hm.Task) (hm.TaskResult, error) {
-					execCh <- task.Name()
-					return runner(task)
+				return &testRunner{
+					task: task,
+					run: func(task *hm.Task) (hm.TaskResult, error) {
+						execCh <- task.Name()
+						return hm.Success, nil
+					},
 				}, nil
 			}
 			for _, t := range targets {
@@ -358,7 +365,7 @@ var _ = Describe("HyperMake", func() {
 				}
 				wg.Done()
 			}()
-			Expect(plan.Execute()).Should(Succeed())
+			Expect(plan.Execute(nil)).Should(Succeed())
 			close(execCh)
 			wg.Wait()
 			return
@@ -440,11 +447,14 @@ var _ = Describe("HyperMake", func() {
 			Expect(err).Should(Succeed())
 			plan := proj.Plan()
 			plan.RunnerFactory = func(task *hm.Task) (hm.Runner, error) {
-				return func(task *hm.Task) (hm.TaskResult, error) {
-					if _, exists := taskFails[task.Name()]; exists {
-						return hm.Failure, nil
-					}
-					return hm.Success, nil
+				return &testRunner{
+					task: task,
+					run: func(task *hm.Task) (hm.TaskResult, error) {
+						if _, exists := taskFails[task.Name()]; exists {
+							return hm.Failure, nil
+						}
+						return hm.Success, nil
+					},
 				}, nil
 			}
 			plan.Require("all")
@@ -454,7 +464,7 @@ var _ = Describe("HyperMake", func() {
 					taskResults[evt.Task.Name()] = evt.Task.Result
 				}
 			})
-			Expect(plan.Execute()).ShouldNot(Succeed())
+			Expect(plan.Execute(nil)).ShouldNot(Succeed())
 			Expect(taskResults).Should(HaveLen(4))
 			Expect(taskResults["t0"]).To(Equal(hm.Skipped))
 			Expect(taskResults["t1.0"]).To(Equal(hm.Skipped))
@@ -481,23 +491,51 @@ var _ = Describe("HyperMake", func() {
 			plan.Require("all", "t2", "t3.0")
 			os.MkdirAll(plan.WorkPath, 0755)
 			task := plan.Tasks["all"]
-			Expect(task.ScriptFile()).To(Equal(Fixtures("project1", hm.WorkFolder, "all.script")))
-			Expect(task.LogFile()).To(Equal(Fixtures("project1", hm.WorkFolder, "all.log")))
+			Expect(sh.ScriptFile(task)).To(Equal(Fixtures("project1", hm.WorkFolder, "all.script")))
+			Expect(sh.LogFile(task)).To(Equal(Fixtures("project1", hm.WorkFolder, "all.log")))
 			task = plan.Tasks["t3.0"]
-			script, err := task.BuildScriptFile()
+			script, err := sh.BuildScriptFile(task)
 			Expect(err).Should(Succeed())
 			Expect(script).To(Equal("#!/usr/bin/interpreter"))
 			fileContent, err := ioutil.ReadFile(Fixtures("project1", hm.WorkFolder, "t3.0.script"))
 			Expect(err).Should(Succeed())
 			Expect(string(fileContent)).To(Equal(script))
 			task = plan.Tasks["t2"]
-			script, err = task.BuildScriptFile()
+			script, err = sh.BuildScriptFile(task)
 			Expect(err).Should(Succeed())
 			Expect(script).To(HavePrefix("#!/bin/sh\n"))
-			Expect(task.ExecScript()).Should(Succeed())
+			Expect(sh.ExecScript(task).Run(nil)).Should(Succeed())
 			fileContent, err = ioutil.ReadFile(Fixtures("project1", hm.WorkFolder, "t2.log"))
 			Expect(err).Should(Succeed())
 			Expect(string(fileContent)).To(Equal("hello"))
+		})
+
+		It("terminates the running targets", func() {
+			proj, err := hm.LoadProjectFrom(Fixtures("project-abort"))
+			Expect(err).Should(Succeed())
+			plan := proj.Plan()
+			plan.Require("abort0")
+			os.MkdirAll(plan.WorkPath, 0755)
+
+			t := plan.Tasks["abort0"]
+			Expect(t).NotTo(BeNil())
+			ch := make(chan os.Signal, 2)
+
+			taskResults := make(map[string]hm.TaskResult)
+			plan.OnEvent(func(event interface{}) {
+				switch evt := event.(type) {
+				case *hm.EvtTaskStart:
+					if evt.Task.Name() == "abort0" {
+						go func() {
+							ch <- os.Interrupt
+						}()
+					}
+				case *hm.EvtTaskFinish:
+					taskResults[evt.Task.Name()] = evt.Task.Result
+				}
+			})
+			Expect(plan.Execute(ch)).NotTo(Succeed())
+			Expect(taskResults["abort0"]).To(Equal(hm.Failure))
 		})
 	})
 })

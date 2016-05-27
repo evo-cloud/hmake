@@ -24,8 +24,6 @@ type Target struct {
 	ExecDriver string                 `json:"exec-driver"`
 	WorkDir    string                 `json:"workdir"`
 	Envs       []string               `json:"envs"`
-	Cmds       []*Command             `json:"cmds"`
-	Script     string                 `json:"script"`
 	Watches    []string               `json:"watches"`
 	Ext        map[string]interface{} `json:"*"`
 
@@ -39,12 +37,6 @@ type Target struct {
 
 // TargetNameMap is targets mapping by name
 type TargetNameMap map[string]*Target
-
-// Command defines a single command to execute
-type Command struct {
-	Shell string                 `json:"*"`
-	Ext   map[string]interface{} `json:"*"`
-}
 
 // Settings applies to targets
 type Settings map[string]interface{}

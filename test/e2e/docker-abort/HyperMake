@@ -1,0 +1,8 @@
+---
+format: hypermake.v0
+
+targets:
+  abort0:
+    image: alpine:3.3
+    cmds:
+      - sleep 60

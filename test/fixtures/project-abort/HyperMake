@@ -1,0 +1,11 @@
+---
+format: hypermake.v0
+
+targets:
+  abort0:
+    cmds:
+      - sleep 5
+
+settings:
+  default-targets: [abort0]
+  exec-driver: shell

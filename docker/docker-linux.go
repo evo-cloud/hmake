@@ -8,17 +8,17 @@ const (
 	dockerSockPath = "/var/run/docker.sock"
 )
 
-func (c *dockerConfig) exposeDocker(r *dockerRunner) {
-	c.exposeDockerEnv()
+func (r *Runner) exposeDocker() {
+	r.exposeDockerEnv()
 	if os.Getenv("DOCKER_HOST") == "" {
 		sockPath := dockerSockPath
-		if r.task.Target.Ext != nil {
-			serverSock, ok := r.task.Target.Ext["server-socket"].(string)
+		if r.Task.Target.Ext != nil {
+			serverSock, ok := r.Task.Target.Ext["server-socket"].(string)
 			if ok && serverSock != "" {
 				sockPath = serverSock
 			}
 		}
-		c.Volumes = append(c.Volumes, sockPath+":"+sockPath)
+		r.Volumes = append(r.Volumes, sockPath+":"+sockPath)
 	}
 }
 

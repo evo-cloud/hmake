@@ -253,6 +253,7 @@ target names accept wildcards:
 - `HMAKE_LAUNCH_PATH`: the relative path under `$HMAKE_PROJECT_DIR` where `hmake` launches
 - `HMAKE_REQUIRED_TARGETS`: the names of targets explicitly required from command line, separate by space
 - `HMAKE_TARGET`: the name of the target currently in execution
+- `HMAKE_TARGET_DIR`: the relative path to directory containing the file which defines the target
 - `HMAKE_VERSION`: version of _hmake_
 - `HMAKE_OS`: operating system
 - `HMAKE_ARCH`: CPU architecture

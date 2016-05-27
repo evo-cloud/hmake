@@ -3,11 +3,9 @@ package project
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -58,7 +56,7 @@ type ExecPlan struct {
 	// Summary is the report of all executed targets
 	Summary []map[string]interface{}
 
-	finishCh chan *Task
+	finishCh chan completion
 	logger   *log.Logger
 }
 
@@ -80,10 +78,23 @@ type EvtTaskActivated struct {
 	Task *Task
 }
 
+// EvtTaskAbort is emitted when task is being aborted
+type EvtTaskAbort struct {
+	Task    *Task
+	Abandon bool
+	Signal  os.Signal
+}
+
 // EvtTaskOutput is emitted when output is received
 type EvtTaskOutput struct {
 	Task   *Task
 	Output []byte
+}
+
+// EvtAbortRequested is emitted when abort is requested over all running tasks
+type EvtAbortRequested struct {
+	Tasks   []*Task
+	Abandon bool
 }
 
 // Task is the execution state of a target
@@ -108,6 +119,7 @@ type Task struct {
 
 	alwaysBuild   bool
 	currentDigest string
+	sigCh         chan os.Signal
 }
 
 // TaskResult indicates the result of task execution
@@ -117,8 +129,9 @@ type TaskResult int
 const (
 	Unknown TaskResult = iota
 	Success
-	Failure
 	Skipped
+	Failure
+	Aborted
 )
 
 func (r TaskResult) String() string {
@@ -127,12 +140,19 @@ func (r TaskResult) String() string {
 		return ""
 	case Success:
 		return "Success"
-	case Failure:
-		return "Failure"
 	case Skipped:
 		return "Skipped"
+	case Failure:
+		return "Failure"
+	case Aborted:
+		return "Aborted"
 	}
 	panic("invalid TaskResult " + strconv.Itoa(int(r)))
+}
+
+// IsOK indicates the result is positive Success/Skipped
+func (r TaskResult) IsOK() bool {
+	return r == Success || r == Skipped
 }
 
 // TaskState indicates the state of task
@@ -143,6 +163,7 @@ const (
 	Waiting TaskState = iota
 	Queued
 	Running
+	Abadoned
 	Finished
 )
 
@@ -156,12 +177,16 @@ func (r TaskState) String() string {
 		return "Running"
 	case Finished:
 		return "Finished"
+	case Abadoned:
+		return "Abadoned"
 	}
 	panic("invalid TaskState " + strconv.Itoa(int(r)))
 }
 
 // Runner is the handler execute a target
-type Runner func(*Task) (TaskResult, error)
+type Runner interface {
+	Run(<-chan os.Signal) (TaskResult, error)
+}
 
 // RunnerFactory creates a runner from a task
 type RunnerFactory func(*Task) (Runner, error)
@@ -175,12 +200,12 @@ var (
 	// DefaultExecDriver specify the default exec-driver to use
 	DefaultExecDriver string
 
-	runners = make(map[string]Runner)
+	drivers = make(map[string]RunnerFactory)
 )
 
 // RegisterExecDriver registers a runner
-func RegisterExecDriver(name string, runner Runner) {
-	runners[name] = runner
+func RegisterExecDriver(name string, factory RunnerFactory) {
+	drivers[name] = factory
 }
 
 // NewExecPlan creates an ExecPlan for a Project
@@ -268,8 +293,13 @@ func (p *ExecPlan) AddTarget(t *Target) (*Task, bool) {
 	return task, !exists
 }
 
+// Logf writes log to debug log file
+func (p *ExecPlan) Logf(fmt string, args ...interface{}) {
+	p.logger.Printf(fmt+"\n", args...)
+}
+
 // Execute start execution
-func (p *ExecPlan) Execute() error {
+func (p *ExecPlan) Execute(abortCh <-chan os.Signal) error {
 	p.Env["HMAKE_REQUIRED_TARGETS"] = strings.Join(p.RequiredTargets, " ")
 
 	// DryRun should not make any changes
@@ -288,8 +318,7 @@ func (p *ExecPlan) Execute() error {
 		}
 	}
 
-	errs := &errors.AggregatedError{}
-	p.finishCh = make(chan *Task)
+	p.finishCh = make(chan completion)
 	p.RunningTasks = make(map[string]*Task)
 
 	concurrency := p.MaxConcurrency
@@ -297,40 +326,71 @@ func (p *ExecPlan) Execute() error {
 		concurrency = runtime.NumCPU()
 	}
 
-	p.logger.Printf("RebuildAll = %v\n", p.RebuildAll)
-	p.logger.Printf("Rebuild = %v\n", p.RebuildTargets)
-	p.logger.Printf("Concurrency = %v\n", concurrency)
+	p.Logf("RebuildAll = %v", p.RebuildAll)
+	p.Logf("Rebuild = %v", p.RebuildTargets)
+	p.Logf("Concurrency = %v", concurrency)
 
 	for _, task := range p.QueuedTasks {
-		p.logger.Printf("Activate %s\n", task.Name())
+		p.Logf("Activate %s", task.Name())
 		p.emit(&EvtTaskActivated{Task: task})
 	}
 
-	for {
-		tasks := p.dequeueTasks(concurrency)
-		if len(tasks) > 0 {
-			runningCount := len(p.RunningTasks)
-			for _, task := range tasks {
-				p.startTask(task, errs)
+	aborting := false
+	stopping := false
+	for !stopping {
+		if !aborting {
+			tasks := p.dequeueTasks(concurrency)
+			if len(tasks) > 0 {
+				runningCount := len(p.RunningTasks)
+				for _, task := range tasks {
+					p.startTask(task)
+				}
+				if len(p.RunningTasks) < runningCount+len(tasks) {
+					// not all tasks pushed to runningTasks
+					// means some tasks are skipped or failed immediately, thus
+					// other tasks may be activated, need to dequeue again
+					continue
+				}
 			}
-			if len(p.RunningTasks) < runningCount+len(tasks) {
-				// not all tasks pushed to runningTasks
-				// means some tasks are skipped or failed immediately, thus
-				// other tasks may be activated, need to dequeue again
-				continue
-			}
-		} else if len(p.RunningTasks) == 0 {
+		}
+
+		if len(p.RunningTasks) == 0 {
 			// nothing to run
 			break
 		}
 
-		if len(p.RunningTasks) > 0 {
-			p.finishTask(<-p.finishCh, errs)
+		select {
+		case c := <-p.finishCh:
+			c.commit()
+		case signal, ok := <-abortCh:
+			if !ok {
+				aborting = true
+			}
+			p.abortTasks(aborting, signal)
+			if aborting {
+				// abort immediately
+				stopping = true
+			}
+			aborting = true
 		}
 	}
 
 	p.GenerateSummary()
 
+	errs := &errors.AggregatedError{}
+	for _, t := range p.FinishedTasks {
+		if t.Error != nil {
+			errs.Add(t.Error)
+		} else if !t.Result.IsOK() {
+			errs.Add(t.Target.Errorf("failed"))
+		}
+	}
+	for _, t := range p.RunningTasks {
+		errs.Add(t.Target.Errorf("abandoned"))
+	}
+	if len(p.RunningTasks)+len(p.QueuedTasks)+len(p.WaitingTasks) > 0 {
+		errs.Add(fmt.Errorf("execution incomplete"))
+	}
 	return errs.Aggregate()
 }
 
@@ -351,11 +411,11 @@ func (p *ExecPlan) GenerateSummary() (err error) {
 	}
 	p.Summary = sum
 	encoded, _ := json.Marshal(sum)
-	p.logger.Printf("Summary\n%s\n", string(encoded))
+	p.Logf("Summary\n%s", string(encoded))
 	if !p.DryRun {
 		err = ioutil.WriteFile(p.Project.SummaryFile(), encoded, 0644)
 		if err != nil {
-			p.logger.Printf("Write summary failed: %v\n", err)
+			p.Logf("Write summary failed: %v", err)
 		}
 	}
 	return err
@@ -386,8 +446,8 @@ func (p *ExecPlan) emit(event interface{}) {
 	}
 }
 
-func (p *ExecPlan) startTask(task *Task, errs *errors.AggregatedError) {
-	p.logger.Printf("Start %s\n", task.Name())
+func (p *ExecPlan) startTask(task *Task) {
+	p.Logf("Start %s", task.Name())
 	task.State = Running
 	p.RunningTasks[task.Name()] = task
 	task.StartTime = time.Now()
@@ -403,7 +463,7 @@ func (p *ExecPlan) startTask(task *Task, errs *errors.AggregatedError) {
 	if skippable {
 		task.Result = Skipped
 		task.FinishTime = task.StartTime
-		p.finishTask(task, errs)
+		p.finishTask(task)
 		return
 	}
 
@@ -414,42 +474,18 @@ func (p *ExecPlan) startTask(task *Task, errs *errors.AggregatedError) {
 		}
 	}
 
-	runner, err := p.runner(task)
-	if err != nil {
-		task.Error = err
-		task.Result = Failure
-		p.finishTask(task, errs)
-	} else {
-		go p.run(task, runner)
-	}
+	task.Run()
 }
 
-func (p *ExecPlan) runner(task *Task) (Runner, error) {
-	if p.RunnerFactory != nil {
-		return p.RunnerFactory(task)
-	}
-	return task.Runner()
-}
-
-func (p *ExecPlan) run(task *Task, runner Runner) {
-	if p.DryRun {
-		task.Result = Success
-	} else {
-		task.Result, task.Error = runner(task)
-	}
-	task.FinishTime = time.Now()
-	p.finishCh <- task
-}
-
-func (p *ExecPlan) finishTask(task *Task, errs *errors.AggregatedError) {
+func (p *ExecPlan) finishTask(task *Task) {
 	if _, exist := p.RunningTasks[task.Name()]; !exist {
 		// task is out-of-date, ignored
-		p.logger.Printf("OUT-OF-DATE %s Result = %s, Err = %v\n",
+		p.Logf("OUT-OF-DATE %s Result = %s, Err = %v",
 			task.Name(), task.Result.String(), task.Error)
 		return
 	}
 
-	p.logger.Printf("Finish %s Result = %s, Err = %v\n",
+	p.Logf("Finish %s Result = %s, Err = %v",
 		task.Name(), task.Result.String(), task.Error)
 
 	// transit to finished state
@@ -459,18 +495,14 @@ func (p *ExecPlan) finishTask(task *Task, errs *errors.AggregatedError) {
 	if !p.DryRun {
 		err := task.BuildSuccessMark()
 		if err != nil {
-			p.logger.Printf("IGNORED: %s BuildSuccessMark Error: %v\n",
+			p.Logf("IGNORED: %s BuildSuccessMark Error: %v",
 				task.Name(), err)
 		}
 	}
 
 	p.emit(&EvtTaskFinish{Task: task})
 
-	errs.Add(task.Error)
-	if task.Result == Failure {
-		if task.Error == nil {
-			errs.Add(task.Target.Errorf("failed"))
-		}
+	if !task.Result.IsOK() {
 		return
 	}
 
@@ -486,15 +518,35 @@ func (p *ExecPlan) finishTask(task *Task, errs *errors.AggregatedError) {
 			delete(p.WaitingTasks, t.Name())
 			t.State = Queued
 			p.QueuedTasks = append(p.QueuedTasks, t)
-			p.logger.Printf("Activate %s", t.Name())
+			p.Logf("Activate %s", t.Name())
 			p.emit(&EvtTaskActivated{Task: t})
 		}
 	}
 }
 
+func (p *ExecPlan) abortTasks(abandon bool, signal os.Signal) {
+	evt := &EvtAbortRequested{Abandon: abandon}
+	for _, t := range p.RunningTasks {
+		if abandon {
+			p.Logf("Abort %s %v(%s) ABANDON", t.Name(), signal, signal.String())
+		} else {
+			p.Logf("Abort %s %v(%s)", t.Name(), signal, signal.String())
+		}
+		p.emit(&EvtTaskAbort{Task: t, Abandon: abandon, Signal: signal})
+		t.Abort(abandon, signal)
+		evt.Tasks = append(evt.Tasks, t)
+	}
+	p.emit(evt)
+}
+
 // NewTask creates a task for a target
 func NewTask(p *ExecPlan, t *Target) *Task {
-	return &Task{Plan: p, Target: t, Depends: make(map[string]*Task)}
+	return &Task{
+		Plan:    p,
+		Target:  t,
+		Depends: make(map[string]*Task),
+		sigCh:   make(chan os.Signal, 2),
+	}
 }
 
 // Name returns the name of wrapped target
@@ -553,9 +605,9 @@ func (t *Task) Summary() map[string]interface{} {
 // checks if the task can be skipped
 func (t *Task) CalcSuccessMark() bool {
 	wl := t.Target.BuildWatchList()
-	t.Plan.logger.Printf("%s WatchList:\n%s", t.Name(), wl.String())
+	t.Plan.Logf("%s WatchList:\n%s", t.Name(), wl.String())
 	t.currentDigest = wl.Digest()
-	t.Plan.logger.Printf("%s Digest: %s\n", t.Name(), t.currentDigest)
+	t.Plan.Logf("%s Digest: %s", t.Name(), t.currentDigest)
 
 	if t.alwaysBuild {
 		return false
@@ -563,11 +615,11 @@ func (t *Task) CalcSuccessMark() bool {
 
 	content, err := ioutil.ReadFile(t.SuccessMarkFile())
 	if err != nil {
-		t.Plan.logger.Printf("%s ExistDigest Error: %v", t.Name(), err)
+		t.Plan.Logf("%s ExistDigest Error: %v", t.Name(), err)
 		return false
 	}
 	prevDigest := strings.TrimSpace(string(content))
-	t.Plan.logger.Printf("%s ExistDigest %s", t.Name(), prevDigest)
+	t.Plan.Logf("%s ExistDigest %s", t.Name(), prevDigest)
 	if prevDigest == "" {
 		return false
 	}
@@ -594,22 +646,58 @@ func (t *Task) BuildSuccessMark() error {
 	return nil
 }
 
-// Runner gets runner according to exec-driver
-func (t *Task) Runner() (Runner, error) {
-	driver := t.Target.ExecDriver
-	if driver == "" {
-		if err := t.Target.GetSettings(SettingExecDriver, &driver); err != nil {
-			return nil, err
+// Run runs the task
+func (t *Task) Run() (result TaskResult, err error) {
+	factory := t.Plan.RunnerFactory
+	if factory == nil {
+		driver := t.Target.ExecDriver
+		if driver == "" {
+			err = t.Target.GetSettings(SettingExecDriver, &driver)
+		}
+		if err == nil {
+			if driver == "" {
+				driver = DefaultExecDriver
+			}
+			factory = drivers[driver]
+		}
+		if factory == nil {
+			err = fmt.Errorf("invalid exec-driver: %s", driver)
 		}
 	}
-	if driver == "" {
-		driver = DefaultExecDriver
+
+	if err == nil {
+		var runner Runner
+		if runner, err = factory(t); err == nil {
+			go func() {
+				var c completion
+				c.task = t
+				if t.Plan.DryRun {
+					c.result = Success
+				} else {
+					c.result, c.err = runner.Run(t.sigCh)
+				}
+				c.finishTime = time.Now()
+				t.Plan.finishCh <- c
+			}()
+		}
 	}
-	runner := runners[driver]
-	if runner == nil {
-		return nil, fmt.Errorf("invalid exec-driver: %s", driver)
+	if err != nil {
+		t.Error = err
+		t.Result = Failure
+		t.Plan.finishTask(t)
+		result = t.Result
 	}
-	return runner, nil
+	return
+}
+
+// Abort terminates a task
+func (t *Task) Abort(abandon bool, signal os.Signal) {
+	t.sigCh <- signal
+	if abandon {
+		t.Result = Aborted
+		t.Error = t.Target.Errorf("aborted")
+		t.State = Abadoned
+	}
 }
 
 // SuccessMarkFile returns the filename of success mark
@@ -617,83 +705,35 @@ func (t *Task) SuccessMarkFile() string {
 	return filepath.Join(t.Plan.WorkPath, t.Name()+".success")
 }
 
-// ScriptFile returns the filename of script
-func (t *Task) ScriptFile() string {
-	return filepath.Join(t.Plan.WorkPath, t.Name()+".script")
-}
-
-// LogFile returns the fullpath to log filename
-func (t *Task) LogFile() string {
-	return filepath.Join(t.Plan.WorkPath, t.Name()+".log")
-}
-
 // WorkingDir is absolute path of working dir to execute the task
 func (t *Task) WorkingDir(dirs ...string) string {
 	return filepath.Join(t.Project().BaseDir, t.Target.WorkingDir(dirs...))
 }
 
-// BuildScript generates script file according to cmds/script in target
-func (t *Task) BuildScript() string {
-	target := t.Target
-	script := target.Script
-	if script == "" && len(target.Cmds) > 0 {
-		lines := make([]string, 0, len(target.Cmds))
-		for _, cmd := range target.Cmds {
-			if cmd == nil || cmd.Shell == "" {
-				continue
-			}
-			lines = append(lines, cmd.Shell)
-		}
-		if len(lines) > 0 {
-			script = "#!/bin/sh\nset -e\n" + strings.Join(lines, "\n") + "\n"
-		}
+// Envs returns task specific envs
+func (t *Task) Envs() []string {
+	return []string{
+		"HMAKE_TARGET=" + t.Name(),
+		"HMAKE_TARGET_DIR=" + t.Target.WorkingDir(),
 	}
-	return script
-}
-
-// WriteScriptFile builds the script file with provided script
-func (t *Task) WriteScriptFile(script string) error {
-	t.Plan.logger.Printf("%s WriteScript:\n%s\n", t.Name(), script)
-	return ioutil.WriteFile(t.ScriptFile(), []byte(script), 0755)
-}
-
-// BuildScriptFile generates the script file using default generated script
-func (t *Task) BuildScriptFile() (string, error) {
-	script := t.BuildScript()
-	return script, t.WriteScriptFile(script)
-}
-
-// Exec executes an external command for a task
-func (t *Task) Exec(command string, args ...string) error {
-	t.Plan.logger.Printf("%s Exec: %s %v\n", t.Name(), command, args)
-	out, err := os.OpenFile(t.LogFile(),
-		syscall.O_WRONLY|syscall.O_CREAT|syscall.O_TRUNC,
-		0644)
-	if err != nil {
-		t.Plan.logger.Printf("%s Exec OpenLog Error: %v\n", t.Name(), err)
-		return err
-	}
-	defer out.Close()
-	w := io.MultiWriter(out, t)
-	cmd := exec.Command(command, args...)
-	cmd.Env = append([]string{}, os.Environ()...)
-	for name, value := range t.Plan.Env {
-		cmd.Env = append(cmd.Env, name+"="+value)
-	}
-	cmd.Env = append(cmd.Env, "HMAKE_TARGET="+t.Name())
-	cmd.Dir = filepath.Join(t.Project().BaseDir, t.Target.WorkingDir())
-	cmd.Stdout = w
-	cmd.Stderr = w
-	return cmd.Run()
-}
-
-// ExecScript executes generated script
-func (t *Task) ExecScript() error {
-	return t.Exec(t.ScriptFile())
 }
 
 // Write implements io.Writer to receive execution output
 func (t *Task) Write(p []byte) (int, error) {
 	t.Plan.emit(&EvtTaskOutput{Task: t, Output: p})
 	return len(p), nil
+}
+
+type completion struct {
+	task       *Task
+	result     TaskResult
+	err        error
+	finishTime time.Time
+}
+
+func (c completion) commit() {
+	c.task.Result = c.result
+	c.task.Error = c.err
+	c.task.FinishTime = c.finishTime
+	c.task.Plan.finishTask(c.task)
 }

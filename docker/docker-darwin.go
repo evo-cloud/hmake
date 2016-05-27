@@ -14,8 +14,8 @@ var (
 	errDockerMachineUnknown = fmt.Errorf("unknown DOCKER_MACHINE_NAME")
 )
 
-func (c *dockerConfig) exposeDocker(*dockerRunner) {
-	c.exposeDockerEnv()
+func (r *Runner) exposeDocker() {
+	r.exposeDockerEnv()
 }
 
 func inspectIds(opt string) (ids []int, err error) {

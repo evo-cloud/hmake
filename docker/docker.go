@@ -1,10 +1,12 @@
 package docker
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 
 	hm "github.com/evo-cloud/hmake/project"
 	"github.com/evo-cloud/hmake/shell"
@@ -21,7 +23,10 @@ const (
 	Dockerfile = "Dockerfile"
 )
 
-type dockerConfig struct {
+// Runner is a docker runner
+type Runner struct {
+	Task *hm.Task `json:"-"`
+
 	Build             string   `json:"build"`
 	BuildFrom         string   `json:"build-from"`
 	Image             string   `json:"image"`
@@ -62,7 +67,7 @@ type dockerConfig struct {
 	projectDir string
 }
 
-func (c *dockerConfig) addEnv(envs ...string) {
+func (r *Runner) addEnv(envs ...string) {
 	for _, env := range envs {
 		if env == "" {
 			continue
@@ -75,103 +80,96 @@ func (c *dockerConfig) addEnv(envs ...string) {
 			name = env
 		}
 		found := false
-		for n, confEnv := range c.Envs {
+		for n, confEnv := range r.Envs {
 			if name == confEnv || strings.HasPrefix(confEnv, name+"=") {
-				c.Envs[n] = env
+				r.Envs[n] = env
 				found = true
 				break
 			}
 		}
 		if !found {
-			c.Envs = append(c.Envs, env)
+			r.Envs = append(r.Envs, env)
 		}
 	}
 }
 
-func (c *dockerConfig) exposeDockerEnv() {
+func (r *Runner) exposeDockerEnv() {
 	if val := os.Getenv("DOCKER_HOST"); val != "" {
-		c.addEnv("DOCKER_HOST=" + val)
+		r.addEnv("DOCKER_HOST=" + val)
 	}
 	if certPath := os.Getenv("DOCKER_CERT_PATH"); certPath != "" {
-		c.addEnv("DOCKER_CERT_PATH=" + certPath)
-		c.Volumes = append(c.Volumes, certPath+":"+certPath)
+		r.addEnv("DOCKER_CERT_PATH=" + certPath)
+		r.Volumes = append(r.Volumes, certPath+":"+certPath)
 	}
 	if val := os.Getenv("DOCKER_TLS_VERIFY"); val != "" {
-		c.addEnv("DOCKER_TLS_VERIFY=" + val)
+		r.addEnv("DOCKER_TLS_VERIFY=" + val)
 	}
 }
 
-type dockerRunner struct {
-	task *hm.Task
+func (r *Runner) cidFile() string {
+	return filepath.Join(r.Task.Plan.WorkPath, r.Task.Name()+".cid")
 }
 
-// Runner wraps docker implementation
-func Runner(task *hm.Task) (hm.TaskResult, error) {
-	r := &dockerRunner{task: task}
-	conf, err := r.loadConfig()
-	if err == nil && conf.Image == "" {
-		// image not present, fallback to shell
-		return shell.Runner(task)
+func (r *Runner) cid() (cid string) {
+	data, err := ioutil.ReadFile(r.cidFile())
+	if err == nil && data != nil {
+		cid = string(data)
 	}
-	if conf.Build != "" {
-		err = r.build(conf)
-	}
-	if err == nil {
-		err = r.run(conf)
-	}
-	if err != nil {
-		return hm.Failure, err
-	}
-	return hm.Success, nil
-}
-
-func (r *dockerRunner) loadConfig() (conf *dockerConfig, err error) {
-	conf = &dockerConfig{}
-
-	if err = r.task.Target.GetSettingsWithExt(SettingName, conf); err != nil {
-		return
-	}
-	if conf.SrcVolume == "" {
-		conf.SrcVolume = DefaultSrcVolume
-	}
-	if conf.ExposeDocker {
-		conf.exposeDocker(r)
-	}
-	conf.addEnv(r.task.Target.Envs...)
-	for name, value := range r.task.Plan.Env {
-		conf.addEnv(name + "=" + value)
-	}
-	conf.addEnv("HMAKE_PROJECT_DIR=" + conf.SrcVolume)
-	conf.addEnv("HMAKE_PROJECT_FILE=" +
-		filepath.Join(conf.SrcVolume,
-			filepath.Base(r.task.Project().MasterFile.Source)))
-	conf.addEnv("HMAKE_WORK_DIR=" +
-		filepath.Join(conf.SrcVolume,
-			filepath.Base(r.task.Plan.WorkPath)))
-	conf.addEnv("HMAKE_TARGET=" + r.task.Name())
-
-	conf.projectDir = filepath.Clean(r.task.Project().BaseDir)
-	volHost := os.Getenv("HMAKE_DOCKER_VOL_HOST")
-	volCntr := os.Getenv("HMAKE_DOCKER_VOL_CNTR")
-	// in nested situation
-	if volHost != "" && volCntr != "" {
-		prefix := filepath.Clean(volCntr) + "/"
-		if strings.HasPrefix(conf.projectDir, prefix) {
-			conf.projectDir = filepath.Join(volHost, conf.projectDir[len(prefix):])
-		}
-	}
-	conf.addEnv("HMAKE_DOCKER_VOL_HOST=" + conf.projectDir)
-	conf.addEnv("HMAKE_DOCKER_VOL_CNTR=" + conf.SrcVolume)
 	return
 }
 
-func (r *dockerRunner) build(conf *dockerConfig) error {
-	dockerCmd := []string{"docker", "build", "-t", conf.Image}
+func (r *Runner) signal(sig os.Signal) {
+	sysSig := sig.(syscall.Signal)
+	if cid := r.cid(); cid != "" {
+		r.Task.Plan.Logf("Signal container %s %d", cid, sysSig)
+		// HACK: in non-tty mode, docker is not going to pass the signal to init
+		// process, then the INTERRUPT/TERM signal should be translated into kill
+		if sysSig == syscall.SIGINT || sysSig == syscall.SIGTERM {
+			shell.Exec(r.Task, "docker", "kill", cid).Mute().Run(nil)
+		} else {
+			shell.Exec(r.Task, "docker", "kill", "-s", strconv.Itoa(int(sysSig)), cid).
+				Mute().
+				Run(nil)
+		}
+	} else {
+		r.Task.Plan.Logf("Ignore signal %d, CID not available", sysSig)
+	}
+}
 
-	dockerFile := r.task.WorkingDir(conf.Build)
-	buildFrom := conf.BuildFrom
+func (r *Runner) removeContainer() {
+	if cid := r.cid(); cid != "" {
+		r.Task.Plan.Logf("Removing container %s", cid)
+		shell.Exec(r.Task, "docker", "rm", "-f", cid).Mute().Run(nil)
+	} else {
+		r.Task.Plan.Logf("Ignore removing container, CID not available")
+	}
+}
+
+// Run implements Runner
+func (r *Runner) Run(sigCh <-chan os.Signal) (result hm.TaskResult, err error) {
+	result = hm.Success
+
+	os.Remove(r.cidFile())
+	if r.Build != "" {
+		err = r.build(sigCh)
+	}
+	if err == nil {
+		err = r.run(sigCh)
+	}
+	if err != nil {
+		result = hm.Failure
+	}
+	r.removeContainer()
+	return
+}
+
+func (r *Runner) build(sigCh <-chan os.Signal) error {
+	dockerCmd := []string{"docker", "build", "-t", r.Image}
+
+	dockerFile := r.Task.WorkingDir(r.Build)
+	buildFrom := r.BuildFrom
 	if buildFrom != "" {
-		buildFrom = r.task.WorkingDir(buildFrom)
+		buildFrom = r.Task.WorkingDir(buildFrom)
 	}
 
 	info, err := os.Stat(dockerFile)
@@ -197,150 +195,213 @@ func (r *dockerRunner) build(conf *dockerConfig) error {
 			buildFrom)
 	}
 
-	return r.task.Exec(dockerCmd[0], dockerCmd[1:]...)
+	return shell.Exec(r.Task, dockerCmd[0], dockerCmd[1:]...).Run(sigCh)
 }
 
-func (r *dockerRunner) run(conf *dockerConfig) error {
-	workDir := filepath.Join(conf.SrcVolume, r.task.Target.WorkingDir())
+func (r *Runner) run(sigCh <-chan os.Signal) error {
+	workDir := filepath.Join(r.SrcVolume, r.Task.Target.WorkingDir())
 	dockerRun := []string{"docker", "run",
 		"-a", "STDOUT", "-a", "STDERR",
 		"--rm",
-		"-v", conf.projectDir + ":" + conf.SrcVolume,
+		"-v", r.projectDir + ":" + r.SrcVolume,
 		"-w", workDir,
-		"--entrypoint", filepath.Join(conf.SrcVolume, hm.WorkFolder, filepath.Base(r.task.ScriptFile())),
+		"--entrypoint", filepath.Join(r.SrcVolume, hm.WorkFolder,
+			filepath.Base(shell.ScriptFile(r.Task))),
+		"--cidfile", r.cidFile(),
 	}
 	// by default, use non-root user
-	if conf.User == "" {
+	if r.User == "" {
 		uid, gid, grps, err := currentUserIds()
 		if err != nil {
 			return err
 		}
 		dockerRun = append(dockerRun, "-u", strconv.Itoa(uid)+":"+strconv.Itoa(gid))
-		if len(conf.Groups) == 0 {
+		if len(r.Groups) == 0 {
 			for _, grp := range grps {
 				if grp != gid {
 					dockerRun = append(dockerRun, "--group-add", strconv.Itoa(grp))
 				}
 			}
 		}
-	} else if conf.User != "root" && conf.User != "0" {
-		dockerRun = append(dockerRun, "-u", conf.User)
+	} else if r.User != "root" && r.User != "0" {
+		dockerRun = append(dockerRun, "-u", r.User)
 	}
-	for _, grp := range conf.Groups {
+	for _, grp := range r.Groups {
 		dockerRun = append(dockerRun, "--group-add", grp)
 	}
 
-	for _, envFile := range conf.EnvFiles {
+	for _, envFile := range r.EnvFiles {
 		dockerRun = append(dockerRun, "--env-file",
-			filepath.Join(conf.SrcVolume, r.task.Target.WorkingDir(envFile)))
+			filepath.Join(r.SrcVolume, r.Task.Target.WorkingDir(envFile)))
 	}
 
-	for _, env := range conf.Envs {
+	for _, env := range r.Envs {
 		dockerRun = append(dockerRun, "-e", env)
 	}
 
-	if conf.Network == "host" {
+	if r.Network == "host" {
 		dockerRun = append(dockerRun, "--net=host", "--uts=host")
 	} else {
-		for _, host := range conf.Hosts {
+		for _, host := range r.Hosts {
 			dockerRun = append(dockerRun, "--add-host", host)
 		}
-		for _, dns := range conf.DNSServers {
+		for _, dns := range r.DNSServers {
 			dockerRun = append(dockerRun, "--dns", dns)
 		}
-		if conf.DNSSearch != "" {
-			dockerRun = append(dockerRun, "--dns-search", conf.DNSSearch)
+		if r.DNSSearch != "" {
+			dockerRun = append(dockerRun, "--dns-search", r.DNSSearch)
 		}
-		for _, opt := range conf.DNSOpts {
+		for _, opt := range r.DNSOpts {
 			dockerRun = append(dockerRun, "--dns-opt", opt)
 		}
 	}
 
-	for _, cap := range conf.CapAdd {
+	for _, cap := range r.CapAdd {
 		dockerRun = append(dockerRun, "--cap-add", cap)
 	}
-	for _, cap := range conf.CapDrop {
+	for _, cap := range r.CapDrop {
 		dockerRun = append(dockerRun, "--cap-drop", cap)
 	}
 
-	for _, dev := range conf.Devices {
+	for _, dev := range r.Devices {
 		dockerRun = append(dockerRun, "--device", dev)
 	}
 
-	if conf.Privileged {
+	if r.Privileged {
 		dockerRun = append(dockerRun, "--privileged")
 	}
 
-	for _, vol := range conf.Volumes {
+	for _, vol := range r.Volumes {
 		hostVol := vol
 		if !filepath.IsAbs(hostVol) {
-			hostVol = filepath.Join(conf.projectDir, r.task.Target.WorkingDir(vol))
+			hostVol = filepath.Join(r.projectDir, r.Task.Target.WorkingDir(vol))
 		}
 		dockerRun = append(dockerRun, "-v", hostVol)
 	}
 
-	if conf.BlkIoWeight != nil {
-		dockerRun = append(dockerRun, "--blkio-weight", strconv.Itoa(*conf.BlkIoWeight))
+	if r.BlkIoWeight != nil {
+		dockerRun = append(dockerRun, "--blkio-weight", strconv.Itoa(*r.BlkIoWeight))
 	}
-	for _, w := range conf.BlkIoWeightDevs {
+	for _, w := range r.BlkIoWeightDevs {
 		dockerRun = append(dockerRun, "--blkio-weight-device", w)
 	}
-	for _, bps := range conf.DevReadBps {
+	for _, bps := range r.DevReadBps {
 		dockerRun = append(dockerRun, "--device-read-bps", bps)
 	}
-	for _, bps := range conf.DevWriteBps {
+	for _, bps := range r.DevWriteBps {
 		dockerRun = append(dockerRun, "--device-write-bps", bps)
 	}
-	for _, iops := range conf.DevReadIops {
+	for _, iops := range r.DevReadIops {
 		dockerRun = append(dockerRun, "--device-read-iops", iops)
 	}
-	for _, iops := range conf.DevWriteIops {
+	for _, iops := range r.DevWriteIops {
 		dockerRun = append(dockerRun, "--device-write-iops", iops)
 	}
-	if conf.CPUShares != nil {
-		dockerRun = append(dockerRun, "-c", strconv.Itoa(*conf.CPUShares))
+	if r.CPUShares != nil {
+		dockerRun = append(dockerRun, "-c", strconv.Itoa(*r.CPUShares))
 	}
-	if conf.CPUPeriod != nil {
-		dockerRun = append(dockerRun, "--cpu-period", strconv.Itoa(*conf.CPUPeriod))
+	if r.CPUPeriod != nil {
+		dockerRun = append(dockerRun, "--cpu-period", strconv.Itoa(*r.CPUPeriod))
 	}
-	if conf.CPUQuota != nil {
-		dockerRun = append(dockerRun, "--cpu-quota", strconv.Itoa(*conf.CPUQuota))
+	if r.CPUQuota != nil {
+		dockerRun = append(dockerRun, "--cpu-quota", strconv.Itoa(*r.CPUQuota))
 	}
-	if conf.CPUSetCPUs != "" {
-		dockerRun = append(dockerRun, "--cpuset-cpus", conf.CPUSetCPUs)
+	if r.CPUSetCPUs != "" {
+		dockerRun = append(dockerRun, "--cpuset-cpus", r.CPUSetCPUs)
 	}
-	if conf.CPUSetMems != "" {
-		dockerRun = append(dockerRun, "--cpuset-mems", conf.CPUSetMems)
+	if r.CPUSetMems != "" {
+		dockerRun = append(dockerRun, "--cpuset-mems", r.CPUSetMems)
 	}
-	if conf.KernelMemory != "" {
-		dockerRun = append(dockerRun, "--kernel-memory", conf.KernelMemory)
+	if r.KernelMemory != "" {
+		dockerRun = append(dockerRun, "--kernel-memory", r.KernelMemory)
 	}
-	if conf.Memory != "" {
-		dockerRun = append(dockerRun, "-m", conf.Memory)
+	if r.Memory != "" {
+		dockerRun = append(dockerRun, "-m", r.Memory)
 	}
-	if conf.MemorySwap != "" {
-		dockerRun = append(dockerRun, "--memory-swap", conf.MemorySwap)
+	if r.MemorySwap != "" {
+		dockerRun = append(dockerRun, "--memory-swap", r.MemorySwap)
 	}
-	if conf.MemorySwappiness != nil {
-		dockerRun = append(dockerRun, "--memory-swappiness", strconv.Itoa(*conf.MemorySwappiness))
+	if r.MemorySwappiness != nil {
+		dockerRun = append(dockerRun, "--memory-swappiness", strconv.Itoa(*r.MemorySwappiness))
 	}
-	if conf.MemoryReservation != "" {
-		dockerRun = append(dockerRun, "--memory-reservation", conf.MemoryReservation)
+	if r.MemoryReservation != "" {
+		dockerRun = append(dockerRun, "--memory-reservation", r.MemoryReservation)
 	}
-	if conf.ShmSize != "" {
-		dockerRun = append(dockerRun, "--shm-size", conf.ShmSize)
+	if r.ShmSize != "" {
+		dockerRun = append(dockerRun, "--shm-size", r.ShmSize)
 	}
 
-	dockerRun = append(dockerRun, conf.Image)
+	dockerRun = append(dockerRun, r.Image)
 
-	script, err := r.task.BuildScriptFile()
+	script, err := shell.BuildScriptFile(r.Task)
 	if err != nil || script == "" {
 		return err
 	}
 
-	return r.task.Exec(dockerRun[0], dockerRun[1:]...)
+	x := shell.Exec(r.Task, dockerRun[0], dockerRun[1:]...)
+	x.Cmd.Stdin = os.Stdin
+
+	ch := make(chan struct{})
+	go func() {
+		select {
+		case <-ch:
+			return
+		case sig := <-sigCh:
+			r.signal(sig)
+		}
+	}()
+	err = x.Run(nil)
+	close(ch)
+	return err
+}
+
+// Factory is runner factory
+func Factory(task *hm.Task) (hm.Runner, error) {
+	r := &Runner{Task: task}
+
+	if err := task.Target.GetSettingsWithExt(SettingName, r); err != nil {
+		return nil, err
+	}
+
+	if r.Image == "" {
+		// image not present, fallback to shell
+		return shell.Factory(task)
+	}
+
+	if r.SrcVolume == "" {
+		r.SrcVolume = DefaultSrcVolume
+	}
+	if r.ExposeDocker {
+		r.exposeDocker()
+	}
+	r.addEnv(task.Target.Envs...)
+	for name, value := range task.Plan.Env {
+		r.addEnv(name + "=" + value)
+	}
+	r.addEnv("HMAKE_PROJECT_DIR=" + r.SrcVolume)
+	r.addEnv("HMAKE_PROJECT_FILE=" +
+		filepath.Join(r.SrcVolume,
+			filepath.Base(task.Project().MasterFile.Source)))
+	r.addEnv("HMAKE_WORK_DIR=" +
+		filepath.Join(r.SrcVolume,
+			filepath.Base(task.Plan.WorkPath)))
+	r.addEnv(task.Envs()...)
+
+	r.projectDir = filepath.Clean(task.Project().BaseDir)
+	volHost := os.Getenv("HMAKE_DOCKER_VOL_HOST")
+	volCntr := os.Getenv("HMAKE_DOCKER_VOL_CNTR")
+	// in nested situation
+	if volHost != "" && volCntr != "" {
+		prefix := filepath.Clean(volCntr) + "/"
+		if strings.HasPrefix(r.projectDir, prefix) {
+			r.projectDir = filepath.Join(volHost, r.projectDir[len(prefix):])
+		}
+	}
+	r.addEnv("HMAKE_DOCKER_VOL_HOST=" + r.projectDir)
+	r.addEnv("HMAKE_DOCKER_VOL_CNTR=" + r.SrcVolume)
+	return r, nil
 }
 
 func init() {
-	hm.RegisterExecDriver(ExecDriverName, Runner)
+	hm.RegisterExecDriver(ExecDriverName, Factory)
 }
