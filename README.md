@@ -164,7 +164,7 @@ targets:
             - builder
         watches:
             - vendor/manifest
-        envs:
+        env:
             - HMAKE_VER_SUFFIX
             - HMAKE_RELEASE            
         cmds:
@@ -272,9 +272,6 @@ target names accept wildcards:
 - `after`: a list of names of targets on which this targets depends
 - `exec-driver`: same as in `settings` section, but only specify the driver for this target
 - `workdir`: the current working directory for commands in the target, relative to project root
-- `envs`: a list of environment variables (the form `NAME=VALUE`) to be used for execution
-- `script`: a multi-line string represents a full script to execute for the target
-- `cmds`: when `script` is not specified, this is a list of commands to execute for the target
 - `watches`: a list of path/filenames (wildcard supported) whose mtime will be checked to determine if the target is out-of-date,
   without specifying this property, the target is always executed (the `.PHONY` target in `make`).
 
@@ -292,6 +289,12 @@ Summary file is stored as `hmake.summary.json`.
 #### The `shell` driver
 
 This is simplest driver which inteprets `script` or `cmds` as shell script/commands.
+The following properties are supported:
+
+- `env`: a list of environment variables (the form `NAME=VALUE`) to be used for execution
+- `script`: a multi-line string represents a full script to execute for the target
+- `cmds`: when `script` is not specified, this is a list of commands to execute for the target
+
 The list of `cmds` will be merged as a shell script.
 And the intepreter is `/bin/sh`.
 `set -e` is inserted as the first line to fail-fast.
@@ -299,7 +302,7 @@ And the intepreter is `/bin/sh`.
 #### The `docker` driver
 
 This driver generates the same script as `shell` driver but run it inside a docker container.
-The following properties are supported:
+The following properties are supported in additional to `script` and `cmds`:
 
 - `build`: path to `Dockerfile`, when specified, this target builds a docker image first.
    `image` property specifies the image name and tag.
@@ -313,7 +316,7 @@ The following properties are supported:
 - `expose-docker`: when set `true`, expose the host docker server connectivity into container to allow
   docker client run from inside the container.
   This is very useful when docker is required for build but to avoid problematic docker-in-docker.
-- `envs`: list environment variables passed to container, can be `NAME=VALUE` or `NAME`.
+- `env`: list environment variables passed to container, can be `NAME=VALUE` or `NAME`.
 - `env-files`: list of files providing environment variables, see `--env-files` of `docker run`
 - `privileged`: run container in privileged mode, default is `false`
 - `net`: when specified, only allowed value is `host`, when specified, run container with `--net=host --uts=host`

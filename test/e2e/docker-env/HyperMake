@@ -1,0 +1,16 @@
+---
+format: hypermake.v0
+
+name: docker-env
+
+targets:
+  test:
+    description: test env
+    image: alpine:latest
+    env:
+      - TEST_VAR=TEST_VAL
+    cmds:
+      - 'echo -n $TEST_VAR >test.log'
+
+settings:
+  default-targets: [test]

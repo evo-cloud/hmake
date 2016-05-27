@@ -14,6 +14,7 @@ import (
 
 // Target defines the schema of shell commands in target
 type Target struct {
+	Env    []string   `json:"env"`
 	Cmds   []*Command `json:"cmds"`
 	Script string     `json:"script"`
 }
@@ -123,12 +124,15 @@ func (x *Executor) Run(sigCh <-chan os.Signal) (err error) {
 
 // Exec executes an external command for a task
 func Exec(t *hm.Task, command string, args ...string) *Executor {
+	var target Target
+	t.Target.GetExt(&target)
 	cmd := exec.Command(command, args...)
 	cmd.Env = append([]string{}, os.Environ()...)
+	cmd.Env = append(cmd.Env, target.Env...)
 	for name, value := range t.Plan.Env {
 		cmd.Env = append(cmd.Env, name+"="+value)
 	}
-	cmd.Env = append(cmd.Env, t.Envs()...)
+	cmd.Env = append(cmd.Env, t.EnvVars()...)
 	cmd.Dir = filepath.Join(t.Project().BaseDir, t.Target.WorkingDir())
 	return &Executor{Task: t, Cmd: cmd, Output: true}
 }

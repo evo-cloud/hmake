@@ -419,7 +419,7 @@ var _ = Describe("HyperMake", func() {
 			os.RemoveAll(Fixtures("project1", "touch.log"))
 			_, execOrder0 := execProject("project1", "all")
 			_, execOrder1 := execProject("project1", "all", "-s:t2")
-			Expect(execOrder1).Should(HaveLen(len(execOrder0) - 4))
+			Expect(execOrder1).Should(HaveLen(len(execOrder0) - 7))
 		})
 
 		It("generates summary file", func() {
@@ -534,8 +534,44 @@ var _ = Describe("HyperMake", func() {
 					taskResults[evt.Task.Name()] = evt.Task.Result
 				}
 			})
-			Expect(plan.Execute(ch)).NotTo(Succeed())
+			Expect(plan.Execute(ch)).ShouldNot(Succeed())
 			Expect(taskResults["abort0"]).To(Equal(hm.Failure))
+		})
+
+		It("skips transit targets when all dependencies are skipped", func() {
+			proj, err := hm.LoadProjectFrom(Fixtures("skip-transit-targets"))
+			Expect(err).Should(Succeed())
+			plan := proj.Plan()
+			plan.Require("all")
+			os.MkdirAll(plan.WorkPath, 0755)
+			Expect(plan.Execute(nil)).Should(Succeed())
+			// run to generate success marks
+			// now t0 t1 should be skipped
+			plan = proj.Plan()
+			plan.Require("all")
+			taskResults := make(map[string]hm.TaskResult)
+			handler := func(event interface{}) {
+				switch evt := event.(type) {
+				case *hm.EvtTaskFinish:
+					taskResults[evt.Task.Name()] = evt.Task.Result
+				}
+			}
+			plan.OnEvent(handler)
+			Expect(plan.Execute(nil)).Should(Succeed())
+			Expect(taskResults["t0"]).To(Equal(hm.Skipped))
+			Expect(taskResults["t1"]).To(Equal(hm.Skipped))
+			Expect(taskResults["all"]).To(Equal(hm.Skipped))
+
+			// run again with dependencies rebuilt
+			plan = proj.Plan()
+			plan.Require("all")
+			plan.Rebuild("t0")
+			taskResults = make(map[string]hm.TaskResult)
+			plan.OnEvent(handler)
+			Expect(plan.Execute(nil)).Should(Succeed())
+			Expect(taskResults["t0"]).To(Equal(hm.Success))
+			Expect(taskResults["t1"]).To(Equal(hm.Skipped))
+			Expect(taskResults["all"]).To(Equal(hm.Success))
 		})
 	})
 })

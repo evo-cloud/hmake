@@ -1,0 +1,22 @@
+---
+format: hypermake.v0
+
+targets:
+    t0:
+        watches:
+            - HyperMake
+        cmds:
+            - echo t0
+    t1:
+        watches:
+            - HyperMake
+        cmds:
+            - echo t1
+    all:
+        after:
+            - t0
+            - t1
+
+settings:
+    default-targets: [all]
+    exec-driver: shell

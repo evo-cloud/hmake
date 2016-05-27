@@ -23,7 +23,6 @@ type Target struct {
 	After      []string               `json:"after"`
 	ExecDriver string                 `json:"exec-driver"`
 	WorkDir    string                 `json:"workdir"`
-	Envs       []string               `json:"envs"`
 	Watches    []string               `json:"watches"`
 	Ext        map[string]interface{} `json:"*"`
 
@@ -58,6 +57,11 @@ func (t *Target) Initialize(name string, project *Project) {
 	t.Project = project
 	t.Depends = make(TargetNameMap)
 	t.Activates = make(TargetNameMap)
+}
+
+// IsTransit indicates the targets doesn't have actual work to do
+func (t *Target) IsTransit() bool {
+	return t.ExecDriver == "" && len(t.Ext) == 0 && len(t.Watches) == 0
 }
 
 // GetExt maps Ext to provided value

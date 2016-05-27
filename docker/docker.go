@@ -32,7 +32,7 @@ type Runner struct {
 	Image             string   `json:"image"`
 	SrcVolume         string   `json:"src-volume"`
 	ExposeDocker      bool     `json:"expose-docker"`
-	Envs              []string `json:"envs"`
+	Env               []string `json:"env"`
 	EnvFiles          []string `json:"env-files"`
 	CapAdd            []string `json:"cap-add"`
 	CapDrop           []string `json:"cap-drop"`
@@ -80,15 +80,15 @@ func (r *Runner) addEnv(envs ...string) {
 			name = env
 		}
 		found := false
-		for n, confEnv := range r.Envs {
+		for n, confEnv := range r.Env {
 			if name == confEnv || strings.HasPrefix(confEnv, name+"=") {
-				r.Envs[n] = env
+				r.Env[n] = env
 				found = true
 				break
 			}
 		}
 		if !found {
-			r.Envs = append(r.Envs, env)
+			r.Env = append(r.Env, env)
 		}
 	}
 }
@@ -118,6 +118,17 @@ func (r *Runner) cid() (cid string) {
 	return
 }
 
+func (r *Runner) exec(args ...string) *shell.Executor {
+	x := shell.Exec(r.Task, "docker", args...)
+	// env are passed with -e, no need for docker client
+	x.Cmd.Env = os.Environ()
+	return x
+}
+
+func (r *Runner) docker(args ...string) error {
+	return r.exec(args...).Mute().Run(nil)
+}
+
 func (r *Runner) signal(sig os.Signal) {
 	sysSig := sig.(syscall.Signal)
 	if cid := r.cid(); cid != "" {
@@ -125,11 +136,9 @@ func (r *Runner) signal(sig os.Signal) {
 		// HACK: in non-tty mode, docker is not going to pass the signal to init
 		// process, then the INTERRUPT/TERM signal should be translated into kill
 		if sysSig == syscall.SIGINT || sysSig == syscall.SIGTERM {
-			shell.Exec(r.Task, "docker", "kill", cid).Mute().Run(nil)
+			r.docker("kill", cid)
 		} else {
-			shell.Exec(r.Task, "docker", "kill", "-s", strconv.Itoa(int(sysSig)), cid).
-				Mute().
-				Run(nil)
+			r.docker("kill", "-s", strconv.Itoa(int(sysSig)), cid)
 		}
 	} else {
 		r.Task.Plan.Logf("Ignore signal %d, CID not available", sysSig)
@@ -139,7 +148,7 @@ func (r *Runner) signal(sig os.Signal) {
 func (r *Runner) removeContainer() {
 	if cid := r.cid(); cid != "" {
 		r.Task.Plan.Logf("Removing container %s", cid)
-		shell.Exec(r.Task, "docker", "rm", "-f", cid).Mute().Run(nil)
+		r.docker("rm", "-f", cid)
 	} else {
 		r.Task.Plan.Logf("Ignore removing container, CID not available")
 	}
@@ -164,7 +173,7 @@ func (r *Runner) Run(sigCh <-chan os.Signal) (result hm.TaskResult, err error) {
 }
 
 func (r *Runner) build(sigCh <-chan os.Signal) error {
-	dockerCmd := []string{"docker", "build", "-t", r.Image}
+	dockerCmd := []string{"build", "-t", r.Image}
 
 	dockerFile := r.Task.WorkingDir(r.Build)
 	buildFrom := r.BuildFrom
@@ -195,12 +204,12 @@ func (r *Runner) build(sigCh <-chan os.Signal) error {
 			buildFrom)
 	}
 
-	return shell.Exec(r.Task, dockerCmd[0], dockerCmd[1:]...).Run(sigCh)
+	return r.exec(dockerCmd...).Run(sigCh)
 }
 
 func (r *Runner) run(sigCh <-chan os.Signal) error {
 	workDir := filepath.Join(r.SrcVolume, r.Task.Target.WorkingDir())
-	dockerRun := []string{"docker", "run",
+	dockerRun := []string{"run",
 		"-a", "STDOUT", "-a", "STDERR",
 		"--rm",
 		"-v", r.projectDir + ":" + r.SrcVolume,
@@ -235,7 +244,7 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 			filepath.Join(r.SrcVolume, r.Task.Target.WorkingDir(envFile)))
 	}
 
-	for _, env := range r.Envs {
+	for _, env := range r.Env {
 		dockerRun = append(dockerRun, "-e", env)
 	}
 
@@ -338,16 +347,17 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 		return err
 	}
 
-	x := shell.Exec(r.Task, dockerRun[0], dockerRun[1:]...)
-	x.Cmd.Stdin = os.Stdin
+	x := r.exec(dockerRun...)
 
 	ch := make(chan struct{})
 	go func() {
-		select {
-		case <-ch:
-			return
-		case sig := <-sigCh:
-			r.signal(sig)
+		for {
+			select {
+			case <-ch:
+				return
+			case sig := <-sigCh:
+				r.signal(sig)
+			}
 		}
 	}()
 	err = x.Run(nil)
@@ -374,7 +384,6 @@ func Factory(task *hm.Task) (hm.Runner, error) {
 	if r.ExposeDocker {
 		r.exposeDocker()
 	}
-	r.addEnv(task.Target.Envs...)
 	for name, value := range task.Plan.Env {
 		r.addEnv(name + "=" + value)
 	}
@@ -385,7 +394,7 @@ func Factory(task *hm.Task) (hm.Runner, error) {
 	r.addEnv("HMAKE_WORK_DIR=" +
 		filepath.Join(r.SrcVolume,
 			filepath.Base(task.Plan.WorkPath)))
-	r.addEnv(task.Envs()...)
+	r.addEnv(task.EnvVars()...)
 
 	r.projectDir = filepath.Clean(task.Project().BaseDir)
 	volHost := os.Getenv("HMAKE_DOCKER_VOL_HOST")

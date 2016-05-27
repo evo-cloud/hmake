@@ -513,7 +513,9 @@ func (p *ExecPlan) finishTask(task *Task) {
 			continue
 		}
 		delete(t.Depends, task.Name())
-
+		if task.Result != Skipped {
+			t.alwaysBuild = true
+		}
 		if t.IsActivated() && p.WaitingTasks[t.Name()] != nil {
 			delete(p.WaitingTasks, t.Name())
 			t.State = Queued
@@ -613,6 +615,10 @@ func (t *Task) CalcSuccessMark() bool {
 		return false
 	}
 
+	if t.Target.IsTransit() {
+		return true
+	}
+
 	content, err := ioutil.ReadFile(t.SuccessMarkFile())
 	if err != nil {
 		t.Plan.Logf("%s ExistDigest Error: %v", t.Name(), err)
@@ -710,8 +716,8 @@ func (t *Task) WorkingDir(dirs ...string) string {
 	return filepath.Join(t.Project().BaseDir, t.Target.WorkingDir(dirs...))
 }
 
-// Envs returns task specific envs
-func (t *Task) Envs() []string {
+// EnvVars returns task specific envs
+func (t *Task) EnvVars() []string {
 	return []string{
 		"HMAKE_TARGET=" + t.Name(),
 		"HMAKE_TARGET_DIR=" + t.Target.WorkingDir(),
