@@ -278,13 +278,18 @@ func (r *Runner) build(sigCh <-chan os.Signal) error {
 }
 
 func (r *Runner) run(sigCh <-chan os.Signal) error {
+	err := r.checkProjectDir()
+	if err != nil {
+		return err
+	}
+
 	workDir := filepath.Join(r.SrcVolume, r.Task.Target.WorkingDir())
 	dockerRun := []string{"run",
 		"--rm",
-		"-v", r.projectDir + ":" + r.SrcVolume,
-		"-w", workDir,
-		"--entrypoint", filepath.Join(r.SrcVolume, hm.WorkFolder,
-			filepath.Base(shell.ScriptFile(r.Task))),
+		"-v", r.canonicalProjectDir() + ":" + r.SrcVolume,
+		"-w", filepath.ToSlash(workDir),
+		"--entrypoint", filepath.ToSlash(filepath.Join(r.SrcVolume, hm.WorkFolder,
+			filepath.Base(shell.ScriptFile(r.Task)))),
 		"--cidfile", r.cidFile(),
 	}
 
@@ -454,8 +459,8 @@ func Factory(task *hm.Task) (hm.Runner, error) {
 	}
 	r.addEnv("HMAKE_PROJECT_DIR=" + r.SrcVolume)
 	r.addEnv("HMAKE_PROJECT_FILE=" +
-		filepath.Join(r.SrcVolume,
-			filepath.Base(task.Project().MasterFile.Source)))
+		filepath.ToSlash(filepath.Join(r.SrcVolume,
+			filepath.Base(task.Project().MasterFile.Source))))
 	r.addEnv("HMAKE_WORK_DIR=" +
 		filepath.Join(r.SrcVolume,
 			filepath.Base(task.Plan.WorkPath)))
@@ -471,10 +476,11 @@ func Factory(task *hm.Task) (hm.Runner, error) {
 			r.projectDir = filepath.Join(volHost, r.projectDir[len(prefix):])
 		}
 	}
-	r.addEnv("HMAKE_DOCKER_VOL_HOST=" + r.projectDir)
+	r.addEnv("HMAKE_DOCKER_VOL_HOST=" + r.canonicalProjectDir())
 	r.addEnv("HMAKE_DOCKER_VOL_CNTR=" + r.SrcVolume)
 	return r, nil
 }
+
 
 func init() {
 	hm.RegisterExecDriver(ExecDriverName, Factory)

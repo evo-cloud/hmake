@@ -54,6 +54,16 @@ targets:
         cmds:
             - ./build.sh darwin amd64
 
+    hmake-windows-amd64:
+        description: static linked hmake binary for Windows
+        after:
+            - generate
+        watches:
+            - '**/**/*.go'
+            - build.sh
+        cmds:
+            - ./build.sh windows amd64
+
     test:
         description: run tests
         after:
@@ -90,6 +100,7 @@ targets:
         after:
             - hmake-linux-amd64
             - hmake-darwin-amd64
+            - hmake-windows-amd64
 
 settings:
     default-targets:
