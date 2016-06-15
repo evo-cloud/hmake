@@ -294,6 +294,9 @@ The following properties are supported:
 - `env`: a list of environment variables (the form `NAME=VALUE`) to be used for execution
 - `script`: a multi-line string represents a full script to execute for the target
 - `cmds`: when `script` is not specified, this is a list of commands to execute for the target
+- `console`: when `true`, the current stdin/stdout/stderr is directly passed to command which
+is able to fully control the current console, however no output can be captured and logged in
+this case.
 
 The list of `cmds` will be merged as a shell script.
 And the intepreter is `/bin/sh`.
@@ -351,6 +354,10 @@ settings:
     docker:
         property: value
 ```
+
+The `console` property is also supported by `docker` driver which emits `-it` option
+to docker client instead of `-a STDOUT -a STDERR`. And similarly to `shell` driver,
+no output is captured or logged in this case.
 
 ##### About volume mapping
 
