@@ -69,7 +69,7 @@ var _ = Describe("docker", func() {
 		Expect(err).Should(Succeed())
 		time.Sleep(time.Second)
 		session.Interrupt()
-		session.Wait(5 * time.Second)
+		session.Wait(30 * time.Second)
 		Eventually(session).Should(gexec.Exit(1))
 	})
 })

@@ -138,7 +138,7 @@ func (r *Runner) docker(args ...string) error {
 	return r.exec(args...).Mute().Run(nil)
 }
 
-func (r *Runner) signal(sig os.Signal) {
+func (r *Runner) signal(sig os.Signal, relayCh chan os.Signal) {
 	sysSig := sig.(syscall.Signal)
 	if cid := r.cid(); cid != "" {
 		r.Task.Plan.Logf("Signal container %s %d", cid, sysSig)
@@ -150,7 +150,10 @@ func (r *Runner) signal(sig os.Signal) {
 			r.docker("kill", "-s", strconv.Itoa(int(sysSig)), cid)
 		}
 	} else {
-		r.Task.Plan.Logf("Ignore signal %d, CID not available", sysSig)
+		// CID not available, probably the image is being downloaded
+		// send the signal to docker client
+		r.Task.Plan.Logf("Relay signal %d, CID not available", sysSig)
+		relayCh <- sig
 	}
 }
 
@@ -396,17 +399,18 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 	x := r.exec(dockerRun...)
 
 	ch := make(chan struct{})
+	sigRelay := make(chan os.Signal, 1)
 	go func() {
 		for {
 			select {
 			case <-ch:
 				return
 			case sig := <-sigCh:
-				r.signal(sig)
+				r.signal(sig, sigRelay)
 			}
 		}
 	}()
-	err = x.Run(nil)
+	err = x.Run(sigRelay)
 	close(ch)
 	return err
 }
