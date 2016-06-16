@@ -88,9 +88,9 @@ Install
 - [gomega](https://github.com/onsi/gomega)
 
 ```bash
-go get https://github.com/FiloSottile/gvt
-go get https://github.com/onsi/ginkgo/ginkgo
-go get https://github.com/onsi/gomega
+go get github.com/FiloSottile/gvt
+go get github.com/onsi/ginkgo/ginkgo
+go get github.com/onsi/gomega
 gvt restore
 ginkgo test ./test
 # or
@@ -408,6 +408,7 @@ hmake [OPTIONS] [TARGETS]
 - docker 1.9 and above (1.9 - 1.11 tested)
 - Linux (Ubuntu 14.04 tested)
 - Mac OS X 10.9 and above (10.9, 10.11 tested)
+- Windows 7 SP1
 
 ## Known issues
 
