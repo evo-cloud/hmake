@@ -1,0 +1,10 @@
+---
+format: hypermake.v0
+
+targets:
+  builder-armv7:
+    description: the builder image for building ARMv7 targets
+    watches:
+      - armv7.Dockerfile
+    build: armv7.Dockerfile
+    image: hm-ex-linux-builder:armv7

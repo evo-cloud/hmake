@@ -1,0 +1,10 @@
+---
+format: hypermake.v0
+
+targets:
+  builder-x86_64:
+    description: the builder image for building x86_64 targets
+    watches:
+      - x86_64.Dockerfile
+    build: x86_64.Dockerfile
+    image: hm-ex-linux-builder:x86_64

@@ -1,0 +1,27 @@
+---
+format: hypermake.v0
+
+name: arm-vexpress
+description: build linux kernel for VExpress platform
+
+targets:
+  target-arm-vexpress:
+    description: build linux kernel for VExpress platform
+    after:
+      - src
+      - builder-armv7
+    watches:
+      - config
+    cmds:
+      - $HMAKE_PROJECT_DIR/build.sh build arm arm-linux-gnueabihf-
+
+  clean-arm-vexpress:
+    description: remove build files for arm-vexpress
+    after:
+      - builder-armv7
+    cmds:
+      - $HMAKE_PROJECT_DIR/build.sh clean
+
+local:
+  docker:
+    image: hm-ex-linux-builder:armv7
