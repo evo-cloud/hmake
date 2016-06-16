@@ -14,9 +14,10 @@ import (
 
 // Target defines the schema of shell commands in target
 type Target struct {
-	Env    []string   `json:"env"`
-	Cmds   []*Command `json:"cmds"`
-	Script string     `json:"script"`
+	Console bool       `json:"console"`
+	Env     []string   `json:"env"`
+	Cmds    []*Command `json:"cmds"`
+	Script  string     `json:"script"`
 }
 
 // Command defines a single command to execute
@@ -69,9 +70,10 @@ func BuildScriptFile(t *hm.Task) (string, error) {
 
 // Executor wraps over exec.Cmd with output file
 type Executor struct {
-	Task   *hm.Task
-	Cmd    *exec.Cmd
-	Output bool
+	Task    *hm.Task
+	Cmd     *exec.Cmd
+	Console bool
+	Output  bool
 }
 
 // Mute disables the output
@@ -84,7 +86,11 @@ func (x *Executor) Mute() *Executor {
 func (x *Executor) Run(sigCh <-chan os.Signal) (err error) {
 	x.Task.Plan.Logf("%s Exec: %v\n", x.Task.Name(), x.Cmd.Args)
 
-	if x.Output {
+	if x.Console {
+		x.Cmd.Stdin = os.Stdin
+		x.Cmd.Stdout = os.Stdout
+		x.Cmd.Stderr = os.Stderr
+	} else if x.Output {
 		var out *os.File
 		out, err = os.OpenFile(LogFile(x.Task),
 			syscall.O_WRONLY|syscall.O_CREAT|syscall.O_TRUNC,
@@ -134,7 +140,7 @@ func Exec(t *hm.Task, command string, args ...string) *Executor {
 	}
 	cmd.Env = append(cmd.Env, t.EnvVars()...)
 	cmd.Dir = filepath.Join(t.Project().BaseDir, t.Target.WorkingDir())
-	return &Executor{Task: t, Cmd: cmd, Output: true}
+	return &Executor{Task: t, Cmd: cmd, Console: target.Console, Output: true}
 }
 
 // ExecScript executes generated script

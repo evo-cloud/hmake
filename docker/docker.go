@@ -280,7 +280,6 @@ func (r *Runner) build(sigCh <-chan os.Signal) error {
 func (r *Runner) run(sigCh <-chan os.Signal) error {
 	workDir := filepath.Join(r.SrcVolume, r.Task.Target.WorkingDir())
 	dockerRun := []string{"run",
-		"-a", "STDOUT", "-a", "STDERR",
 		"--rm",
 		"-v", r.projectDir + ":" + r.SrcVolume,
 		"-w", workDir,
@@ -288,6 +287,16 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 			filepath.Base(shell.ScriptFile(r.Task))),
 		"--cidfile", r.cidFile(),
 	}
+
+	// support console
+	var shellTarget shell.Target
+	r.Task.Target.GetExt(&shellTarget)
+	if shellTarget.Console {
+		dockerRun = append(dockerRun, "-it")
+	} else {
+		dockerRun = append(dockerRun, "-a", "STDOUT", "-a", "STDERR")
+	}
+
 	// by default, use non-root user
 	if r.User == "" {
 		uid, gid, grps, err := currentUserIds()
@@ -398,20 +407,26 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 
 	x := r.exec(dockerRun...)
 
-	ch := make(chan struct{})
-	sigRelay := make(chan os.Signal, 1)
-	go func() {
-		for {
-			select {
-			case <-ch:
-				return
-			case sig := <-sigCh:
-				r.signal(sig, sigRelay)
+	if shellTarget.Console {
+		// tty mode, CtrlC is handled by docker client
+		err = x.Run(sigCh)
+	} else {
+		// non-tty mode, CtrlC is not handled properly
+		ch := make(chan struct{})
+		sigRelay := make(chan os.Signal, 1)
+		go func() {
+			for {
+				select {
+				case <-ch:
+					return
+				case sig := <-sigCh:
+					r.signal(sig, sigRelay)
+				}
 			}
-		}
-	}()
-	err = x.Run(sigRelay)
-	close(ch)
+		}()
+		err = x.Run(sigRelay)
+		close(ch)
+	}
 	return err
 }
 
