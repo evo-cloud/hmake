@@ -1,0 +1,47 @@
+---
+format: hypermake.v0
+
+name: linux
+description: the example to build linux kernel for multiple architectures
+
+targets:
+  src:
+    description: download linux kernel source
+    watches:
+      - fetch.sh
+    image: thewtex/cross-compiler-linux-x64
+    cmds:
+      - ./fetch.sh
+
+  nconfig:
+    description: run make nconfig
+    after:
+      - src
+    console: true
+    image: thewtex/cross-compiler-linux-x64
+    cmds:
+      - ./build.sh config nconfig
+
+  menuconfig:
+    description: run make menuconfig
+    after:
+      - src
+    console: true
+    image: thewtex/cross-compiler-linux-x64
+    cmds:
+      - ./build.sh config menuconfig
+
+  all:
+    after:
+      - 'target-*'
+
+  clean:
+    after:
+      - 'clean-*'
+
+includes:
+  - builders/**/**/*.hmake
+  - targets/**/**/*.hmake
+
+settings:
+  default-targets: [all]

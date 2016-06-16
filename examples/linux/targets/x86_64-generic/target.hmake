@@ -1,0 +1,27 @@
+---
+format: hypermake.v0
+
+name: x86_64-generic
+description: build linux kernel for x86_64 generic
+
+targets:
+  target-x86_64-generic:
+    description: build linux kernel for x86_64 generic
+    after:
+      - src
+      - builder-x86_64
+    watches:
+      - config
+    cmds:
+      - $HMAKE_PROJECT_DIR/build.sh build x86_64 x86_64-linux-gnu-
+
+  clean-x86_64-generic:
+    description: remove build files for x86_64 generic
+    after:
+      - builder-x86_64
+    cmds:
+      - $HMAKE_PROJECT_DIR/build.sh clean
+
+local:
+  docker:
+    image: hm-ex-linux-builder:x86_64
