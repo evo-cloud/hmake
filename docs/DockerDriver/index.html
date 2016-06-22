@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> &middot; HyperMake</title>
+
+    <meta name="description" content="">
+
+    <meta name="generator" content="Hugo 0.17-DEV" />
+    <meta name="twitter:card" content="summary">
+    
+    <meta name="twitter:title" content=" &middot; HyperMake">
+    <meta name="twitter:description" content="">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content=" &middot; HyperMake">
+    <meta property="og:description" content="">
+
+    <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700|Oxygen:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/pure-min.css">
+    <!--[if lte IE 8]>
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive-old-ie-min.css">
+    <![endif]-->
+    <!--[if gt IE 8]><!-->
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive-min.css">
+    <!--<![endif]-->
+
+    <link rel="stylesheet" href="http://evo-cloud.github.com/hmake//css/syntax-highlighter.css">
+    <link rel="stylesheet" href="http://evo-cloud.github.com/hmake//css/blog.css">
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <link rel="alternate" type="application/rss+xml" title="HyperMake" href="http://evo-cloud.github.com/hmake//index.xml" />
+</head>
+<body>
+<div class="banner pure-u-1 pure-u-md-1-4">
+    <div class="banner-title">
+        <h1 class="brand-title"><a href="http://evo-cloud.github.com/hmake/">HyperMake</a></h1>
+        <h2 class="brand-tagline"> build without pre-requisites </h2>
+    </div>
+    <div class="banner-links">
+        <nav class="nav">
+            <ul class="nav-list">
+                
+                
+                <li class="nav-item">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake "><i class="fa fa-github-alt"></i><span> github</span></a>
+                </li>
+                
+                
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+<div id="layout" class="pure-g">
+    <div class="content pure-u-1 pure-u-md-3-4">
+        <div>
+            
+            <div class="posts">
+                
+<section class="post">
+    <header class="post-header">
+
+        <a href="http://evo-cloud.github.com/hmake/docs/DockerDriver/" class="post-title"></a>
+
+        <p class="post-meta">
+            
+            
+        </p>
+    </header>
+    
+    <div class="post-description">
+        
+
+<h1 id="the-docker-execution-driver">The <em>docker</em> Execution Driver</h1>
+
+<p>This execution driver interprets commands or scripts and run inside the specified
+docker container.</p>
+
+<h2 id="properties">Properties</h2>
+
+<ul>
+<li><code>script</code>: a multi-line string represents a full script to execute inside the
+container;
+E.g.</li>
+</ul>
+
+<pre><code class="language-yaml">  targets:
+      sample:
+          script: |
+              #!/bin/bash
+              echo 'This is a bash script'
+      sample1:
+          script: |
+              #!/usr/bin/env perl
+              print &quot;a perl script&quot;
+</code></pre>
+
+<ul>
+<li><code>cmds</code>: when <code>script</code> is not specified, this is a list of commands to execute
+for the target; E.g.</li>
+</ul>
+
+<pre><code class="language-yaml">  targets:
+      sample:
+          cmds:
+              - mkdir -p bin
+              - gcc -o bin/hello hello.c
+</code></pre>
+
+<p>the list of commands is merged to generate a shell script:</p>
+
+<pre><code class="language-sh">  #!/bin/sh
+  set -e
+  mkdir -p bin
+  gcc -o bin/hello hello.c
+</code></pre>
+
+<ul>
+<li><code>env</code>: a list of environment variables (the form <code>NAME=VALUE</code>) to be used for
+execution (the <code>-e</code> option of <code>docker run</code>); E.g.</li>
+</ul>
+
+<pre><code class="language-yaml">  targets:
+      sample:
+          env:
+              - ARCH=x86_64
+              - OS=linux
+              - RELEASE        # without =VALUE, the value is populated from
+                               # current environment of hmake
+</code></pre>
+
+<ul>
+<li><p><code>env-files</code>: list of files providing environment variables, see <code>--env-files</code>
+of <code>docker run</code>;</p></li>
+
+<li><p><code>console</code>: when <code>true</code>, the current stdin/stdout/stderr is directly passed to
+command which is able to fully control the current console, equivalent to
+<code>docker run -it</code>.
+Default is false, equivalent to <code>docker run -a STDOUT -a STDERR</code>.</p></li>
+</ul>
+
+<p><em>NOTE: When enabled, no output is captured or logged.</em></p>
+
+<ul>
+<li><code>build</code>: path to <code>Dockerfile</code>, when specified, this target builds a docker
+image first. <code>image</code> property specifies the image name and tag.
+The value can point to a <code>Dockerfile</code> (e.g. <code>build: build/Dockerfile.arm</code>)
+which indicates the folder containing the file is the context folder.
+And the value can also point to a folder which contains a <code>Dockerfile</code>
+(e.g. <code>build: build</code>) which uses the folder as context folder and looks for
+<code>Dockerfile</code> there.</li>
+</ul>
+
+<p>It&rsquo;s strongly recommended to put <code>Dockerfile</code> and any related files to
+   <code>watches</code> list;</p>
+
+<ul>
+<li><p><code>build-from</code>: the path of context folder for <code>docker build</code>.
+Without this property, the path is derived from path of <code>Dockerfile</code> specified
+in <code>build</code>. Please note, the path must be direct/indirect parent of the
+<code>Dockerfile</code> as required by <code>docker build</code>;</p></li>
+
+<li><p><code>build-args</code>: list of args, corresponding to <code>docker build</code> option;</p></li>
+
+<li><p><code>image</code>: with <code>build</code> it&rsquo;s the image name and tag to build,
+without <code>build</code>, it&rsquo;s the image used to create the container;</p></li>
+
+<li><p><code>tags</code>: a list of tags in addition to <code>image</code> when do <code>docker build</code>;</p></li>
+
+<li><p><code>cache</code>: only used to specify <code>false</code> which adds <code>--no-cache</code> to <code>docker build</code>;</p></li>
+
+<li><p><code>content-trust</code>: only used to specify <code>false</code> which adds
+<code>--disable-content-trust</code> to <code>docker build/run</code>;</p></li>
+
+<li><p><code>src-volume</code>: the full path inside container where project root is mapped to.
+Default is <code>/src</code>;</p></li>
+
+<li><p><code>expose-docker</code>: when set <code>true</code>, expose the host docker server connectivity
+into container to allow docker client run from inside the container.
+This is very useful when docker is required for build and avoid problematic
+docker-in-docker;</p></li>
+
+<li><p><code>privileged</code>: run container in privileged mode, default is <code>false</code>;</p></li>
+
+<li><p><code>net</code>: when specified, only allowed value is <code>host</code>, when specified, run
+container with <code>--net=host --uts=host</code>;</p></li>
+
+<li><p><code>user</code>: passed to <code>docker run --user...</code>, by default, current <code>uid:gid</code> are
+passed (with <em>docker-machine</em> the <code>uid:gid</code> is queried from the virtual machine
+running docker daemon).
+It must be explicitly specified <code>root</code> if the script is executed as root
+inside container.
+When a non-root user is explicitly specified, all group IDs are automatically
+passed using <code>--group-add</code>l;</p></li>
+
+<li><p><code>groups</code>: explicitly specify group IDs to pass into container, instead of
+passing all of them;</p></li>
+
+<li><p><code>volumes</code>: a list of volume mappings passed to <code>-v</code> option of <code>docker run</code>.</p></li>
+</ul>
+
+<p>The following properties directly maps to <code>docker build/run</code> options:</p>
+
+<ul>
+<li><code>cap-add</code>, <code>cap-drop</code></li>
+<li><code>devices</code></li>
+<li><code>hosts</code>: mapped to <code>--add-host</code></li>
+<li><code>dns</code>, <code>dns-opts</code>, <code>dns-search</code></li>
+<li><code>blkio-weight</code>, <code>blkio-weight-devices</code></li>
+<li><code>device-read-bps</code>, <code>device-write-bps</code>, <code>device-read-iops</code>, <code>device-write-iops</code></li>
+<li><code>cpu-shares</code>, <code>cpu-period</code>, <code>cpu-quota</code>, <code>cpuset-cpus</code>, <code>cpuset-mems</code></li>
+<li><code>kernel-memory</code>, <code>memory</code>, <code>memory-swap</code>, <code>memory-swappiness</code>, <code>shm-size</code></li>
+<li><code>ulimit</code></li>
+<li><code>labels</code>, <code>label-files</code></li>
+<li><code>pull</code>, <code>force-rm</code></li>
+</ul>
+
+<p>All above properties can also be specified in <code>settings</code>/<code>local</code> under
+<code>docker</code> section:</p>
+
+<pre><code class="language-yaml">settings:
+    docker:
+        property: value
+</code></pre>
+
+<h2 id="volume-mapping">Volume Mapping</h2>
+
+<p>By default the current project root is mapped into container at <code>src-volume</code>,
+default value is <code>/src</code>.
+As the script is a shell script, the executable <code>/bin/sh</code> must be present in
+the container.</p>
+
+<p><em>NOTE</em></p>
+
+<p>On Mac OS, only paths under <code>/Users</code> can be mapped into the container.
+All project trees must sit under <code>/Users</code>.</p>
+
+<p>On Windows, only paths under <code>C:\Users</code> can be mapped into the container.
+All project trees must sit under <code>C:\Users</code>.</p>
+
+<h2 id="user">User</h2>
+
+<p>By default <em>hmake</em> uses current user (NOT root) to run inside container,
+which make sure any file change has the same ownership as the environment outside.
+If root is required, it can be explicitly specified <code>user: root</code>,
+however, all files created inside container will be owned by <code>root</code> outside,
+and you may eventually see some error messages like <code>permission denied</code> when you
+do something outside.</p>
+
+<h2 id="limits">Limits</h2>
+
+<p>On Linux, <em>docker-machine</em> is not supported, docker daemon must run on the same
+host running <em>hmake</em>.</p>
+
+    </div>
+    
+</section>
+
+            </div>
+            <div class="footer">
+    <div class="pure-menu pure-menu-horizontal pure-menu-open">
+        <ul>
+            <li>Pages generated by <a class="hugo" href="https://gohugo.io/" target="_blank">hugo</a></li>
+        </ul>
+    </div>
+</div>
+<script src="http://evo-cloud.github.com/hmake//js/jquery.min.js"></script>
+<script src="http://evo-cloud.github.com/hmake//js/jquery.prettysocial.min.js"></script>
+<script src="http://evo-cloud.github.com/hmake//js/rainbow-custom.min.js"></script>
+<script src="http://evo-cloud.github.com/hmake//js/scripts.js"></script>
+
+        </div>
+    </div>
+    <div class="sidebar pure-u-1 pure-u-md-1-4">
+    <div class="header">
+        
+        
+        
+        <hgroup>
+            <h1 class="brand-title"><a href="https://github.com/evo-cloud/hmake/releases">Releases</a></h1>
+            
+            <h2 class="brand-tagline">
+                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.0.0">1.0.0</a>
+            </h2>
+            
+        </hgroup>
+        
+        <nav class="nav">
+            <ul class="nav-list">
+                
+                <li class="nav-item">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-linux-amd64.tar.gz">
+                        <i class="os fa fa-linux"></i>
+                        <span>linux</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-darwin-amd64.tar.gz">
+                        <i class="os fa fa-apple"></i>
+                        <span>Mac OS X</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-windows-amd64.zip">
+                        <i class="os fa fa-windows"></i>
+                        <span>windows</span>
+                    </a>
+                </li>
+                
+            </ul>
+        </nav>
+        
+    </div>
+</div>
+
+</div>
+
+
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', '', 'auto');
+ga('send', 'pageview');
+
+</script>
+
+</body>
+</html>

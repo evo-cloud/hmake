@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> &middot; HyperMake</title>
+
+    <meta name="description" content="">
+
+    <meta name="generator" content="Hugo 0.17-DEV" />
+    <meta name="twitter:card" content="summary">
+    
+    <meta name="twitter:title" content=" &middot; HyperMake">
+    <meta name="twitter:description" content="">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content=" &middot; HyperMake">
+    <meta property="og:description" content="">
+
+    <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700|Oxygen:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/pure-min.css">
+    <!--[if lte IE 8]>
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive-old-ie-min.css">
+    <![endif]-->
+    <!--[if gt IE 8]><!-->
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive-min.css">
+    <!--<![endif]-->
+
+    <link rel="stylesheet" href="http://evo-cloud.github.com/hmake//css/syntax-highlighter.css">
+    <link rel="stylesheet" href="http://evo-cloud.github.com/hmake//css/blog.css">
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <link rel="alternate" type="application/rss+xml" title="HyperMake" href="http://evo-cloud.github.com/hmake//index.xml" />
+</head>
+<body>
+<div class="banner pure-u-1 pure-u-md-1-4">
+    <div class="banner-title">
+        <h1 class="brand-title"><a href="http://evo-cloud.github.com/hmake/">HyperMake</a></h1>
+        <h2 class="brand-tagline"> build without pre-requisites </h2>
+    </div>
+    <div class="banner-links">
+        <nav class="nav">
+            <ul class="nav-list">
+                
+                
+                <li class="nav-item">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake "><i class="fa fa-github-alt"></i><span> github</span></a>
+                </li>
+                
+                
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+<div id="layout" class="pure-g">
+    <div class="content pure-u-1 pure-u-md-3-4">
+        <div>
+            
+            <div class="posts">
+                
+<section class="post">
+    <header class="post-header">
+
+        <a href="http://evo-cloud.github.com/hmake/docs/FileFormat/" class="post-title"></a>
+
+        <p class="post-meta">
+            
+            
+        </p>
+    </header>
+    
+    <div class="post-description">
+        
+
+<h1 id="hypermake-file-format">HyperMake File Format</h1>
+
+<p>File <code>HyperMake</code> must be present in root directory of the project tree. Command
+<code>hmake</code> can be invoked in any sub-directories inside the project tree and it will
+locate the root of project by looking up <code>HyperMake</code>.
+Additional files must be named as <code>*.hmake</code> for being referenced in <code>includes</code>
+section.
+All these files share the same format.</p>
+
+<p>In <code>HyperMake</code> or <code>*.hmake</code>, define the following things:</p>
+
+<ul>
+<li>Format: the format presents the current file, should always be <code>hypermake.v0</code>;</li>
+<li>Name and description: only defined in top-level <code>HyperMake</code> file;</li>
+<li>Targets: the target to build, including dependencies and commands;</li>
+<li>Settings: the settings applies to <em>hmake</em> and should be merged into a global view;</li>
+<li>Local Settings: the settings only apply to current <code>HyperMake</code> or <code>.hmake</code> file;</li>
+<li>Includes: include more <code>*.hmake</code> files.</li>
+</ul>
+
+<p>Here&rsquo;s the schema in example (this is from the <code>HyperMake</code> file of <code>hmake</code> project):</p>
+
+<pre><code class="language-yaml">---
+format: hypermake.v0 # this indicates this is a HyperMake file
+
+# project name and description
+name: hmake
+description: HyperMake builds your project without pre-requisites
+
+# define targets
+targets:
+    builder:
+        description: build the docker image including toolchain
+        build: builder
+        image: hmake-builder:latest
+        watches:
+            - builder
+
+    hmake-linux-amd64:
+        description: static linked hmake binary for Linux AMD64
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+        cmds:
+            - ./build.sh linux amd64
+
+    hmake-darwin-amd64:
+        description: static linked hmake binary for Mac OS
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+        cmds:
+            - ./build.sh darwin amd64
+
+    vendor:
+        description: pull all vendor packages
+        after:
+            - builder
+        watches:
+            - vendor/manifest
+        env:
+            - HMAKE_VER_SUFFIX
+            - HMAKE_RELEASE            
+        cmds:
+            - gvt restore
+            - mkdir -p bin
+            - ./build.sh genver
+
+    test:
+        description: run tests
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+            - test
+        cmds:
+            - ginkgo ./test
+
+    cover:
+        description: run tests with coverage
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+            - test
+        cmds:
+            - &gt;
+                go test -coverprofile cover.out
+                -coverpkg ./project
+                ./test
+
+    all:
+        description: the default make target
+        after:
+            - hmake-linux-amd64
+            - hmake-darwin-amd64
+
+# settings shared across targets
+settings:
+    default-targets:
+        - all
+    docker:
+        image: hmake-builder:latest
+        src-volume: /go/src/github.com/evo-cloud/hmake
+
+# same as settings, but only apply to targets in the same file
+local:
+    key: value
+
+includes:
+    - build/**/**/*.hmake
+</code></pre>
+
+<h2 id="format">Format</h2>
+
+<p>The format of this <code>YAML</code> file is indicated by <code>format</code> property which is
+mandatory and the current acceptable value is <code>hypermake.v0</code></p>
+
+<h2 id="name-and-description">Name and Description</h2>
+
+<p>These are optional properties, while it&rsquo;s recommended <code>name</code> should be provided
+as project name.</p>
+
+<h2 id="targets">Targets</h2>
+
+<p>The property <code>targets</code> defines a dictionary of named targets.
+A target is a set of properties to define what to do (a script or a list of commands).
+Usually, it defines</p>
+
+<ul>
+<li>The environment to execute the script/commands,
+like docker image, workdir, and options for <code>docker run</code>;</li>
+<li>The dependencies between targets, using <code>before</code> and <code>after</code> properties;</li>
+<li>Watch of files to decide whether the target should be rebuilt.</li>
+</ul>
+
+<h4 id="common-properties-in-target">Common Properties in Target</h4>
+
+<ul>
+<li><code>description</code>: description of the target;</li>
+<li><code>before</code>: a list of names of targets which can only execute after this target;</li>
+<li><code>after</code>: a list of names of targets on which this targets depends;</li>
+<li><code>workdir</code>: the current working directory for commands in the target,
+relative to project root;</li>
+<li><code>watches</code>: a list of path/filenames (wildcard supported) whose mtime will be
+checked to determine if the target is out-of-date, without specifying this
+property, the target is automatically skipped if the last execution was successful
+and all dependencies are skipped;</li>
+<li><code>always</code>: always build the target regardless of last execution state and results
+of all dependencies (the <code>.PHONY</code> target in <code>make</code>);</li>
+</ul>
+
+<p>Other properties are specific to execution driver which executes the target.
+The currently supported execution driver is <code>docker</code>, please read
+<a href="/hmake/docs/DockerDriver/">Docker Driver</a> for details.</p>
+
+<h4 id="dependencies">Dependencies</h4>
+
+<p>Dependencies are specified using:</p>
+
+<ul>
+<li><code>after</code>: the target is executed when the depended tasks succeed or are skipped</li>
+<li><code>before</code>: the target must succeed or skip before the specified tasks get executed.</li>
+</ul>
+
+<p>A <em>skipped</em> target means there&rsquo;s nothing to do with the target (no commands or
+it&rsquo;s still up-to-date). It can be an equivalent to <em>success</em>.</p>
+
+<p>In most cases, <code>after</code> is enough. <code>before</code> is often used to inject dependencies.</p>
+
+<h4 id="matching-targets-names-with-wildcards">Matching targets names with wildcards</h4>
+
+<p>The places (<code>before</code>, <code>after</code>, <code>-r</code>, <code>-S</code>, command line targets, etc) requiring
+target names accept wildcards:</p>
+
+<ul>
+<li>Wildcards used in file names: <code>*</code>, <code>?</code>, <code>\</code> and <code>[chars]</code>, they are matched using <code>filepath.Match</code></li>
+<li>Regular Expression: the name starts and ends with <code>/</code></li>
+</ul>
+
+<h4 id="pre-defined-environment-variables">Pre-defined Environment Variables</h4>
+
+<ul>
+<li><code>HMAKE_PROJECT_NAME</code>: the name of the project</li>
+<li><code>HMAKE_PROJECT_DIR</code>: the directory containing <code>HyperMake</code> (aka. project root)</li>
+<li><code>HMAKE_PROJECT_FILE</code>: the full path to <code>HyperMake</code></li>
+<li><code>HMAKE_WORK_DIR</code>: <code>$HMAKE_PROJECT_DIR/.hmake</code></li>
+<li><code>HMAKE_LAUNCH_PATH</code>: the relative path under <code>$HMAKE_PROJECT_DIR</code> where <code>hmake</code> launches</li>
+<li><code>HMAKE_REQUIRED_TARGETS</code>: the names of targets explicitly required from command line, separate by space</li>
+<li><code>HMAKE_TARGET</code>: the name of the target currently in execution</li>
+<li><code>HMAKE_TARGET_DIR</code>: the relative path to directory containing the file which defines the target</li>
+<li><code>HMAKE_VERSION</code>: version of <em>hmake</em></li>
+<li><code>HMAKE_OS</code>: operating system</li>
+<li><code>HMAKE_ARCH</code>: CPU architecture</li>
+</ul>
+
+<h2 id="include-files">Include Files</h2>
+
+<p>In <code>includes</code> section, specify files to be included.
+The files included can provide more targets and also override settings.</p>
+
+<p>Any path used in <code>HyperMake</code> or <code>*.hmake</code> files are relative to current file.
+When a target gets executed, the default working directory is where the file
+defining the target exists.</p>
+
+<h2 id="settings">Settings</h2>
+
+<p>In <code>settings</code> section, the hierarchical dictionary is used to provide
+global settings. According to the order of <code>*.hmake</code> files loaded, the file loaded
+latter overrides the settings in the former loaded files.
+In <code>local</code> section, the settings are only applied to current file.
+And the properties defined in target overrides everything.</p>
+
+<p>Here&rsquo;s the order <em>hmake</em> looks a setting by name:</p>
+
+<ul>
+<li>From target&rsquo;s properties;</li>
+<li>From <code>local</code>;</li>
+<li>From <code>settings</code> in the reversed order of files being loaded.</li>
+</ul>
+
+<h4 id="pre-defined-setting-properties">Pre-defined Setting Properties</h4>
+
+<ul>
+<li><code>default-targets</code>: a list of targets to build when no targets are specified
+in <code>hmake</code> command;</li>
+<li><code>docker</code>: a set of <a href="/hmake/docs/DockerDriver/">docker</a> specific properties which defines
+default values for targets.</li>
+</ul>
+
+<h2 id="local-customization">Local Customization</h2>
+
+<p>After loading <code>HyperMake</code> and <code>*.hmake</code> files, <em>hmake</em> also looks up <code>.hmakerc</code>
+files from current directory up to root directory of the project and load them
+in the order from root directory down to the current directory.
+The <code>.hmakerc</code> has the same format as <code>HyperMake</code> and <code>*.hmake</code> files and is
+used to override settings and inject targets to satisfy the special needs of
+local development environment.
+<code>.hmakerc</code> should be included in <code>.gitignore</code> file.</p>
+
+    </div>
+    
+</section>
+
+            </div>
+            <div class="footer">
+    <div class="pure-menu pure-menu-horizontal pure-menu-open">
+        <ul>
+            <li>Pages generated by <a class="hugo" href="https://gohugo.io/" target="_blank">hugo</a></li>
+        </ul>
+    </div>
+</div>
+<script src="http://evo-cloud.github.com/hmake//js/jquery.min.js"></script>
+<script src="http://evo-cloud.github.com/hmake//js/jquery.prettysocial.min.js"></script>
+<script src="http://evo-cloud.github.com/hmake//js/rainbow-custom.min.js"></script>
+<script src="http://evo-cloud.github.com/hmake//js/scripts.js"></script>
+
+        </div>
+    </div>
+    <div class="sidebar pure-u-1 pure-u-md-1-4">
+    <div class="header">
+        
+        
+        
+        <hgroup>
+            <h1 class="brand-title"><a href="https://github.com/evo-cloud/hmake/releases">Releases</a></h1>
+            
+            <h2 class="brand-tagline">
+                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.0.0">1.0.0</a>
+            </h2>
+            
+        </hgroup>
+        
+        <nav class="nav">
+            <ul class="nav-list">
+                
+                <li class="nav-item">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-linux-amd64.tar.gz">
+                        <i class="os fa fa-linux"></i>
+                        <span>linux</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-darwin-amd64.tar.gz">
+                        <i class="os fa fa-apple"></i>
+                        <span>Mac OS X</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-windows-amd64.zip">
+                        <i class="os fa fa-windows"></i>
+                        <span>windows</span>
+                    </a>
+                </li>
+                
+            </ul>
+        </nav>
+        
+    </div>
+</div>
+
+</div>
+
+
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', '', 'auto');
+ga('send', 'pageview');
+
+</script>
+
+</body>
+</html>

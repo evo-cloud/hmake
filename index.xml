@@ -1,0 +1,995 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>HyperMake</title>
+    <link>http://evo-cloud.github.com/hmake/</link>
+    <description>Recent content on HyperMake</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <atom:link href="http://evo-cloud.github.com/hmake/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title></title>
+      <link>http://evo-cloud.github.com/hmake/README/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/README/</guid>
+      <description>
+
+&lt;h1 id=&#34;introduction&#34;&gt;Introduction&lt;/h1&gt;
+
+&lt;p&gt;It&amp;rsquo;s a build tool which builds projects &lt;strong&gt;without pre-requisites&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;Pains&lt;/em&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Preparing building environment may take days&lt;/li&gt;
+&lt;li&gt;Solving conflicts and incorrect versions of dependencies is painful&lt;/li&gt;
+&lt;li&gt;Writing long and complicated building instructions when shipping the work&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;em&gt;Heals&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;Forget about environment setup, what needed are only&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;A running &lt;a href=&#34;https://www.docker.com&#34;&gt;docker&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;hmake&lt;/code&gt; executable in &lt;code&gt;PATH&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;HyperMake helps you build projects instantly and consistently without installing
+pre-requisites in your local environment.
+It uses containers to build projects, all pre-requisites are installed cleanly
+and consistently inside the container.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;Features&lt;/em&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Brings back the experience of &lt;em&gt;make&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;Selectively build targets on demand&lt;/li&gt;
+&lt;li&gt;Build in parallel&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;getting-started&#34;&gt;Getting Started&lt;/h2&gt;
+
+&lt;p&gt;Knowledge required as a user:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Docker: &lt;a href=&#34;http://www.docker.com&#34;&gt;http://www.docker.com&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Very basic Unix shell and command line tools&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;As an author of HyperMake files:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;YAML: &lt;a href=&#34;http://yaml.org&#34;&gt;http://yaml.org&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&#34;installation&#34;&gt;Installation&lt;/h3&gt;
+
+&lt;p&gt;Assume &lt;a href=&#34;http://www.docker.com&#34;&gt;Docker&lt;/a&gt; is already installed, and make sure it&amp;rsquo;s
+running properly.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;TIPS&lt;/em&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;When using &lt;code&gt;docker-machine&lt;/code&gt;, many people encountered the issue docker complains
+unable to connect to docker daemon. The cause is the environment variables are
+not populated properly in current shell. Type the following commands:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# if you are using bash
+eval $(docker-machine env MACHINE-NAME)
+docker version
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Make sure &lt;code&gt;docker version&lt;/code&gt; is able to show both versions of client and server,
+otherwise, docker may not work properly.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Now we can move on install &lt;code&gt;hmake&lt;/code&gt;:&lt;/p&gt;
+
+&lt;p&gt;On Mac OS X, using Homebrew is the simplest way&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;brew tap evo-cloud/toolkit  # only do this once
+brew install hmake
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Alternatively, download from Github &lt;a href=&#34;https://github.com/evo-cloud/hmake/releases&#34;&gt;releases&lt;/a&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;curl -s https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
+chmod a+rx /usr/local/bin/hmake
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If you are on Mac OS, change &lt;code&gt;linux&lt;/code&gt; above to &lt;code&gt;darwin&lt;/code&gt;.
+For Windows, change &lt;code&gt;linux&lt;/code&gt; to &lt;code&gt;windows&lt;/code&gt; and unpack the binary to some folder in
+&lt;code&gt;%PATH%&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Now do &lt;code&gt;hmake --version&lt;/code&gt; to verify if it&amp;rsquo;s properly installed.&lt;/p&gt;
+
+&lt;h3 id=&#34;do-something-funny&#34;&gt;Do Something Funny&lt;/h3&gt;
+
+&lt;p&gt;For the first time using hmake, let&amp;rsquo;s do something funny - cross compile Linux
+kernel without installing anything, even on Mac OS/Windows!&lt;/p&gt;
+
+&lt;p&gt;Checkout the examples in &lt;a href=&#34;https://github.com/evo-cloud/hmake&#34;&gt;hmake&lt;/a&gt; repository&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;git clone https://github.com/evo-cloud/hmake
+cd hmake/examples/linux
+hmake -sv
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;That&amp;rsquo;s it! You get Linux kernel for both x86_64 and ARMv7 (vexpress board) in
+a while.&lt;/p&gt;
+
+&lt;p&gt;See &lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/examples/linux/README/&#34;&gt;README&lt;/a&gt; for details.&lt;/p&gt;
+
+&lt;h2 id=&#34;how-it-works&#34;&gt;How It Works&lt;/h2&gt;
+
+&lt;p&gt;&lt;em&gt;hmake&lt;/em&gt; works in a very simple way by running the commands of each target inside
+the specified Docker container which already has pre-requisites installed.
+The root directory of project tree is mapped into the container under a certain
+path which can be customized, and the commands is able to access files inside
+the project and can also produce output files into the project tree.&lt;/p&gt;
+
+&lt;h3 id=&#34;state-directory&#34;&gt;State Directory&lt;/h3&gt;
+
+&lt;p&gt;&lt;em&gt;hmake&lt;/em&gt; creates a state directory &lt;code&gt;$HMAKE_PROJECT_DIR/.hmake&lt;/code&gt;
+(see &lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/docs/FileFormat/&#34;&gt;File Format&lt;/a&gt; for the details of environment variables)
+to store logs and state files.
+The output (stdout and stderr combined) of each target is stored in files &lt;code&gt;TARGET.log&lt;/code&gt;.
+Debug log is stored as &lt;code&gt;hmake.debug.log&lt;/code&gt;.
+Summary file is stored as &lt;code&gt;hmake.summary.json&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&#34;documents&#34;&gt;Documents&lt;/h2&gt;
+
+&lt;p&gt;Please read the following documents if more detailed information is needed&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;References are list of specifications including
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/docs/FileFormat/&#34;&gt;File Format&lt;/a&gt; defines the format of &lt;em&gt;hmake&lt;/em&gt; files;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/docs/CommandLine/&#34;&gt;Command line&lt;/a&gt; specification;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/docs/Contribute/&#34;&gt;Contributing&lt;/a&gt; is a guideline for people who want to
+contribute to this project.&lt;/li&gt;
+&lt;li&gt;Examples are always helpful
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/examples/linux/README/&#34;&gt;Cross Compile Linux kernel&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/examples/drone/README/&#34;&gt;Cross Compile drone&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;supported-platform-and-software&#34;&gt;Supported Platform and Software&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;docker 1.9 and above (1.9 - 1.11 tested)&lt;/li&gt;
+&lt;li&gt;Linux (Ubuntu 14.04 tested)&lt;/li&gt;
+&lt;li&gt;Mac OS X 10.9 and above (10.9, 10.11 tested)&lt;/li&gt;
+&lt;li&gt;Windows 7 SP1&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4 id=&#34;limits&#34;&gt;Limits&lt;/h4&gt;
+
+&lt;ul&gt;
+&lt;li&gt;On Mac OS X, the project tree must be under &lt;code&gt;/Users&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;On Windows, the project tree must be under &lt;code&gt;C:\Users&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;docker-machine&lt;/code&gt; is required on Mac OS X and Windows;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;docker-machine&lt;/code&gt; is not supported on Linux;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;See &lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/docs/DockerDriver/&#34;&gt;Docker Driver&lt;/a&gt; for details.&lt;/p&gt;
+
+&lt;h2 id=&#34;license&#34;&gt;License&lt;/h2&gt;
+
+&lt;p&gt;MIT&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>http://evo-cloud.github.com/hmake/docs/CommandLine/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/docs/CommandLine/</guid>
+      <description>
+
+&lt;h1 id=&#34;hypermake-command-line&#34;&gt;HyperMake Command Line&lt;/h1&gt;
+
+&lt;h2 id=&#34;usage&#34;&gt;Usage&lt;/h2&gt;
+
+&lt;pre&gt;&lt;code&gt;hmake [OPTIONS] [TARGETS]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;There&amp;rsquo;s no specific order between &lt;code&gt;OPTIONS&lt;/code&gt; and &lt;code&gt;TARGETS&lt;/code&gt;. All &lt;code&gt;OPTIONS&lt;/code&gt; starts
+with hyphen &lt;code&gt;-&lt;/code&gt; while &lt;code&gt;TARGETS&lt;/code&gt; doesn&amp;rsquo;t.&lt;/p&gt;
+
+&lt;h2 id=&#34;option-parsing-rules&#34;&gt;Option Parsing Rules&lt;/h2&gt;
+
+&lt;p&gt;Common Unix command line option parsing rule is adopted:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;A short option starts with a single hyphen and then a single letter
+(e.g. &lt;code&gt;-C&lt;/code&gt;);
+it may have a corresponding long option which starts with a double hyphen
+followed by a word (or a few words concated with hyphen)
+(e.g. &lt;code&gt;--chdir&lt;/code&gt;, &lt;code&gt;--this-is-a-multi-word-opt&lt;/code&gt;);&lt;/li&gt;
+&lt;li&gt;The value after a short option is provided as a separated argument
+(after a space, e.g. &lt;code&gt;-C /tmp/proj&lt;/code&gt;);
+for long option, the value follows directly with &lt;code&gt;=&lt;/code&gt; in the same argument
+(e.g. &lt;code&gt;--chdir=/tmp/proj&lt;/code&gt;);&lt;/li&gt;
+&lt;li&gt;Some option can be specified multiple times to provide a list or a map
+(e.g.
+  list: &lt;code&gt;--include=a.hmake --include=b.hmake&lt;/code&gt; or &lt;code&gt;-I a.hmake -I b.hmake&lt;/code&gt;;
+  map: &lt;code&gt;--define=ARCH=x86_64 --define=OS=linux&lt;/code&gt; or &lt;code&gt;-D ARCH=x86_64 -D OS=linux&lt;/code&gt;
+);&lt;/li&gt;
+&lt;li&gt;Bool options can be specified without value as &lt;code&gt;true&lt;/code&gt; or prefixed by &lt;code&gt;no-&lt;/code&gt; as
+&lt;code&gt;false&lt;/code&gt; (e.g. &lt;code&gt;--verbose&lt;/code&gt; for &lt;code&gt;true&lt;/code&gt;, &lt;code&gt;--no-verbose&lt;/code&gt; for &lt;code&gt;false&lt;/code&gt;);
+It can also be specified with a value in the long option format
+(e.g. &lt;code&gt;--verbose=true&lt;/code&gt; or &lt;code&gt;--verbose=false&lt;/code&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;options&#34;&gt;Options&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;--chdir=PATH, -C PATH&lt;/code&gt;: Chdir to specified PATH first before doing anything&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--include=FILE, -I FILE&lt;/code&gt;: Include additional files (must be relative path under project root), can be specified multiple times&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--define=key=value, -D key=value&lt;/code&gt;: Define property in global &lt;code&gt;settings&lt;/code&gt; section, &lt;code&gt;key&lt;/code&gt; may include &lt;code&gt;.&lt;/code&gt; to specify the hierarchy&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--parallel=N, -p N&lt;/code&gt;: Set maximum number of targets executed in parallel, 0 for auto, -1 for unlimited&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--rebuild-all, -R&lt;/code&gt;: Force rebuild all needed targets&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--rebuild TARGET, -r TARGET&lt;/code&gt;: Force rebuild specified target, this can repeat&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--skip TARGET, -S TARGET&lt;/code&gt;: Skip specified target (mark as Skipped), this can repeat&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--json&lt;/code&gt;: Dump execution events to stdout each encoded in single line json&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--summary, -s&lt;/code&gt;: Show execution summary before exit&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--verbose, -v&lt;/code&gt;: Show execution output to stderr for each target&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--rcfile|--no-rcfile&lt;/code&gt;: Load .hmakerc inside project directories, default is true&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--color|--no-color&lt;/code&gt;: Explicitly specify print with color/no-color&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--emoji|--no-emoji&lt;/code&gt;: Explicitly specify print with emoji/no-emoji&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--no-debug-log&lt;/code&gt;: Disable writing debug log to &lt;code&gt;hmake.debug.log&lt;/code&gt; in hmake state directory&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--show-summary&lt;/code&gt;: When specified, print previous execution summary and exit&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--targets&lt;/code&gt;: When specified, print list of target names and exit&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--dryrun&lt;/code&gt;: When specified, run targets as normal but without invoking execution drivers (simply mark task Success)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--version&lt;/code&gt;: When specified, print version and exit&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;exit-code&#34;&gt;Exit Code&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;0: Success&lt;/li&gt;
+&lt;li&gt;1: One or more targets failed&lt;/li&gt;
+&lt;li&gt;2: Incorrect usage&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>http://evo-cloud.github.com/hmake/docs/Contribute/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/docs/Contribute/</guid>
+      <description>
+
+&lt;h1 id=&#34;guidelines-for-contributing-to-hypermake&#34;&gt;Guidelines for Contributing to HyperMake&lt;/h1&gt;
+
+&lt;p&gt;Thanks for using &lt;em&gt;HyperMake&lt;/em&gt; and welcome to contribute any features/patches back
+to this project!&lt;/p&gt;
+
+&lt;h2 id=&#34;before-you-start&#34;&gt;Before You Start&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Make sure you understand the features of &lt;em&gt;HyperMake&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;Look at &lt;a href=&#34;https://github.com/evo-cloud/hmake/issues&#34;&gt;Github Issues&lt;/a&gt; to see if
+your feature request/issue has already been submitted&lt;/li&gt;
+&lt;li&gt;Be familiar with &lt;a href=&#34;http://golang.org&#34;&gt;Go development&lt;/a&gt; and &lt;a href=&#34;http://www.docker.com&#34;&gt;Docker&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;submit-an-issue&#34;&gt;Submit an Issue&lt;/h2&gt;
+
+&lt;p&gt;An issue can be a feature request or a bug. If possible please put on the
+corresponding labels &lt;code&gt;feature&lt;/code&gt;, &lt;code&gt;bug&lt;/code&gt;, &lt;code&gt;enhancement&lt;/code&gt; etc. And the maintainers
+may alter the labels and put priority labels.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;Features&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;Please clearly define the feature with as more details as possible to help others
+easily understand the feature. For example, describing the detailed operation
+steps, listing the example usage (command line) will be great help.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;Bugs&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;In the title, please briefly describe the problem.
+In the comment, please follow the structures below:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# Problem Description
+
+Detailed problem description
+
+# Environment
+
+Platform: OS, version
+Arch: CPU architecture
+Version: hmake version
+
+Other information...
+
+# Reproduce Steps
+
+Steps for reproducing the problem
+
+# Attached Content
+
+E.g. Content of your HyperMake file, project directory structure,
+scripts when possible.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;submit-a-pull-request&#34;&gt;Submit a Pull Request&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Make sure there&amp;rsquo;s a corresponding issue submitted in
+&lt;a href=&#34;https://github.com/evo-cloud/hmake/issues&#34;&gt;Github Issues&lt;/a&gt;, arbitrary pull
+requests are unlikely to be accepted;&lt;/li&gt;
+&lt;li&gt;Make sure your code has been well formatted, vetted/linted and documented;&lt;/li&gt;
+&lt;li&gt;Include issue number in your short commit message (first line), like &lt;code&gt;#15&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;Tests must be included, depending on the change, End-to-End tests may be required;&lt;/li&gt;
+&lt;li&gt;Make sure there&amp;rsquo;s a single commit.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;em&gt;TIPS&lt;/em&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;To run format check, vet and lint, you can simply use&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;hmake check -v
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;To fix format, simply use&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;go fmt -w DIR
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&#34;dependencies-needed&#34;&gt;Dependencies Needed&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Git&lt;/li&gt;
+&lt;li&gt;A Github account&lt;/li&gt;
+&lt;li&gt;Go 1.6 or above: install from &lt;a href=&#34;http://golang.org&#34;&gt;golang.org&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;A list of Go dependencies:
+
+&lt;ul&gt;
+&lt;li&gt;gvt: &lt;code&gt;go get github.com/FiloSottile/gvt&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;ginkgo: &lt;code&gt;go get github.com/onsi/ginkgo/ginkgo&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;gomega: &lt;code&gt;go get github.com/onsi/gomega&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;hugo: &lt;code&gt;go get github.com/spf13/hugo&lt;/code&gt;, if you want to generate sites&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;For format, vet and lint
+
+&lt;ul&gt;
+&lt;li&gt;go tools: &lt;code&gt;go get golang.org/x/tools/cmd/...&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;metalinter: &lt;code&gt;go get -v github.com/alecthomas/gometalinter &amp;amp;&amp;amp; gometalinter --install&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;steps-to-get-started&#34;&gt;Steps to Get Started&lt;/h2&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Fork &lt;code&gt;github.com/evo-cloud/hmake&lt;/code&gt; to your own account (assume &lt;code&gt;dev&lt;/code&gt;)&lt;/li&gt;
+&lt;li&gt;Create a Go development environment, the following steps are recommended for
+most people, especially for those new to Go:&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;   mkdir -p ~/workspace/go
+   cd ~/workspace/go
+   export GOPATH=`pwd`
+   export PATH=&amp;quot;$GOPATH/bin:$PATH&amp;quot;
+   go get github.com/FiloSottile/gvt
+   go get github.com/onsi/ginkgo/ginkgo
+   go get github.com/onsi/gomega
+   mkdir -p src/github.com/evo-cloud
+   git clone git@github.com:dev/hmake src/github.com/evo-cloud/hmake
+   cd src/github.com/evo-cloud/hmake
+   gvt restore
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Start developing&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;   cd ~/workspace/go/src/github.com/evo-cloud/hmake
+   # and make sure environment variable GOPATH and PATH are properly set as above
+
+   go build ./   # this will build ./hmake executable
+   go install ./ # or if you want to install to $GOPATH/bin
+
+   # make sure docker is running
+   # if docker-machine is used (not for Linux)
+   eval $(docker-machine env MACHINE-NAME)
+   docker version # make sure both client and server versions are displayed
+
+   ./hmake -sv # build all by default
+   ./hmake check # check format, run lint
+   ./hmake test # run tests
+   ./hmake e2e # run end-to-end tests
+   ./hmake cover # generate coverage
+
+   # alternatively, use go directly
+   go test ./test
+   # or
+   ginkgo ./test
+   go test ./test/e2e
+   # or
+   ginkgo ./test/e2e
+   go test -coverprofile=cover.out -coverpkg=./project ./test
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>http://evo-cloud.github.com/hmake/docs/DockerDriver/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/docs/DockerDriver/</guid>
+      <description>
+
+&lt;h1 id=&#34;the-docker-execution-driver&#34;&gt;The &lt;em&gt;docker&lt;/em&gt; Execution Driver&lt;/h1&gt;
+
+&lt;p&gt;This execution driver interprets commands or scripts and run inside the specified
+docker container.&lt;/p&gt;
+
+&lt;h2 id=&#34;properties&#34;&gt;Properties&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;script&lt;/code&gt;: a multi-line string represents a full script to execute inside the
+container;
+E.g.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;  targets:
+      sample:
+          script: |
+              #!/bin/bash
+              echo &#39;This is a bash script&#39;
+      sample1:
+          script: |
+              #!/usr/bin/env perl
+              print &amp;quot;a perl script&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;cmds&lt;/code&gt;: when &lt;code&gt;script&lt;/code&gt; is not specified, this is a list of commands to execute
+for the target; E.g.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;  targets:
+      sample:
+          cmds:
+              - mkdir -p bin
+              - gcc -o bin/hello hello.c
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;the list of commands is merged to generate a shell script:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;  #!/bin/sh
+  set -e
+  mkdir -p bin
+  gcc -o bin/hello hello.c
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;env&lt;/code&gt;: a list of environment variables (the form &lt;code&gt;NAME=VALUE&lt;/code&gt;) to be used for
+execution (the &lt;code&gt;-e&lt;/code&gt; option of &lt;code&gt;docker run&lt;/code&gt;); E.g.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;  targets:
+      sample:
+          env:
+              - ARCH=x86_64
+              - OS=linux
+              - RELEASE        # without =VALUE, the value is populated from
+                               # current environment of hmake
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;&lt;code&gt;env-files&lt;/code&gt;: list of files providing environment variables, see &lt;code&gt;--env-files&lt;/code&gt;
+of &lt;code&gt;docker run&lt;/code&gt;;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;console&lt;/code&gt;: when &lt;code&gt;true&lt;/code&gt;, the current stdin/stdout/stderr is directly passed to
+command which is able to fully control the current console, equivalent to
+&lt;code&gt;docker run -it&lt;/code&gt;.
+Default is false, equivalent to &lt;code&gt;docker run -a STDOUT -a STDERR&lt;/code&gt;.&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;em&gt;NOTE: When enabled, no output is captured or logged.&lt;/em&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;build&lt;/code&gt;: path to &lt;code&gt;Dockerfile&lt;/code&gt;, when specified, this target builds a docker
+image first. &lt;code&gt;image&lt;/code&gt; property specifies the image name and tag.
+The value can point to a &lt;code&gt;Dockerfile&lt;/code&gt; (e.g. &lt;code&gt;build: build/Dockerfile.arm&lt;/code&gt;)
+which indicates the folder containing the file is the context folder.
+And the value can also point to a folder which contains a &lt;code&gt;Dockerfile&lt;/code&gt;
+(e.g. &lt;code&gt;build: build&lt;/code&gt;) which uses the folder as context folder and looks for
+&lt;code&gt;Dockerfile&lt;/code&gt; there.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;It&amp;rsquo;s strongly recommended to put &lt;code&gt;Dockerfile&lt;/code&gt; and any related files to
+   &lt;code&gt;watches&lt;/code&gt; list;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;&lt;code&gt;build-from&lt;/code&gt;: the path of context folder for &lt;code&gt;docker build&lt;/code&gt;.
+Without this property, the path is derived from path of &lt;code&gt;Dockerfile&lt;/code&gt; specified
+in &lt;code&gt;build&lt;/code&gt;. Please note, the path must be direct/indirect parent of the
+&lt;code&gt;Dockerfile&lt;/code&gt; as required by &lt;code&gt;docker build&lt;/code&gt;;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;build-args&lt;/code&gt;: list of args, corresponding to &lt;code&gt;docker build&lt;/code&gt; option;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;image&lt;/code&gt;: with &lt;code&gt;build&lt;/code&gt; it&amp;rsquo;s the image name and tag to build,
+without &lt;code&gt;build&lt;/code&gt;, it&amp;rsquo;s the image used to create the container;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;tags&lt;/code&gt;: a list of tags in addition to &lt;code&gt;image&lt;/code&gt; when do &lt;code&gt;docker build&lt;/code&gt;;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;cache&lt;/code&gt;: only used to specify &lt;code&gt;false&lt;/code&gt; which adds &lt;code&gt;--no-cache&lt;/code&gt; to &lt;code&gt;docker build&lt;/code&gt;;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;content-trust&lt;/code&gt;: only used to specify &lt;code&gt;false&lt;/code&gt; which adds
+&lt;code&gt;--disable-content-trust&lt;/code&gt; to &lt;code&gt;docker build/run&lt;/code&gt;;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;src-volume&lt;/code&gt;: the full path inside container where project root is mapped to.
+Default is &lt;code&gt;/src&lt;/code&gt;;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;expose-docker&lt;/code&gt;: when set &lt;code&gt;true&lt;/code&gt;, expose the host docker server connectivity
+into container to allow docker client run from inside the container.
+This is very useful when docker is required for build and avoid problematic
+docker-in-docker;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;privileged&lt;/code&gt;: run container in privileged mode, default is &lt;code&gt;false&lt;/code&gt;;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;net&lt;/code&gt;: when specified, only allowed value is &lt;code&gt;host&lt;/code&gt;, when specified, run
+container with &lt;code&gt;--net=host --uts=host&lt;/code&gt;;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;user&lt;/code&gt;: passed to &lt;code&gt;docker run --user...&lt;/code&gt;, by default, current &lt;code&gt;uid:gid&lt;/code&gt; are
+passed (with &lt;em&gt;docker-machine&lt;/em&gt; the &lt;code&gt;uid:gid&lt;/code&gt; is queried from the virtual machine
+running docker daemon).
+It must be explicitly specified &lt;code&gt;root&lt;/code&gt; if the script is executed as root
+inside container.
+When a non-root user is explicitly specified, all group IDs are automatically
+passed using &lt;code&gt;--group-add&lt;/code&gt;l;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;groups&lt;/code&gt;: explicitly specify group IDs to pass into container, instead of
+passing all of them;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;volumes&lt;/code&gt;: a list of volume mappings passed to &lt;code&gt;-v&lt;/code&gt; option of &lt;code&gt;docker run&lt;/code&gt;.&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The following properties directly maps to &lt;code&gt;docker build/run&lt;/code&gt; options:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;cap-add&lt;/code&gt;, &lt;code&gt;cap-drop&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;devices&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;hosts&lt;/code&gt;: mapped to &lt;code&gt;--add-host&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;dns&lt;/code&gt;, &lt;code&gt;dns-opts&lt;/code&gt;, &lt;code&gt;dns-search&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;blkio-weight&lt;/code&gt;, &lt;code&gt;blkio-weight-devices&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;device-read-bps&lt;/code&gt;, &lt;code&gt;device-write-bps&lt;/code&gt;, &lt;code&gt;device-read-iops&lt;/code&gt;, &lt;code&gt;device-write-iops&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;cpu-shares&lt;/code&gt;, &lt;code&gt;cpu-period&lt;/code&gt;, &lt;code&gt;cpu-quota&lt;/code&gt;, &lt;code&gt;cpuset-cpus&lt;/code&gt;, &lt;code&gt;cpuset-mems&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;kernel-memory&lt;/code&gt;, &lt;code&gt;memory&lt;/code&gt;, &lt;code&gt;memory-swap&lt;/code&gt;, &lt;code&gt;memory-swappiness&lt;/code&gt;, &lt;code&gt;shm-size&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ulimit&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;labels&lt;/code&gt;, &lt;code&gt;label-files&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;pull&lt;/code&gt;, &lt;code&gt;force-rm&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;All above properties can also be specified in &lt;code&gt;settings&lt;/code&gt;/&lt;code&gt;local&lt;/code&gt; under
+&lt;code&gt;docker&lt;/code&gt; section:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;settings:
+    docker:
+        property: value
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;volume-mapping&#34;&gt;Volume Mapping&lt;/h2&gt;
+
+&lt;p&gt;By default the current project root is mapped into container at &lt;code&gt;src-volume&lt;/code&gt;,
+default value is &lt;code&gt;/src&lt;/code&gt;.
+As the script is a shell script, the executable &lt;code&gt;/bin/sh&lt;/code&gt; must be present in
+the container.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;NOTE&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;On Mac OS, only paths under &lt;code&gt;/Users&lt;/code&gt; can be mapped into the container.
+All project trees must sit under &lt;code&gt;/Users&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;On Windows, only paths under &lt;code&gt;C:\Users&lt;/code&gt; can be mapped into the container.
+All project trees must sit under &lt;code&gt;C:\Users&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&#34;user&#34;&gt;User&lt;/h2&gt;
+
+&lt;p&gt;By default &lt;em&gt;hmake&lt;/em&gt; uses current user (NOT root) to run inside container,
+which make sure any file change has the same ownership as the environment outside.
+If root is required, it can be explicitly specified &lt;code&gt;user: root&lt;/code&gt;,
+however, all files created inside container will be owned by &lt;code&gt;root&lt;/code&gt; outside,
+and you may eventually see some error messages like &lt;code&gt;permission denied&lt;/code&gt; when you
+do something outside.&lt;/p&gt;
+
+&lt;h2 id=&#34;limits&#34;&gt;Limits&lt;/h2&gt;
+
+&lt;p&gt;On Linux, &lt;em&gt;docker-machine&lt;/em&gt; is not supported, docker daemon must run on the same
+host running &lt;em&gt;hmake&lt;/em&gt;.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>http://evo-cloud.github.com/hmake/docs/FileFormat/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/docs/FileFormat/</guid>
+      <description>
+
+&lt;h1 id=&#34;hypermake-file-format&#34;&gt;HyperMake File Format&lt;/h1&gt;
+
+&lt;p&gt;File &lt;code&gt;HyperMake&lt;/code&gt; must be present in root directory of the project tree. Command
+&lt;code&gt;hmake&lt;/code&gt; can be invoked in any sub-directories inside the project tree and it will
+locate the root of project by looking up &lt;code&gt;HyperMake&lt;/code&gt;.
+Additional files must be named as &lt;code&gt;*.hmake&lt;/code&gt; for being referenced in &lt;code&gt;includes&lt;/code&gt;
+section.
+All these files share the same format.&lt;/p&gt;
+
+&lt;p&gt;In &lt;code&gt;HyperMake&lt;/code&gt; or &lt;code&gt;*.hmake&lt;/code&gt;, define the following things:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Format: the format presents the current file, should always be &lt;code&gt;hypermake.v0&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;Name and description: only defined in top-level &lt;code&gt;HyperMake&lt;/code&gt; file;&lt;/li&gt;
+&lt;li&gt;Targets: the target to build, including dependencies and commands;&lt;/li&gt;
+&lt;li&gt;Settings: the settings applies to &lt;em&gt;hmake&lt;/em&gt; and should be merged into a global view;&lt;/li&gt;
+&lt;li&gt;Local Settings: the settings only apply to current &lt;code&gt;HyperMake&lt;/code&gt; or &lt;code&gt;.hmake&lt;/code&gt; file;&lt;/li&gt;
+&lt;li&gt;Includes: include more &lt;code&gt;*.hmake&lt;/code&gt; files.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Here&amp;rsquo;s the schema in example (this is from the &lt;code&gt;HyperMake&lt;/code&gt; file of &lt;code&gt;hmake&lt;/code&gt; project):&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;---
+format: hypermake.v0 # this indicates this is a HyperMake file
+
+# project name and description
+name: hmake
+description: HyperMake builds your project without pre-requisites
+
+# define targets
+targets:
+    builder:
+        description: build the docker image including toolchain
+        build: builder
+        image: hmake-builder:latest
+        watches:
+            - builder
+
+    hmake-linux-amd64:
+        description: static linked hmake binary for Linux AMD64
+        after:
+            - vendor
+        watches:
+            - &#39;**/**/*.go&#39;
+        cmds:
+            - ./build.sh linux amd64
+
+    hmake-darwin-amd64:
+        description: static linked hmake binary for Mac OS
+        after:
+            - vendor
+        watches:
+            - &#39;**/**/*.go&#39;
+        cmds:
+            - ./build.sh darwin amd64
+
+    vendor:
+        description: pull all vendor packages
+        after:
+            - builder
+        watches:
+            - vendor/manifest
+        env:
+            - HMAKE_VER_SUFFIX
+            - HMAKE_RELEASE            
+        cmds:
+            - gvt restore
+            - mkdir -p bin
+            - ./build.sh genver
+
+    test:
+        description: run tests
+        after:
+            - vendor
+        watches:
+            - &#39;**/**/*.go&#39;
+            - test
+        cmds:
+            - ginkgo ./test
+
+    cover:
+        description: run tests with coverage
+        after:
+            - vendor
+        watches:
+            - &#39;**/**/*.go&#39;
+            - test
+        cmds:
+            - &amp;gt;
+                go test -coverprofile cover.out
+                -coverpkg ./project
+                ./test
+
+    all:
+        description: the default make target
+        after:
+            - hmake-linux-amd64
+            - hmake-darwin-amd64
+
+# settings shared across targets
+settings:
+    default-targets:
+        - all
+    docker:
+        image: hmake-builder:latest
+        src-volume: /go/src/github.com/evo-cloud/hmake
+
+# same as settings, but only apply to targets in the same file
+local:
+    key: value
+
+includes:
+    - build/**/**/*.hmake
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;format&#34;&gt;Format&lt;/h2&gt;
+
+&lt;p&gt;The format of this &lt;code&gt;YAML&lt;/code&gt; file is indicated by &lt;code&gt;format&lt;/code&gt; property which is
+mandatory and the current acceptable value is &lt;code&gt;hypermake.v0&lt;/code&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;name-and-description&#34;&gt;Name and Description&lt;/h2&gt;
+
+&lt;p&gt;These are optional properties, while it&amp;rsquo;s recommended &lt;code&gt;name&lt;/code&gt; should be provided
+as project name.&lt;/p&gt;
+
+&lt;h2 id=&#34;targets&#34;&gt;Targets&lt;/h2&gt;
+
+&lt;p&gt;The property &lt;code&gt;targets&lt;/code&gt; defines a dictionary of named targets.
+A target is a set of properties to define what to do (a script or a list of commands).
+Usually, it defines&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;The environment to execute the script/commands,
+like docker image, workdir, and options for &lt;code&gt;docker run&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;The dependencies between targets, using &lt;code&gt;before&lt;/code&gt; and &lt;code&gt;after&lt;/code&gt; properties;&lt;/li&gt;
+&lt;li&gt;Watch of files to decide whether the target should be rebuilt.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4 id=&#34;common-properties-in-target&#34;&gt;Common Properties in Target&lt;/h4&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;description&lt;/code&gt;: description of the target;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;before&lt;/code&gt;: a list of names of targets which can only execute after this target;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;after&lt;/code&gt;: a list of names of targets on which this targets depends;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;workdir&lt;/code&gt;: the current working directory for commands in the target,
+relative to project root;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;watches&lt;/code&gt;: a list of path/filenames (wildcard supported) whose mtime will be
+checked to determine if the target is out-of-date, without specifying this
+property, the target is automatically skipped if the last execution was successful
+and all dependencies are skipped;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;always&lt;/code&gt;: always build the target regardless of last execution state and results
+of all dependencies (the &lt;code&gt;.PHONY&lt;/code&gt; target in &lt;code&gt;make&lt;/code&gt;);&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Other properties are specific to execution driver which executes the target.
+The currently supported execution driver is &lt;code&gt;docker&lt;/code&gt;, please read
+&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/docs/DockerDriver/&#34;&gt;Docker Driver&lt;/a&gt; for details.&lt;/p&gt;
+
+&lt;h4 id=&#34;dependencies&#34;&gt;Dependencies&lt;/h4&gt;
+
+&lt;p&gt;Dependencies are specified using:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;after&lt;/code&gt;: the target is executed when the depended tasks succeed or are skipped&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;before&lt;/code&gt;: the target must succeed or skip before the specified tasks get executed.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;A &lt;em&gt;skipped&lt;/em&gt; target means there&amp;rsquo;s nothing to do with the target (no commands or
+it&amp;rsquo;s still up-to-date). It can be an equivalent to &lt;em&gt;success&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;In most cases, &lt;code&gt;after&lt;/code&gt; is enough. &lt;code&gt;before&lt;/code&gt; is often used to inject dependencies.&lt;/p&gt;
+
+&lt;h4 id=&#34;matching-targets-names-with-wildcards&#34;&gt;Matching targets names with wildcards&lt;/h4&gt;
+
+&lt;p&gt;The places (&lt;code&gt;before&lt;/code&gt;, &lt;code&gt;after&lt;/code&gt;, &lt;code&gt;-r&lt;/code&gt;, &lt;code&gt;-S&lt;/code&gt;, command line targets, etc) requiring
+target names accept wildcards:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Wildcards used in file names: &lt;code&gt;*&lt;/code&gt;, &lt;code&gt;?&lt;/code&gt;, &lt;code&gt;\&lt;/code&gt; and &lt;code&gt;[chars]&lt;/code&gt;, they are matched using &lt;code&gt;filepath.Match&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Regular Expression: the name starts and ends with &lt;code&gt;/&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4 id=&#34;pre-defined-environment-variables&#34;&gt;Pre-defined Environment Variables&lt;/h4&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;HMAKE_PROJECT_NAME&lt;/code&gt;: the name of the project&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;HMAKE_PROJECT_DIR&lt;/code&gt;: the directory containing &lt;code&gt;HyperMake&lt;/code&gt; (aka. project root)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;HMAKE_PROJECT_FILE&lt;/code&gt;: the full path to &lt;code&gt;HyperMake&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;HMAKE_WORK_DIR&lt;/code&gt;: &lt;code&gt;$HMAKE_PROJECT_DIR/.hmake&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;HMAKE_LAUNCH_PATH&lt;/code&gt;: the relative path under &lt;code&gt;$HMAKE_PROJECT_DIR&lt;/code&gt; where &lt;code&gt;hmake&lt;/code&gt; launches&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;HMAKE_REQUIRED_TARGETS&lt;/code&gt;: the names of targets explicitly required from command line, separate by space&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;HMAKE_TARGET&lt;/code&gt;: the name of the target currently in execution&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;HMAKE_TARGET_DIR&lt;/code&gt;: the relative path to directory containing the file which defines the target&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;HMAKE_VERSION&lt;/code&gt;: version of &lt;em&gt;hmake&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;HMAKE_OS&lt;/code&gt;: operating system&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;HMAKE_ARCH&lt;/code&gt;: CPU architecture&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;include-files&#34;&gt;Include Files&lt;/h2&gt;
+
+&lt;p&gt;In &lt;code&gt;includes&lt;/code&gt; section, specify files to be included.
+The files included can provide more targets and also override settings.&lt;/p&gt;
+
+&lt;p&gt;Any path used in &lt;code&gt;HyperMake&lt;/code&gt; or &lt;code&gt;*.hmake&lt;/code&gt; files are relative to current file.
+When a target gets executed, the default working directory is where the file
+defining the target exists.&lt;/p&gt;
+
+&lt;h2 id=&#34;settings&#34;&gt;Settings&lt;/h2&gt;
+
+&lt;p&gt;In &lt;code&gt;settings&lt;/code&gt; section, the hierarchical dictionary is used to provide
+global settings. According to the order of &lt;code&gt;*.hmake&lt;/code&gt; files loaded, the file loaded
+latter overrides the settings in the former loaded files.
+In &lt;code&gt;local&lt;/code&gt; section, the settings are only applied to current file.
+And the properties defined in target overrides everything.&lt;/p&gt;
+
+&lt;p&gt;Here&amp;rsquo;s the order &lt;em&gt;hmake&lt;/em&gt; looks a setting by name:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;From target&amp;rsquo;s properties;&lt;/li&gt;
+&lt;li&gt;From &lt;code&gt;local&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;From &lt;code&gt;settings&lt;/code&gt; in the reversed order of files being loaded.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4 id=&#34;pre-defined-setting-properties&#34;&gt;Pre-defined Setting Properties&lt;/h4&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;default-targets&lt;/code&gt;: a list of targets to build when no targets are specified
+in &lt;code&gt;hmake&lt;/code&gt; command;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;docker&lt;/code&gt;: a set of &lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/docs/DockerDriver/&#34;&gt;docker&lt;/a&gt; specific properties which defines
+default values for targets.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;local-customization&#34;&gt;Local Customization&lt;/h2&gt;
+
+&lt;p&gt;After loading &lt;code&gt;HyperMake&lt;/code&gt; and &lt;code&gt;*.hmake&lt;/code&gt; files, &lt;em&gt;hmake&lt;/em&gt; also looks up &lt;code&gt;.hmakerc&lt;/code&gt;
+files from current directory up to root directory of the project and load them
+in the order from root directory down to the current directory.
+The &lt;code&gt;.hmakerc&lt;/code&gt; has the same format as &lt;code&gt;HyperMake&lt;/code&gt; and &lt;code&gt;*.hmake&lt;/code&gt; files and is
+used to override settings and inject targets to satisfy the special needs of
+local development environment.
+&lt;code&gt;.hmakerc&lt;/code&gt; should be included in &lt;code&gt;.gitignore&lt;/code&gt; file.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>http://evo-cloud.github.com/hmake/examples/drone/README/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/examples/drone/README/</guid>
+      <description>
+
+&lt;h1 id=&#34;example-cross-build-drone&#34;&gt;Example - Cross build Drone&lt;/h1&gt;
+
+&lt;p&gt;This example demonstrates how to use HyperMake to cross build
+&lt;a href=&#34;https://github.com/drone/drone&#34;&gt;drone&lt;/a&gt; for different platforms.&lt;/p&gt;
+
+&lt;h2 id=&#34;get-started&#34;&gt;Get Started&lt;/h2&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;hmake -sv
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;how-it-works&#34;&gt;How it works&lt;/h2&gt;
+
+&lt;p&gt;Simply a few steps:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Build a docker image containing all tools&lt;/li&gt;
+&lt;li&gt;Install dependencies (Go get)&lt;/li&gt;
+&lt;li&gt;Git clone latest source code&lt;/li&gt;
+&lt;li&gt;Go generate&lt;/li&gt;
+&lt;li&gt;Go build for (in parallel)
+
+&lt;ul&gt;
+&lt;li&gt;linux-amd64&lt;/li&gt;
+&lt;li&gt;linux-arm64&lt;/li&gt;
+&lt;li&gt;linux-arm&lt;/li&gt;
+&lt;li&gt;windows-amd64&lt;/li&gt;
+&lt;li&gt;darwin-amd64&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The output is under &lt;code&gt;release/OS/ARCH/drone&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&#34;notes&#34;&gt;Notes&lt;/h2&gt;
+
+&lt;p&gt;The &lt;code&gt;go generate&lt;/code&gt; step requires &lt;code&gt;sassc&lt;/code&gt; which is built from source in the first
+step building docker image. See &lt;code&gt;builder.Dockerfile&lt;/code&gt; for details.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>http://evo-cloud.github.com/hmake/examples/linux/README/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/examples/linux/README/</guid>
+      <description>
+
+&lt;h1 id=&#34;example-build-linux-kernel&#34;&gt;Example - Build Linux Kernel&lt;/h1&gt;
+
+&lt;p&gt;This example builds linux kernel for multiple platforms using HyperMake.&lt;/p&gt;
+
+&lt;h2 id=&#34;get-started&#34;&gt;Get Started&lt;/h2&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;hmake -C examples/linux -sv
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And collect outputs from &lt;code&gt;build/out/PLATFORM/arch/ARCH/boot&lt;/code&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;structure&#34;&gt;Structure&lt;/h2&gt;
+
+&lt;p&gt;On top directory, &lt;code&gt;HyperMake&lt;/code&gt; defines the project and top-level targets.
+And some scripts implements the build related logic which can be easily called
+in other hmake targets.&lt;/p&gt;
+
+&lt;p&gt;The &lt;code&gt;builders&lt;/code&gt; directory contains &lt;code&gt;*.hmake&lt;/code&gt; files which define targets building
+docker images with required toolchain.&lt;/p&gt;
+
+&lt;p&gt;The &lt;code&gt;targets&lt;/code&gt; directory contains sub-directories for different platforms.
+Each sub-directory contains a &lt;code&gt;config&lt;/code&gt; file which is used as kernel config file,
+and a &lt;code&gt;.hmake&lt;/code&gt; file defining targets to build/clean the kernel.&lt;/p&gt;
+
+&lt;p&gt;When build starts, an intermediate directory &lt;code&gt;build&lt;/code&gt; is created.
+&lt;code&gt;build/src&lt;/code&gt; contains the Linux kernel source, and &lt;code&gt;build/out/PLATFORM&lt;/code&gt; is created
+for output of specific platform.
+By building the kernel in separated platform directories, it&amp;rsquo;s possible to build
+kernel for multiple platform in parallel.&lt;/p&gt;
+
+&lt;h2 id=&#34;add-a-new-platform&#34;&gt;Add a new platform&lt;/h2&gt;
+
+&lt;p&gt;It&amp;rsquo;s very easy to add a new platform:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Create folder &lt;code&gt;targets/PLATFORM&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Generate/Copy &lt;code&gt;config&lt;/code&gt; (kernel config) to &lt;code&gt;targets/PLATFORM&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Create &lt;code&gt;targets/PLATFORM/target.hmake&lt;/code&gt; containing hmake targets of:
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;target-PLATFORM&lt;/code&gt;: it builds the kernel&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;clean-PLATFORM&lt;/code&gt;: it removes &lt;code&gt;build/out/PLATFORM&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The recommended naming convention for &lt;code&gt;PLATFORM&lt;/code&gt; is &lt;code&gt;ARCH-BOARD&lt;/code&gt;,
+e.g. &lt;code&gt;arm-vexpress&lt;/code&gt; is to build kernel for VExpress board with ARM CPU.&lt;/p&gt;
+
+&lt;h2 id=&#34;other-targets&#34;&gt;Other targets&lt;/h2&gt;
+
+&lt;p&gt;In &lt;code&gt;HyperMake&lt;/code&gt;, additional targets are defined to help build the kernel:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;nconfig&lt;/code&gt;/&lt;code&gt;menuconfig&lt;/code&gt;: these maps to &lt;code&gt;make nconfig/menuconfig&lt;/code&gt;. It helps you
+to edit the kernel config file. The config file is saved in &lt;code&gt;build/out/config/.config&lt;/code&gt;.
+After finishing the config, you can copy this file to your platform folder.
+These targets also demonstrate the use of &lt;code&gt;console&lt;/code&gt; property in hmake to allow
+interactive targets.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;build-with-a-different-kernel-version&#34;&gt;Build with a different kernel version&lt;/h2&gt;
+
+&lt;p&gt;The kernel version is hard-coded in &lt;code&gt;fetch.sh&lt;/code&gt;.
+To use a different kernel version, simply update &lt;code&gt;fetch.sh&lt;/code&gt;.&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

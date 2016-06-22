@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/README/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/docs/CommandLine/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/docs/Contribute/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/docs/DockerDriver/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/docs/FileFormat/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/examples/drone/README/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/examples/linux/README/</loc>
+  </url>
+  
+</urlset>

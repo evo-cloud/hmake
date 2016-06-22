@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Examples on HyperMake</title>
+    <link>http://evo-cloud.github.com/hmake/examples/</link>
+    <description>Recent content in Examples on HyperMake</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <atom:link href="http://evo-cloud.github.com/hmake/examples/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title></title>
+      <link>http://evo-cloud.github.com/hmake/examples/drone/README/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/examples/drone/README/</guid>
+      <description>
+
+&lt;h1 id=&#34;example-cross-build-drone&#34;&gt;Example - Cross build Drone&lt;/h1&gt;
+
+&lt;p&gt;This example demonstrates how to use HyperMake to cross build
+&lt;a href=&#34;https://github.com/drone/drone&#34;&gt;drone&lt;/a&gt; for different platforms.&lt;/p&gt;
+
+&lt;h2 id=&#34;get-started&#34;&gt;Get Started&lt;/h2&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;hmake -sv
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;how-it-works&#34;&gt;How it works&lt;/h2&gt;
+
+&lt;p&gt;Simply a few steps:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Build a docker image containing all tools&lt;/li&gt;
+&lt;li&gt;Install dependencies (Go get)&lt;/li&gt;
+&lt;li&gt;Git clone latest source code&lt;/li&gt;
+&lt;li&gt;Go generate&lt;/li&gt;
+&lt;li&gt;Go build for (in parallel)
+
+&lt;ul&gt;
+&lt;li&gt;linux-amd64&lt;/li&gt;
+&lt;li&gt;linux-arm64&lt;/li&gt;
+&lt;li&gt;linux-arm&lt;/li&gt;
+&lt;li&gt;windows-amd64&lt;/li&gt;
+&lt;li&gt;darwin-amd64&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The output is under &lt;code&gt;release/OS/ARCH/drone&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&#34;notes&#34;&gt;Notes&lt;/h2&gt;
+
+&lt;p&gt;The &lt;code&gt;go generate&lt;/code&gt; step requires &lt;code&gt;sassc&lt;/code&gt; which is built from source in the first
+step building docker image. See &lt;code&gt;builder.Dockerfile&lt;/code&gt; for details.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>http://evo-cloud.github.com/hmake/examples/linux/README/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/examples/linux/README/</guid>
+      <description>
+
+&lt;h1 id=&#34;example-build-linux-kernel&#34;&gt;Example - Build Linux Kernel&lt;/h1&gt;
+
+&lt;p&gt;This example builds linux kernel for multiple platforms using HyperMake.&lt;/p&gt;
+
+&lt;h2 id=&#34;get-started&#34;&gt;Get Started&lt;/h2&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;hmake -C examples/linux -sv
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And collect outputs from &lt;code&gt;build/out/PLATFORM/arch/ARCH/boot&lt;/code&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;structure&#34;&gt;Structure&lt;/h2&gt;
+
+&lt;p&gt;On top directory, &lt;code&gt;HyperMake&lt;/code&gt; defines the project and top-level targets.
+And some scripts implements the build related logic which can be easily called
+in other hmake targets.&lt;/p&gt;
+
+&lt;p&gt;The &lt;code&gt;builders&lt;/code&gt; directory contains &lt;code&gt;*.hmake&lt;/code&gt; files which define targets building
+docker images with required toolchain.&lt;/p&gt;
+
+&lt;p&gt;The &lt;code&gt;targets&lt;/code&gt; directory contains sub-directories for different platforms.
+Each sub-directory contains a &lt;code&gt;config&lt;/code&gt; file which is used as kernel config file,
+and a &lt;code&gt;.hmake&lt;/code&gt; file defining targets to build/clean the kernel.&lt;/p&gt;
+
+&lt;p&gt;When build starts, an intermediate directory &lt;code&gt;build&lt;/code&gt; is created.
+&lt;code&gt;build/src&lt;/code&gt; contains the Linux kernel source, and &lt;code&gt;build/out/PLATFORM&lt;/code&gt; is created
+for output of specific platform.
+By building the kernel in separated platform directories, it&amp;rsquo;s possible to build
+kernel for multiple platform in parallel.&lt;/p&gt;
+
+&lt;h2 id=&#34;add-a-new-platform&#34;&gt;Add a new platform&lt;/h2&gt;
+
+&lt;p&gt;It&amp;rsquo;s very easy to add a new platform:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Create folder &lt;code&gt;targets/PLATFORM&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Generate/Copy &lt;code&gt;config&lt;/code&gt; (kernel config) to &lt;code&gt;targets/PLATFORM&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Create &lt;code&gt;targets/PLATFORM/target.hmake&lt;/code&gt; containing hmake targets of:
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;target-PLATFORM&lt;/code&gt;: it builds the kernel&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;clean-PLATFORM&lt;/code&gt;: it removes &lt;code&gt;build/out/PLATFORM&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The recommended naming convention for &lt;code&gt;PLATFORM&lt;/code&gt; is &lt;code&gt;ARCH-BOARD&lt;/code&gt;,
+e.g. &lt;code&gt;arm-vexpress&lt;/code&gt; is to build kernel for VExpress board with ARM CPU.&lt;/p&gt;
+
+&lt;h2 id=&#34;other-targets&#34;&gt;Other targets&lt;/h2&gt;
+
+&lt;p&gt;In &lt;code&gt;HyperMake&lt;/code&gt;, additional targets are defined to help build the kernel:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;nconfig&lt;/code&gt;/&lt;code&gt;menuconfig&lt;/code&gt;: these maps to &lt;code&gt;make nconfig/menuconfig&lt;/code&gt;. It helps you
+to edit the kernel config file. The config file is saved in &lt;code&gt;build/out/config/.config&lt;/code&gt;.
+After finishing the config, you can copy this file to your platform folder.
+These targets also demonstrate the use of &lt;code&gt;console&lt;/code&gt; property in hmake to allow
+interactive targets.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;build-with-a-different-kernel-version&#34;&gt;Build with a different kernel version&lt;/h2&gt;
+
+&lt;p&gt;The kernel version is hard-coded in &lt;code&gt;fetch.sh&lt;/code&gt;.
+To use a different kernel version, simply update &lt;code&gt;fetch.sh&lt;/code&gt;.&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
