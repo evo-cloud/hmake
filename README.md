@@ -2,406 +2,133 @@
 
 # HyperMake
 
-- Are you feeling bored and upset with spending days on preparing development
-environment to build some project from source?
-- Are you tired of writing a long list of building steps when you ships your work
-to others?
-- Are you crazy struggling with environment issues and try to make something work?
+It's a build tool which builds projects **without pre-requisites**.
 
-Forget about environment setup,
-HyperMake helps you build projects instantly and consistently without installing
-pre-requisites in your local environment.
-It uses containers to build projects, all pre-requisites are pre-installed
-inside the container.
+_Pains_
 
-To build _ANY_ HyperMake project, the _ONLY_ software needed are:
+- Preparing building environment may take days
+- Solving conflicts and incorrect versions of dependencies is painful
+- Writing long and complicated building instructions when shipping the work
+
+_Heals_
+
+Forget about environment setup, what needed are only
 
 - A running [docker](https://www.docker.com)
 - `hmake` executable in `PATH`
 
-A similar project is [drone](http://readme.drone.io) which is built to be a service.
-While HyperMake is built as a handy tool with a few special features:
+HyperMake helps you build projects instantly and consistently without installing
+pre-requisites in your local environment.
+It uses containers to build projects, all pre-requisites are installed cleanly
+and consistently inside the container.
 
-- Brings in the _target_ concept from traditional _GNU make_,
-  targets can be defined in one HyperMake file or multiple,
-  and targets have dependencies, can be built selectively.
-- Concurrent builds, targets without explicit dependencies can be built concurrently.
+_Features_
+
+- Brings back the experience of _make_
+- Selectively build targets on demand
+- Build in parallel
 
 ## Getting Started
 
 Knowledge required as a user:
 
-- YAML: [http://yaml.org](http://yaml.org)
 - Docker: [http://www.docker.com](http://www.docker.com)
 - Very basic Unix shell and command line tools
 
-#### With Homebrew
+As an author of HyperMake files:
 
+- YAML: [http://yaml.org](http://yaml.org)
+
+### Installation
+
+Assume [Docker](http://www.docker.com) is already installed, and make sure it's
+running properly.
+
+_TIPS_
+> When using `docker-machine`, many people encountered the issue docker complains
+> unable to connect to docker daemon. The cause is the environment variables are
+> not populated properly in current shell. Type the following commands:
+>
+```sh
+# if you are using bash
+eval $(docker-machine env MACHINE-NAME)
+docker version
 ```
+>
+>Make sure `docker version` is able to show both versions of client and server,
+>otherwise, docker may not work properly.
+
+Now we can move on install `hmake`:
+
+On Mac OS X, using Homebrew is the simplest way
+
+```sh
 brew tap evo-cloud/toolkit  # only do this once
 brew install hmake
 ```
 
-#### Download from Github release page
+Alternatively, download from Github [releases](https://github.com/evo-cloud/hmake/releases)
 
 ```
 curl -s https://github.com/evo-cloud/hmake/releases/download/v1.0.0rc3/hmake-1.0.0rc3-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 chmod a+rx /usr/local/bin/hmake
 ```
 
-#### Build from source
+If you are on Mac OS, change `linux` above to `darwin`.
+For Windows, change `linux` to `windows` and unpack the binary to some folder in
+`%PATH%`.
 
-Using `go get ...`
+Now do `hmake --version` to verify if it's properly installed.
 
-```
-go get github.com/evo-cloud/hmake
-```
+### Do Something Funny
 
-Or do a full build
+For the first time using hmake, let's do something funny - cross compile Linux
+kernel without installing anything, even on Mac OS/Windows!
 
-```
+Checkout the examples in [hmake](https://github.com/evo-cloud/hmake) repository
+
+```sh
 git clone https://github.com/evo-cloud/hmake
-cd hmake
-# first do a bootstrap
-go get
-go install
-# do a full build
-hmake
+cd hmake/examples/linux
+hmake -sv
 ```
 
-Note: if you want to use `hmake` to do a full build, make sure [docker](https://www.docker.com) is running.
+That's it! You get Linux kernel for both x86_64 and ARMv7 (vexpress board) in
+a while.
 
-#### You want tests?
+See [README](examples/linux/README.md) for details.
 
-After build, `hmake test`.
-If you want run test with coverage, `hmake cover`.
-End-to-End test runs with `hmake e2e` which builds `hmake` and invokes from a HyperMake target.
-This shows how to invoke docker client from a target.
+## How It Works
 
-## Setup Development Environment
+_hmake_ works in a very simple way by running the commands in each target inside
+the specified Docker container which already has dependencies installed.
+The root directory of project tree is mapped into the container under a certain
+path which can be customized, and the commands is able to access files inside
+the project and can also produce output files into the project tree.
 
-_In fact with `hmake` installed, you don't need this local development environment._
+### State Directory
 
-Install
-- [gvt](github.com/FiloSottile/gvt)
-- [ginkgo](https://github.com/onsi/ginkgo)
-- [gomega](https://github.com/onsi/gomega)
-
-```bash
-go get github.com/FiloSottile/gvt
-go get github.com/onsi/ginkgo/ginkgo
-go get github.com/onsi/gomega
-gvt restore
-ginkgo test ./test
-# or
-go test ./test
-go test -coverprofile=cover.out -coverpkg=./project ./test
-```
-
-## How it works
-
-_hmake_ expects a `HyperMake` file in root of the project,
-and you can run `hmake` from any sub-directory inside the project,
-the command will figure out project root by locating `HyperMake` file.
-
-From the top-level `HyperMake` file, use `includes` section to include any
-`*.hmake` files inside project tree.
-It can't access any files outside project tree.
-
-By default, it will search for `.hmakerc` files inside project directories, and
-load them in the order from parent to child folders.
-
-### File Format
-
-In `HyperMake` or `*.hmake`, define any of the following things:
-
-- Format: the format presents the current file, should always be `hypermake.v0`;
-- Name and description: only defined in top-level `HyperMake` file;
-- Targets: the target to build, including dependencies and commands;
-- Settings: the settings applies to _hmake_;
-- Includes: include more `*.hmake` files.
-
-Here's the schema in example (this is actually the `HyperMake` file of `hmake` project):
-
-```yaml
----
-format: hypermake.v0 # this indicates this is a HyperMake file
-
-# project name and description
-name: hmake
-description: HyperMake builds your project without pre-requisites
-
-# define targets
-targets:
-    builder:
-        description: build the docker image including toolchain
-        build: builder
-        image: hmake-builder:latest
-        watches:
-            - builder
-
-    hmake-linux-amd64:
-        description: static linked hmake binary for Linux AMD64
-        after:
-            - vendor
-        watches:
-            - '**/**/*.go'
-        cmds:
-            - ./build.sh linux amd64
-
-    hmake-darwin-amd64:
-        description: static linked hmake binary for Mac OS
-        after:
-            - vendor
-        watches:
-            - '**/**/*.go'
-        cmds:
-            - ./build.sh darwin amd64
-
-    vendor:
-        description: pull all vendor packages
-        after:
-            - builder
-        watches:
-            - vendor/manifest
-        env:
-            - HMAKE_VER_SUFFIX
-            - HMAKE_RELEASE            
-        cmds:
-            - gvt restore
-            - mkdir -p bin
-            - ./build.sh genver
-
-    test:
-        description: run tests
-        after:
-            - vendor
-        watches:
-            - '**/**/*.go'
-            - test
-        cmds:
-            - ginkgo ./test
-
-    cover:
-        description: run tests with coverage
-        after:
-            - vendor
-        watches:
-            - '**/**/*.go'
-            - test
-        cmds:
-            - >
-                go test -coverprofile cover.out
-                -coverpkg ./project
-                ./test
-
-    all:
-        description: the default make target
-        after:
-            - hmake-linux-amd64
-            - hmake-darwin-amd64
-
-# settings shared across targets
-settings:
-    default-targets:
-        - all
-    docker:
-        image: hmake-builder:latest
-        src-volume: /go/src/github.com/evo-cloud/hmake
-
-# same as settings, but only apply to targets in the same file
-local:
-    key: value
-
-includes:
-    - build/**/**/*.hmake
-```
-
-#### Dependencies
-
-Dependencies can be specified using:
-
-- `after`: the target is executed when the depended tasks succeed or are skipped
-- `before`: the target must succeed or skip before the specified tasks get executed.
-
-In most cases, `after` is enough in a single file.
-`before` is mostly used to inject dependencies in the files included.
-
-#### Include files
-
-In `includes` section, specify files to be included.
-The files included can provide more targets and also override settings.
-
-Any path used in `HyperMake` or `*.hmake` files are relative to current file.
-When a target gets executed, the default working directory is where the file
-defining the target exists.
-
-#### Matching targets names with wildcards
-
-The places (`before`, `after`, `-r`, `-S`, command line targets, etc) requiring
-target names accept wildcards:
-
-- Wildcards used in file names: `*`, `?`, `\` and `[chars]`, they are matched using `filepath.Match`
-- Regular Expression: the name starts and ends with `/`
-
-#### Pre-defined Environment Variables
-
-- `HMAKE_PROJECT_NAME`: the name of the project
-- `HMAKE_PROJECT_DIR`: the directory containing `HyperMake` (aka. project root)
-- `HMAKE_PROJECT_FILE`: the full path to `HyperMake`
-- `HMAKE_WORK_DIR`: `$HMAKE_PROJECT_DIR/.hmake`
-- `HMAKE_LAUNCH_PATH`: the relative path under `$HMAKE_PROJECT_DIR` where `hmake` launches
-- `HMAKE_REQUIRED_TARGETS`: the names of targets explicitly required from command line, separate by space
-- `HMAKE_TARGET`: the name of the target currently in execution
-- `HMAKE_TARGET_DIR`: the relative path to directory containing the file which defines the target
-- `HMAKE_VERSION`: version of _hmake_
-- `HMAKE_OS`: operating system
-- `HMAKE_ARCH`: CPU architecture
-
-#### Global Setting Properties
-
-- `default-targets`: a list of targets to build when no targets are specified in `hmake` command
-- `exec-driver`: the name of driver which parses properties in target and executes the target,
-  the default value is `docker`, and supported drivers are `docker` and `shell`.
-  This property can also be specified in target instead of global `settings` section.
-
-#### Common Properties in Target
-
-- `description`: description of the target
-- `before`: a list of names of targets which can only execute after this target
-- `after`: a list of names of targets on which this targets depends
-- `exec-driver`: same as in `settings` section, but only specify the driver for this target
-- `workdir`: the current working directory for commands in the target, relative to project root
-- `watches`: a list of path/filenames (wildcard supported) whose mtime will be checked to determine if the target is out-of-date,
-  without specifying this property, the target is always executed (the `.PHONY` target in `make`).
-
-Other properties are driver specific, and will be parsed by driver.
-
-#### State Directory
-
-_hmake_ creates a state directory `$HMAKE_PROJECT_DIR/.hmake` to store logs and state files.
+_hmake_ creates a state directory `$HMAKE_PROJECT_DIR/.hmake`
+(see [File Format](docs/FileFormat.md) for the details of environment variables)
+to store logs and state files.
 The output (stdout and stderr combined) of each target is stored in files `TARGET.log`.
 Debug log (with `--debug`) is stored as `hmake.debug.log`.
 Summary file is stored as `hmake.summary.json`.
 
-### Execution Drivers
+## Documents
 
-#### The `shell` driver
+Please read the following documents if more detailed information is needed
 
-This is simplest driver which inteprets `script` or `cmds` as shell script/commands.
-The following properties are supported:
-
-- `env`: a list of environment variables (the form `NAME=VALUE`) to be used for execution
-- `script`: a multi-line string represents a full script to execute for the target
-- `cmds`: when `script` is not specified, this is a list of commands to execute for the target
-- `console`: when `true`, the current stdin/stdout/stderr is directly passed to command which
-is able to fully control the current console, however no output can be captured and logged in
-this case.
-
-The list of `cmds` will be merged as a shell script.
-And the intepreter is `/bin/sh`.
-`set -e` is inserted as the first line to fail-fast.
-
-#### The `docker` driver
-
-This driver generates the same script as `shell` driver but run it inside a docker container.
-The following properties are supported in additional to `script` and `cmds`:
-
-- `build`: path to `Dockerfile`, when specified, this target builds a docker image first.
-   `image` property specifies the image name and tag.
-   It's strongly recommended to put `Dockerfile` and any related files to `watches` list.
-- `build-from`: the build path for `docker build`.
-  Without this property, the build path is derived from path of `Dockerfile` specified in `build`.
-- `build-args`: list of args, corresponding to `docker build` option.
-- `image`: with `build` it's the image name and tag to build,
-  without `build`, it's the image used to create the container.
-- `tags`: a list of tags in addition to `image` when do `docker build`.
-- `cache`: only used to specify `false` which adds `--no-cache` to `docker build`.
-- `content-trust`: only used to specify `false` which adds `--disable-content-trust` to `docker build/run`
-- `src-volume`: the full path inside container where project root is mapped to.
-  Default is `/root/src`.
-- `expose-docker`: when set `true`, expose the host docker server connectivity into container to allow
-  docker client run from inside the container.
-  This is very useful when docker is required for build but to avoid problematic docker-in-docker.
-- `env`: list environment variables passed to container, can be `NAME=VALUE` or `NAME`.
-- `env-files`: list of files providing environment variables, see `--env-files` of `docker run`
-- `privileged`: run container in privileged mode, default is `false`
-- `net`: when specified, only allowed value is `host`, when specified, run container with `--net=host --uts=host`
-- `user`: passed to `docker run --user...`, by default, current `uid:gid` are passed
-  It must be explicitly specified `root` if the script is executed as root inside container.
-  When a non-root user is explicitly specified, all group IDs are passed using `--group-add`.
-- `groups`: explicitly specify group IDs to pass into container, instead of passing all of them.
-- `volumes`: a list of volume mappings passed to `-v` option of `docker run`.
-
-The following properties maps to `docker build/run` options:
-
-- `cap-add`, `cap-drop`
-- `devices`
-- `hosts`: mapped to `--add-host`
-- `dns`, `dns-opts`, `dns-search`
-- `blkio-weight`, `blkio-weight-devices`
-- `device-read-bps`, `device-write-bps`, `device-read-iops`, `device-write-iops`
-- `cpu-shares`, `cpu-period`, `cpu-quota`, `cpuset-cpus`, `cpuset-mems`
-- `kernel-memory`, `memory`, `memory-swap`, `memory-swappiness`, `shm-size`
-- `ulimit`
-- `labels`, `label-files`
-- `pull`, `force-rm`
-
-All above properties can also be specified in global `settings` under `docker` section:
-
-```yaml
-settings:
-    docker:
-        property: value
-```
-
-The `console` property is also supported by `docker` driver which emits `-it` option
-to docker client instead of `-a STDOUT -a STDERR`. And similarly to `shell` driver,
-no output is captured or logged in this case.
-
-##### About volume mapping
-
-By default the current project root is mapped into container at `src-volume`,
-default value is `/root/src`.
-And it's also the current working directory when script starts.
-As the script is a shell script, the executable `/bin/sh` must be present in the container.
-
-##### About user
-
-By default `hmake` uses current user (NOT root) to run inside container,
-which make sure any file change has the same permission as the environment outside.
-If root is required, it can be explicitly specified `user: root`,
-however, all files created inside container will show up being owned by `root` outside,
-and you may end up seeing some error messages like `permission denied` when you do something later.
-
-## Command Usage
-
-#### Usage
-
-```
-hmake [OPTIONS] [TARGETS]
-```
-
-#### Options
-
-- `--chdir=PATH, -C PATH`: Chdir to specified PATH first before doing anything
-- `--include=FILE, -I FILE`: Include additional files (must be relative path under project root), can be specified multiple times
-- `--define=key=value, -D key=value`: Define property in global `settings` section, `key` may include `.` to specify the hierarchy
-- `--parallel=N, -p N`: Set maximum number of targets executed in parallel, 0 for auto, -1 for unlimited
-- `--rebuild-all, -R`: Force rebuild all needed targets
-- `--rebuild TARGET, -r TARGET`: Force rebuild specified target, this can repeat
-- `--skip TARGET, -S TARGET`: Skip specified target (mark as Skipped), this can repeat
-- `--json`: Dump execution events to stdout each encoded in single line json
-- `--summary, -s`: Show execution summary before exit
-- `--verbose, -v`: Show execution output to stderr for each target
-- `--rcfile|--no-rcfile`: Load .hmakerc inside project directories, default is true
-- `--color|--no-color`: Explicitly specify print with color/no-color
-- `--emoji|--no-emoji`: Explicitly specify print with emoji/no-emoji
-- `--debug`: Write a debug log `hmake.debug.log` in hmake state directory
-- `--show-summary`: When specified, print previous execution summary and exit
-- `--targets`: When specified, print list of target names and exit
-- `--dryrun`: When specified, run targets as normal but without invoking execution drivers (simply mark task Success)
-- `--version`: When specified, print version and exit
+- References are list of specifications including
+  - [File Format](docs/FileFormat.md) defines the format of _hmake_ files;
+  - [Command line](docs/CommandLine.md) specification;
+  - [Shell driver](docs/ShellDriver.md) for properties in `shell` driver;
+  - [Docker driver](docs/DockerDriver.md) for properties in `docker` driver;
+- [Contributing](docs/Contribute.md) is a guideline for people who want to
+  contribute to this project.
+- Examples are always helpful
+  - [Cross Compile Linux kernel](examples/linux/README.md)
+  - [Cross Compile drone](examples/drone/README.md)
 
 ## Supported Platform and Software
 
@@ -410,9 +137,10 @@ hmake [OPTIONS] [TARGETS]
 - Mac OS X 10.9 and above (10.9, 10.11 tested)
 - Windows 7 SP1
 
-## Known issues
-
-- Don't use `docker-machine` on Linux
+Please see
+[Docker Driver](docs/DockerDriver.md) and
+[Shell Driver](docs/ShellDriver.md)
+for notes and limits on certain platforms.
 
 ## License
 
