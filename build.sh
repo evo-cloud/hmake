@@ -46,10 +46,19 @@ build() {
         -a -tags "$TAGS" -installsuffix netgo \
         -ldflags '-extldflags -static' \
         .
-    tar --posix --owner=0 --group=0 --no-acls --no-xattrs \
-        --transform="s/$(basename $OUT)/hmake/" \
-        -C $(dirname $OUT) -czf $OUT.tar.gz $(basename $OUT)
-    cat $OUT.tar.gz | sha1sum >$OUT.tar.gz.sha1sum
+
+    if [ "$GOOS" == "windows" ]; then
+        cp -f $OUT bin/hmake.exe
+        PKG=$OUT.zip
+        rm -f $PKG
+        zip -jX9 $PKG bin/hmake.exe
+    else
+        PKG=$OUT.tar.gz
+        tar --posix --owner=0 --group=0 --no-acls --no-xattrs \
+            --transform="s/$(basename $OUT)/hmake/" \
+            -C $(dirname $OUT) -czf $PKG $(basename $OUT)
+    fi
+    cat $PKG | sha1sum >$PKG.sha1sum
 }
 
 case "$1" in
