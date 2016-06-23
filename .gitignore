@@ -4,6 +4,7 @@ _*
 *.gen.go
 bin
 .hmake
+.hmakerc
 hmake
 /vendor/*
 !/vendor/manifest
