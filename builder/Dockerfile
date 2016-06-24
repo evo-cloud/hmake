@@ -4,4 +4,5 @@ RUN apk update && apk add curl git tar zip && rm -fr /var/cache/apk/* && \
     go get -v github.com/FiloSottile/gvt && \
     go get -v github.com/onsi/ginkgo/ginkgo && \
     go get -v github.com/onsi/gomega && \
+    go get -v github.com/spf13/hugo && \
     chmod -R a+rw /go

@@ -1,0 +1,12 @@
+name = "purehugo"
+description = "A theme based on the pure css blog layout"
+license = "MIT"
+source_repo = "https://github.com/dplesca/purehugo"
+tags = ["blog", "purecss"]
+min_version = 0.14
+
+[author]
+    name = "dplesca"
+    twitter = "http://twitter.com/dragos_plesca"
+    url = "http://github.com/dplesca"
+

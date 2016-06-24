@@ -64,6 +64,21 @@ targets:
         cmds:
             - ./build.sh windows amd64
 
+    site:
+        description: generate document site
+        after:
+            - builder
+        watches:
+            - site/gh-pages/config.toml
+            - site/gh-pages/themes/**/**/*
+            - site/gh-pages/static/**/**/*
+            - README.md
+            - docs/**/**/*
+            - examples/*/README.md
+            - build.sh
+        cmds:
+            - ./build.sh gensite
+
     test:
         description: run tests
         after:

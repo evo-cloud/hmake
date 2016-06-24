@@ -20,4 +20,4 @@ script:
     - docker version
     - go get
     - go build
-    - ./hmake all test e2e -sv
+    - ./hmake all test e2e site -sv

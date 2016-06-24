@@ -1,0 +1,29 @@
+<div class="sidebar pure-u-1 pure-u-md-1-4">
+    <div class="header">
+        {{ if isset .Site.Params "githubName" }}
+        {{ $releaseUrl := .Site.Params.githubName | printf "https://github.com/%s/releases" }}
+        {{ $releaseVersion := .Site.Params.releaseVersion }}
+        <hgroup>
+            <h1 class="brand-title"><a href="{{ $releaseUrl }}">Releases</a></h1>
+            {{ with $releaseVersion }}
+            <h2 class="brand-tagline">
+                <a href="{{ $releaseUrl }}/tag/v{{ . }}">{{ . }}</a>
+            </h2>
+            {{ end }}
+        </hgroup>
+        
+        <nav class="nav">
+            <ul class="nav-list">
+                {{ range .Site.Params.artifacts }}
+                <li class="nav-item">
+                    <a class="pure-button" href="{{ $releaseUrl }}/download/v{{ $releaseVersion }}/{{ .file }}">
+                        <i class="os fa fa-{{ if .osIcon }}{{ .osIcon }}{{ else }}{{ .os }}{{ end }}"></i>
+                        <span>{{ if .osName }}{{ .osName }}{{ else }}{{ .os }}{{ end }}</span>
+                    </a>
+                </li>
+                {{ end }}
+            </ul>
+        </nav>
+        {{ end }}
+    </div>
+</div>

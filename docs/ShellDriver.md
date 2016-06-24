@@ -1,4 +1,4 @@
-# The `shell` Execution Driver
+# The _shell_ Execution Driver
 
 This is simplest driver which inteprets `script` or `cmds` as shell script/commands.
 The following properties are supported:
