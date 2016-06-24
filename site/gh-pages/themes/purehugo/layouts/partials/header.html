@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .Title }} &middot; {{ .Site.Title }}</title>
+
+    <meta name="description" content="{{ if .IsNode }}{{ with .Site.Params.description }}{{ . }}{{ end }}{{ else }}{{ with .Description }}{{ . }}{{ end }}{{ end }}">
+
+    {{.Hugo.Generator}}
+    <meta name="twitter:card" content="summary">
+    {{ with .Site.Params.twitter }}<meta name="twitter:site" content="{{ . }}" />{{ end }}
+    <meta name="twitter:title" content="{{ .Title }} &middot; {{ .Site.Title }}">
+    <meta name="twitter:description" content="{{ if .IsNode }}{{ with .Site.Params.description }}{{ . }}{{ end }}{{ else }}{{ with .Description }}{{ . }}{{ end }}{{ end }}">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="{{ .Title }} &middot; {{ .Site.Title }}">
+    <meta property="og:description" content="{{ if .IsNode }}{{ with .Site.Params.description }}{{ . }}{{ end }}{{ else }}{{ with .Description }}{{ . }}{{ end }}{{ end }}">
+
+    <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700|Oxygen:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/pure-min.css">
+    {{ "<!--[if lte IE 8]>" | safeHTML }}
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive-old-ie-min.css">
+    {{ "<![endif]-->" | safeHTML }}
+    {{ "<!--[if gt IE 8]><!-->" | safeHTML }}
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive-min.css">
+    {{ "<!--<![endif]-->" | safeHTML }}
+
+    <link rel="stylesheet" href="{{ .Site.BaseURL }}/css/syntax-highlighter.css">
+    <link rel="stylesheet" href="{{ .Site.BaseURL }}/css/blog.css">
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <link rel="alternate" type="application/rss+xml" title="{{ .Site.Title }}" href="{{ .Site.BaseURL }}/index.xml" />
+</head>
+<body>
+<div class="banner pure-u-1 pure-u-md-1-4">
+    <div class="banner-title">
+        <h1 class="brand-title"><a href="{{ .Site.BaseURL }}">{{ .Site.Title }}</a></h1>
+        <h2 class="brand-tagline">{{ with .Site.Params.description }} {{.}} {{end}}</h2>
+    </div>
+    <div class="banner-links">
+        <nav class="nav">
+            <ul class="nav-list">
+                {{ with .Site.Params.twitterName }}
+                <li class="nav-item">
+                    <a class="pure-button" href="https://twitter.com/{{ . }}"><i class="fa fa-twitter"></i> Twitter</a>
+                </li>
+                {{ end }}
+                {{ with .Site.Params.githubName }}
+                <li class="nav-item">
+                    <a class="pure-button" href="https://github.com/{{ . }} "><i class="fa fa-github-alt"></i> github</a>
+                </li>
+                {{ end }}
+                <li class="nav-item">
+                    <a class="pure-button" href="{{ .Site.BaseURL }}/index.xml"><i class="fa fa-rss"></i> rss</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
