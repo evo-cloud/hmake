@@ -79,6 +79,32 @@ targets:
         cmds:
             - ./build.sh gensite
 
+    checkfmt:
+        description: check code format
+        after:
+            - builder
+        watches:
+            - '**/**/*.go'
+            - build.sh
+        cmds:
+            - ./build.sh checkfmt
+
+    lint:
+        description: check code using metalint
+        after:
+            - builder
+        watches:
+            - '**/**/*.go'
+            - build.sh
+        cmds:
+            - ./build.sh lint
+
+    check:
+        description: check source code
+        after:
+            - checkfmt
+            - lint
+
     test:
         description: run tests
         after:

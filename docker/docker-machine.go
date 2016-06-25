@@ -52,4 +52,3 @@ func currentUserIdsFromDockerMachine() (uid, gid int, grps []int, err error) {
 	}
 	return
 }
-

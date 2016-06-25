@@ -20,4 +20,5 @@ script:
     - docker version
     - go get
     - go build
-    - ./hmake all test e2e site -sv
+    - ./hmake all
+    - ./bin/hmake-*-linux-amd64 check test e2e site -sv
