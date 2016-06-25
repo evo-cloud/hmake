@@ -135,13 +135,19 @@ Usually, it defines
 
 #### Common Properties in Target
 
-- `description`: description of the target
-- `before`: a list of names of targets which can only execute after this target
-- `after`: a list of names of targets on which this targets depends
-- `exec-driver`: same as in `settings` section, but only specify the driver for this target
-- `workdir`: the current working directory for commands in the target, relative to project root
-- `watches`: a list of path/filenames (wildcard supported) whose mtime will be checked to determine if the target is out-of-date,
-  without specifying this property, the target is always executed (the `.PHONY` target in `make`).
+- `description`: description of the target;
+- `before`: a list of names of targets which can only execute after this target;
+- `after`: a list of names of targets on which this targets depends;
+- `workdir`: the current working directory for commands in the target,
+  relative to project root;
+- `watches`: a list of path/filenames (wildcard supported) whose mtime will be
+  checked to determine if the target is out-of-date, without specifying this
+  property, the target is automatically skipped if the last execution was successful
+  and all dependencies are skipped;
+- `always`: always build the target regardless of last execution state and results
+  of all dependencies (the `.PHONY` target in `make`);
+- `exec-driver`: (DO NOT USE THIS) same as in `settings` section, but only specify the driver for
+  this target.
 
 Other properties are driver specific, and will be parsed by driver.
 

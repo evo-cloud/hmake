@@ -17,6 +17,7 @@ targets:
     description: run make nconfig
     after:
       - src
+    always: true
     console: true
     image: thewtex/cross-compiler-linux-x64
     cmds:
@@ -26,6 +27,7 @@ targets:
     description: run make menuconfig
     after:
       - src
+    always: true
     console: true
     image: thewtex/cross-compiler-linux-x64
     cmds:

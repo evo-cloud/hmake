@@ -47,7 +47,7 @@ Common Unix command line option parsing rule is adopted:
 - `--rcfile|--no-rcfile`: Load .hmakerc inside project directories, default is true
 - `--color|--no-color`: Explicitly specify print with color/no-color
 - `--emoji|--no-emoji`: Explicitly specify print with emoji/no-emoji
-- `--debug`: Write a debug log `hmake.debug.log` in hmake state directory
+- `--no-debug-log`: Disable writing debug log to `hmake.debug.log` in hmake state directory
 - `--show-summary`: When specified, print previous execution summary and exit
 - `--targets`: When specified, print list of target names and exit
 - `--dryrun`: When specified, run targets as normal but without invoking execution drivers (simply mark task Success)

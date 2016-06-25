@@ -101,9 +101,10 @@ func cliDef() *flag.CliDef {
 					Default: false,
 				},
 				&flag.Option{
-					Name: "debug",
-					Desc: "Write debug log into .hmake/hmake.debug.log",
-					Type: "bool",
+					Name:    "debug-log",
+					Desc:    "Write debug log into .hmake/hmake.debug.log",
+					Type:    "bool",
+					Default: true,
 				},
 				&flag.Option{
 					Name: "show-summary",

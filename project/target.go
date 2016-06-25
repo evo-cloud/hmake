@@ -24,6 +24,7 @@ type Target struct {
 	ExecDriver string                 `json:"exec-driver"`
 	WorkDir    string                 `json:"workdir"`
 	Watches    []string               `json:"watches"`
+	Always     bool                   `json:"always"`
 	Ext        map[string]interface{} `json:"*"`
 
 	// Runtime fields

@@ -453,14 +453,14 @@ func (p *ExecPlan) startTask(task *Task) {
 	task.StartTime = time.Now()
 	p.emit(&EvtTaskStart{Task: task})
 
-	skippable := task.CalcSuccessMark()
+	skipped := task.CalcSuccessMark()
 	if p.SkippedTargets[task.Name()] {
-		skippable = true
+		skipped = true
 	} else if p.RebuildAll || p.RebuildTargets[task.Name()] {
-		skippable = false
+		skipped = false
 	}
 
-	if skippable {
+	if skipped {
 		task.Result = Skipped
 		task.FinishTime = task.StartTime
 		p.finishTask(task)
@@ -611,7 +611,7 @@ func (t *Task) CalcSuccessMark() bool {
 	t.currentDigest = wl.Digest()
 	t.Plan.Logf("%s Digest: %s", t.Name(), t.currentDigest)
 
-	if t.alwaysBuild {
+	if t.alwaysBuild || t.Target.Always {
 		return false
 	}
 
@@ -626,9 +626,6 @@ func (t *Task) CalcSuccessMark() bool {
 	}
 	prevDigest := strings.TrimSpace(string(content))
 	t.Plan.Logf("%s ExistDigest %s", t.Name(), prevDigest)
-	if prevDigest == "" {
-		return false
-	}
 	return t.currentDigest == prevDigest
 }
 
@@ -646,7 +643,7 @@ func (t *Task) BuildSuccessMark() error {
 	defer func() {
 		t.currentDigest = ""
 	}()
-	if t.Result == Success && t.currentDigest != "" {
+	if t.Result == Success && !t.Target.Always {
 		return ioutil.WriteFile(t.SuccessMarkFile(), []byte(t.currentDigest), 0644)
 	}
 	return nil
