@@ -57,7 +57,20 @@ scripts when possible.
   requests are unlikely to be accepted;
 - Make sure your code has been well formatted, vetted/linted and documented;
 - Include issue number in your short commit message (first line), like `#15`;
+- Tests must be included, depending on the change, End-to-End tests may be required;
 - Make sure there's a single commit.
+
+_TIPS_
+
+>To run format check, vet and lint, you can simply use
+```
+hmake check -v
+```
+
+>To fix format, simply use
+```
+go fmt -w DIR
+```
 
 ## Dependencies Needed
 
@@ -68,6 +81,9 @@ scripts when possible.
   - gvt: `go get github.com/FiloSottile/gvt`
   - ginkgo: `go get github.com/onsi/ginkgo/ginkgo`
   - gomega: `go get github.com/onsi/gomega`
+- For format, vet and lint
+  - go tools: `go get golang.org/x/tools/cmd/...`
+  - metalinter: `go get -v github.com/alecthomas/gometalinter && gometalinter --install`
 
 ## Steps to Get Started
 
@@ -103,6 +119,7 @@ scripts when possible.
    docker version # make sure both client and server versions are displayed
 
    hmake -sv # build all by default
+   hmake check # check format, run lint
    hmake test # run tests
    hmake e2e # run end-to-end tests
    hmake cover # generate coverage

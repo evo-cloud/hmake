@@ -42,6 +42,26 @@ gensite() {
     hugo
 }
 
+checkfmt() {
+    local files="$(gofmt -l . | grep -v vendor)"
+    if [ -n "$files" ]; then
+        echo "$files" >&2
+        return 1
+    fi
+}
+
+lint() {
+    gometalinter \
+        --disable=gotype \
+        --vendor \
+        --skip=examples \
+        --skip=test \
+        --deadline=60s \
+        --severity=golint:error \
+        --errors \
+        ./...
+}
+
 build() {
     TAGS="static_build netgo"
     RELEASE=$(grep 'Release = ' main.go | sed -r 's/^.+"([^"]+)".*$/\1/')
@@ -79,5 +99,7 @@ build() {
 case "$1" in
     genver) genver ;;
     gensite) gensite ;;
+    lint) lint ;;
+    checkfmt) checkfmt ;;
     *) build $@ ;;
 esac
