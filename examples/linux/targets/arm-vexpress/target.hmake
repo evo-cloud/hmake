@@ -19,6 +19,7 @@ targets:
     description: remove build files for arm-vexpress
     after:
       - builder-armv7
+    always: true
     cmds:
       - $HMAKE_PROJECT_DIR/build.sh clean
 

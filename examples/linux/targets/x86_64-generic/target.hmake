@@ -19,6 +19,7 @@ targets:
     description: remove build files for x86_64 generic
     after:
       - builder-x86_64
+    always: true
     cmds:
       - $HMAKE_PROJECT_DIR/build.sh clean
 

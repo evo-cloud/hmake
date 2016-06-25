@@ -391,7 +391,7 @@ var _ = Describe("HyperMake", func() {
 			os.RemoveAll(Fixtures("project1", "touch.log"))
 			_, execOrder0 := execProject("project1", "all")
 			_, execOrder1 := execProject("project1", "all")
-			Expect(execOrder1).Should(HaveLen(len(execOrder0) - 3))
+			Expect(execOrder1).Should(BeEmpty())
 			for i := 0; i < len(execOrder1); i++ {
 				name := execOrder1[i]
 				Expect(name).ShouldNot(Equal("t0"))
@@ -408,7 +408,7 @@ var _ = Describe("HyperMake", func() {
 			os.RemoveAll(Fixtures("project1", "touch.log"))
 			_, execOrder0 := execProject("project1", "all")
 			_, execOrder1 := execProject("project1", "all")
-			Expect(execOrder1).Should(HaveLen(len(execOrder0) - 3))
+			Expect(execOrder1).Should(BeEmpty())
 			_, execOrder2 := execProject("project1", "-r:t0", "all")
 			Expect(execOrder2).Should(HaveLen(len(execOrder0)))
 			_, execOrder3 := execProject("project1", "-R", "all")
@@ -418,8 +418,8 @@ var _ = Describe("HyperMake", func() {
 		It("skips task when explicitly specified", func() {
 			os.RemoveAll(Fixtures("project1", "touch.log"))
 			_, execOrder0 := execProject("project1", "all")
-			_, execOrder1 := execProject("project1", "all", "-s:t2")
-			Expect(execOrder1).Should(HaveLen(len(execOrder0) - 7))
+			_, execOrder1 := execProject("project1", "all", "-R", "-s:t2")
+			Expect(execOrder1).Should(HaveLen(len(execOrder0) - 1))
 		})
 
 		It("generates summary file", func() {
@@ -458,6 +458,7 @@ var _ = Describe("HyperMake", func() {
 				}, nil
 			}
 			plan.Require("all")
+			plan.RebuildAll = true
 			plan.OnEvent(func(event interface{}) {
 				switch evt := event.(type) {
 				case *hm.EvtTaskFinish:
@@ -465,12 +466,7 @@ var _ = Describe("HyperMake", func() {
 				}
 			})
 			Expect(plan.Execute(nil)).ShouldNot(Succeed())
-			Expect(taskResults).Should(HaveLen(4))
-			Expect(taskResults["t0"]).To(Equal(hm.Skipped))
-			Expect(taskResults["t1.0"]).To(Equal(hm.Skipped))
-			Expect(taskResults["t1.1"]).To(Equal(hm.Skipped))
 			Expect(taskResults["t2"]).To(Equal(hm.Failure))
-			Expect(plan.Tasks["t0"].Duration()).To(BeZero())
 		})
 
 		It("converts states into strings", func() {
@@ -561,6 +557,7 @@ var _ = Describe("HyperMake", func() {
 			Expect(taskResults["t0"]).To(Equal(hm.Skipped))
 			Expect(taskResults["t1"]).To(Equal(hm.Skipped))
 			Expect(taskResults["all"]).To(Equal(hm.Skipped))
+			Expect(plan.Tasks["all"].Duration()).Should(BeZero())
 
 			// run again with dependencies rebuilt
 			plan = proj.Plan()
@@ -572,6 +569,46 @@ var _ = Describe("HyperMake", func() {
 			Expect(taskResults["t0"]).To(Equal(hm.Success))
 			Expect(taskResults["t1"]).To(Equal(hm.Skipped))
 			Expect(taskResults["all"]).To(Equal(hm.Success))
+		})
+
+		It("always build target with property always set to true", func() {
+			proj, err := hm.LoadProjectFrom(Fixtures("always-target"))
+			Expect(err).Should(Succeed())
+			plan := proj.Plan()
+			plan.Require("all")
+			os.MkdirAll(plan.WorkPath, 0755)
+			Expect(plan.Execute(nil)).Should(Succeed())
+			// run to generate success marks
+			// now t0 should be skipped, all should be success
+			plan = proj.Plan()
+			plan.Require("all")
+			taskResults := make(map[string]hm.TaskResult)
+			handler := func(event interface{}) {
+				switch evt := event.(type) {
+				case *hm.EvtTaskFinish:
+					taskResults[evt.Task.Name()] = evt.Task.Result
+				}
+			}
+			plan.OnEvent(handler)
+			Expect(plan.Execute(nil)).Should(Succeed())
+			Expect(taskResults["t0"]).To(Equal(hm.Skipped))
+			Expect(taskResults["t0a"]).To(Equal(hm.Skipped))
+			Expect(taskResults["t1"]).To(Equal(hm.Success))
+			Expect(taskResults["t2"]).To(Equal(hm.Success))
+			Expect(taskResults["all"]).To(Equal(hm.Success))
+
+			// run again with explicity skip
+			plan = proj.Plan()
+			plan.Skip("t1")
+			plan.Require("all")
+			taskResults = make(map[string]hm.TaskResult)
+			plan.OnEvent(handler)
+			Expect(plan.Execute(nil)).Should(Succeed())
+			Expect(taskResults["t0"]).To(Equal(hm.Skipped))
+			Expect(taskResults["t0a"]).To(Equal(hm.Skipped))
+			Expect(taskResults["t1"]).To(Equal(hm.Skipped))
+			Expect(taskResults["t2"]).To(Equal(hm.Skipped))
+			Expect(taskResults["all"]).To(Equal(hm.Skipped))
 		})
 	})
 })

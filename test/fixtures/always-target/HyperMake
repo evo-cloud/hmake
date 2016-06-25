@@ -5,15 +5,21 @@ targets:
     t0:
         cmds:
             - echo t0
+    t0a:
+        after: [t0]
+
     t1:
-        watches:
-            - HyperMake
-        cmds:
-            - echo t1
-    all:
+        always: true
         after:
             - t0
-            - t1
+
+    t2:
+        after: [t1]
+
+    all:
+        after:
+            - t2
+            - t0a
 
 settings:
     default-targets: [all]

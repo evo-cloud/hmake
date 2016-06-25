@@ -83,9 +83,7 @@ targets:
         description: check code format
         after:
             - builder
-        watches:
-            - '**/**/*.go'
-            - build.sh
+        always: true
         cmds:
             - ./build.sh checkfmt
 
@@ -93,9 +91,7 @@ targets:
         description: check code using metalint
         after:
             - builder
-        watches:
-            - '**/**/*.go'
-            - build.sh
+        always: true
         cmds:
             - ./build.sh lint
 
@@ -109,9 +105,7 @@ targets:
         description: run tests
         after:
             - vendor
-        watches:
-            - '**/**/*.go'
-            - test
+        always: true
         cmds:
             - ginkgo ./test
 
@@ -119,9 +113,7 @@ targets:
         description: run tests with coverage
         after:
             - vendor
-        watches:
-            - '**/**/*.go'
-            - test
+        always: true
         cmds:
             - >
                 go test -coverprofile cover.out
@@ -133,6 +125,7 @@ targets:
         after:
             - vendor
         expose-docker: true
+        always: true
         cmds:
             - ginkgo ./test/e2e
 
