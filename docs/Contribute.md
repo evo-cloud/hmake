@@ -81,6 +81,7 @@ go fmt -w DIR
   - gvt: `go get github.com/FiloSottile/gvt`
   - ginkgo: `go get github.com/onsi/ginkgo/ginkgo`
   - gomega: `go get github.com/onsi/gomega`
+  - hugo: `go get github.com/spf13/hugo`, if you want to generate sites
 - For format, vet and lint
   - go tools: `go get golang.org/x/tools/cmd/...`
   - metalinter: `go get -v github.com/alecthomas/gometalinter && gometalinter --install`
@@ -111,18 +112,19 @@ go fmt -w DIR
    cd ~/workspace/go/src/github.com/evo-cloud/hmake
    # and make sure environment variable GOPATH and PATH are properly set as above
 
-   go build ./ # this will install hmake to $GOPATH/bin
+   go build ./   # this will build ./hmake executable
+   go install ./ # or if you want to install to $GOPATH/bin
 
    # make sure docker is running
    # if docker-machine is used (not for Linux)
    eval $(docker-machine env MACHINE-NAME)
    docker version # make sure both client and server versions are displayed
 
-   hmake -sv # build all by default
-   hmake check # check format, run lint
-   hmake test # run tests
-   hmake e2e # run end-to-end tests
-   hmake cover # generate coverage
+   ./hmake -sv # build all by default
+   ./hmake check # check format, run lint
+   ./hmake test # run tests
+   ./hmake e2e # run end-to-end tests
+   ./hmake cover # generate coverage
 
    # alternatively, use go directly
    go test ./test

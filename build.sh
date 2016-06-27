@@ -76,19 +76,22 @@ build() {
         export GOOS="$1"
         export GOARCH="$2"
         OUT=$OUT-$GOOS-$GOARCH
+        PKG_SUFFIX=-$GOOS-$GOARCH
     fi
     go build -o $OUT \
         -a -tags "$TAGS" -installsuffix netgo \
         -ldflags '-extldflags -static' \
         .
 
+    PKG=bin/hmake
     if [ "$GOOS" == "windows" ]; then
         cp -f $OUT bin/hmake.exe
-        PKG=$OUT.zip
+        PKG=${PKG}${PKG_SUFFIX}.zip
         rm -f $PKG
         zip -jX9 $PKG bin/hmake.exe
     else
-        PKG=$OUT.tar.gz
+        PKG=${PKG}${PKG_SUFFIX}.tar.gz
+        rm -f $PKG
         tar --posix --owner=0 --group=0 --no-acls --no-xattrs \
             --transform="s/$(basename $OUT)/hmake/" \
             -C $(dirname $OUT) -czf $PKG $(basename $OUT)

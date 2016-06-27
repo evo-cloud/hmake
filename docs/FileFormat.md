@@ -146,10 +146,10 @@ Usually, it defines
   and all dependencies are skipped;
 - `always`: always build the target regardless of last execution state and results
   of all dependencies (the `.PHONY` target in `make`);
-- `exec-driver`: (DO NOT USE THIS) same as in `settings` section, but only specify the driver for
-  this target.
 
-Other properties are driver specific, and will be parsed by driver.
+Other properties are specific to execution driver which executes the target.
+The currently supported execution driver is `docker`, please read
+[Docker Driver](DockerDriver.md) for details.
 
 #### Dependencies
 
@@ -210,11 +210,10 @@ Here's the order _hmake_ looks a setting by name:
 
 #### Pre-defined Setting Properties
 
-- `default-targets`: a list of targets to build when no targets are specified in `hmake` command
-- `exec-driver`: the name of driver which parses properties in target and executes the target,
-  the default value is `docker`, and supported drivers are
-  - [docker](DockerDriver.md)
-  - [shell](ShellDriver.md)
+- `default-targets`: a list of targets to build when no targets are specified
+  in `hmake` command;
+- `docker`: a set of [docker](DockerDriver.md) specific properties which defines
+   default values for targets.
 
 ## Local Customization
 

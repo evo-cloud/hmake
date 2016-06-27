@@ -11,18 +11,18 @@ githubName = "evo-cloud/hmake"
 description = "build without pre-requisites"
 hideShareOptions = true
 hidePostTime = true
-releaseVersion = "1.0.0rc3"
+releaseVersion = "1.0.0"
 
 [[params.artifacts]]
 os = "linux"
-file = "hmake-1.0.0rc3-linux-amd64.tar.gz"
+file = "hmake-linux-amd64.tar.gz"
 
 [[params.artifacts]]
 os = "darwin"
-file = "hmake-1.0.0rc3-darwin-amd64.tar.gz"
+file = "hmake-darwin-amd64.tar.gz"
 osIcon = "apple"
 osName = "Mac OS X"
 
 [[params.artifacts]]
 os = "windows"
-file = "hmake-1.0.0rc3-windows-amd64.zip"
+file = "hmake-windows-amd64.zip"

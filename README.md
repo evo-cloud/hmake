@@ -70,7 +70,7 @@ brew install hmake
 Alternatively, download from Github [releases](https://github.com/evo-cloud/hmake/releases)
 
 ```
-curl -s https://github.com/evo-cloud/hmake/releases/download/v1.0.0rc3/hmake-1.0.0rc3-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
+curl -s https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 chmod a+rx /usr/local/bin/hmake
 ```
 
@@ -100,8 +100,8 @@ See [README](examples/linux/README.md) for details.
 
 ## How It Works
 
-_hmake_ works in a very simple way by running the commands in each target inside
-the specified Docker container which already has dependencies installed.
+_hmake_ works in a very simple way by running the commands of each target inside
+the specified Docker container which already has pre-requisites installed.
 The root directory of project tree is mapped into the container under a certain
 path which can be customized, and the commands is able to access files inside
 the project and can also produce output files into the project tree.
@@ -112,7 +112,7 @@ _hmake_ creates a state directory `$HMAKE_PROJECT_DIR/.hmake`
 (see [File Format](docs/FileFormat.md) for the details of environment variables)
 to store logs and state files.
 The output (stdout and stderr combined) of each target is stored in files `TARGET.log`.
-Debug log (with `--debug`) is stored as `hmake.debug.log`.
+Debug log is stored as `hmake.debug.log`.
 Summary file is stored as `hmake.summary.json`.
 
 ## Documents
@@ -122,8 +122,6 @@ Please read the following documents if more detailed information is needed
 - References are list of specifications including
   - [File Format](docs/FileFormat.md) defines the format of _hmake_ files;
   - [Command line](docs/CommandLine.md) specification;
-  - [Shell driver](docs/ShellDriver.md) for properties in `shell` driver;
-  - [Docker driver](docs/DockerDriver.md) for properties in `docker` driver;
 - [Contributing](docs/Contribute.md) is a guideline for people who want to
   contribute to this project.
 - Examples are always helpful
@@ -137,10 +135,14 @@ Please read the following documents if more detailed information is needed
 - Mac OS X 10.9 and above (10.9, 10.11 tested)
 - Windows 7 SP1
 
-Please see
-[Docker Driver](docs/DockerDriver.md) and
-[Shell Driver](docs/ShellDriver.md)
-for notes and limits on certain platforms.
+#### Limits
+
+- On Mac OS X, the project tree must be under `/Users`;
+- On Windows, the project tree must be under `C:\Users`;
+- `docker-machine` is required on Mac OS X and Windows;
+- `docker-machine` is not supported on Linux;
+
+See [Docker Driver](docs/DockerDriver.md) for details.
 
 ## License
 
