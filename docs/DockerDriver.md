@@ -1,8 +1,68 @@
 # The _docker_ Execution Driver
 
-This driver generates the same script as [shell driver](ShellDriver.md) but run
-it inside a docker container. The following properties are supported in
-additional to properties supported by _shell_ driver:
+This execution driver interprets commands or scripts and run inside the specified
+docker container.
+
+## Properties
+
+- `script`: a multi-line string represents a full script to execute inside the
+  container;
+  E.g.
+
+  ```yaml
+  targets:
+      sample:
+          script: |
+              #!/bin/bash
+              echo 'This is a bash script'
+      sample1:
+          script: |
+              #!/usr/bin/env perl
+              print "a perl script"
+  ```
+
+- `cmds`: when `script` is not specified, this is a list of commands to execute
+  for the target; E.g.
+
+  ```yaml
+  targets:
+      sample:
+          cmds:
+              - mkdir -p bin
+              - gcc -o bin/hello hello.c
+  ```
+
+  the list of commands is merged to generate a shell script:
+
+  ```sh
+  #!/bin/sh
+  set -e
+  mkdir -p bin
+  gcc -o bin/hello hello.c
+  ```
+
+- `env`: a list of environment variables (the form `NAME=VALUE`) to be used for
+  execution (the `-e` option of `docker run`); E.g.
+
+  ```yaml
+  targets:
+      sample:
+          env:
+              - ARCH=x86_64
+              - OS=linux
+              - RELEASE        # without =VALUE, the value is populated from
+                               # current environment of hmake
+  ```
+
+- `env-files`: list of files providing environment variables, see `--env-files`
+  of `docker run`;
+
+- `console`: when `true`, the current stdin/stdout/stderr is directly passed to
+  command which is able to fully control the current console, equivalent to
+  `docker run -it`.
+  Default is false, equivalent to `docker run -a STDOUT -a STDERR`.
+
+  _NOTE: When enabled, no output is captured or logged._
 
 - `build`: path to `Dockerfile`, when specified, this target builds a docker
    image first. `image` property specifies the image name and tag.
@@ -28,15 +88,11 @@ additional to properties supported by _shell_ driver:
 - `content-trust`: only used to specify `false` which adds
   `--disable-content-trust` to `docker build/run`;
 - `src-volume`: the full path inside container where project root is mapped to.
-  Default is `/root/src`;
+  Default is `/src`;
 - `expose-docker`: when set `true`, expose the host docker server connectivity
   into container to allow docker client run from inside the container.
   This is very useful when docker is required for build and avoid problematic
   docker-in-docker;
-- `env`: list environment variables passed to container, can be `NAME=VALUE` or
-  `NAME` and maps to `-e` option of `docker run`;
-- `env-files`: list of files providing environment variables, see `--env-files`
-   of `docker run`;
 - `privileged`: run container in privileged mode, default is `false`;
 - `net`: when specified, only allowed value is `host`, when specified, run
   container with `--net=host --uts=host`;
@@ -74,14 +130,10 @@ settings:
         property: value
 ```
 
-The `console` property is also supported by `docker` driver which emits `-it` option
-to docker client instead of `-a STDOUT -a STDERR`. And similarly to _shell_ driver,
-no output is captured or logged.
-
 ## Volume Mapping
 
 By default the current project root is mapped into container at `src-volume`,
-default value is `/root/src`.
+default value is `/src`.
 As the script is a shell script, the executable `/bin/sh` must be present in
 the container.
 

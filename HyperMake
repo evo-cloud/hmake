@@ -27,7 +27,7 @@ targets:
             - vendor
         watches:
             - build.sh
-        envs:
+        env:
             - HMAKE_VER_SUFFIX
             - HMAKE_RELEASE
         cmds:
