@@ -49,8 +49,9 @@ h3 {
 
 .banner-links {
     position: absolute;
-    display: inline-block;
-    right: 2em;
+    display: block;
+    top: 0;
+    right: 1em;
 }
 
 .header {
@@ -99,7 +100,6 @@ h3 {
     margin: 0;
     padding: 0;
     list-style: none;
-    min-width: 320px;
 }
 .nav-item {
     display: inline-block;
@@ -126,6 +126,10 @@ h3 {
 .sidebar .brand-title {
     text-transform: capitalize;
     font-family: "Oxygen", sans-serif;
+}
+
+.sidebar .nav-list {
+    min-width: 320px;
 }
 
 .sidebar .nav-item {
@@ -275,6 +279,84 @@ h3 {
     font-family: "Oxygen", sans-serif;
     margin:0 0 5px;
     color:#aaa
+}
+
+@media (max-width: 48em) {
+    .banner-title .brand-title {
+        display: block;
+        margin-left: .5em;
+    }
+
+    .banner-title .brand-tagline {
+        display: block;
+    }
+
+    .banner-links {
+        right: 0;
+    }
+
+    .nav-item a {
+        margin-top: 0;
+        border: 0;
+    }
+    .nav-item a:hover,
+    .nav-item a:focus {
+        border: 0;
+    }
+
+    .nav-item a span {
+        display: none;
+    }
+
+    .sidebar .brand-title {
+        text-transform: capitalize;
+        font-family: "Oxygen", sans-serif;
+    }
+
+    .sidebar .nav {
+        display: inline-block;
+    }
+
+    .sidebar .nav-list {
+        min-width: 32px;
+    }
+
+    .sidebar .nav-item {
+        display: inline-block;
+        margin-bottom: 0;
+    }
+
+    .sidebar .nav-item a {
+        width: auto;
+        text-align: left;
+        font-size: 1em;
+    }
+
+    .sidebar .nav-item span {
+        display: none;
+    }
+
+    .sidebar .nav-item .os {
+        font-size: 2em;
+        margin-right: 0;
+    }
+
+    .sidebar .header {
+        margin: auto;
+    }
+
+    .sidebar hgroup {
+        margin: auto;
+    }
+
+    .sidebar hgroup h1 {
+        display: inline-block;
+    }
+
+    .sidebar hgroup h2 {
+        display: inline-block;
+        margin-left: 1em;
+    }
 }
 
 @media (min-width: 48em) {

@@ -43,17 +43,19 @@
             <ul class="nav-list">
                 {{ with .Site.Params.twitterName }}
                 <li class="nav-item">
-                    <a class="pure-button" href="https://twitter.com/{{ . }}"><i class="fa fa-twitter"></i> Twitter</a>
+                    <a class="pure-button" href="https://twitter.com/{{ . }}"><i class="fa fa-twitter"></i><span> Twitter</span></a>
                 </li>
                 {{ end }}
                 {{ with .Site.Params.githubName }}
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/{{ . }} "><i class="fa fa-github-alt"></i> github</a>
+                    <a class="pure-button" href="https://github.com/{{ . }} "><i class="fa fa-github-alt"></i><span> github</span></a>
                 </li>
                 {{ end }}
+                <!--
                 <li class="nav-item">
-                    <a class="pure-button" href="{{ .Site.BaseURL }}/index.xml"><i class="fa fa-rss"></i> rss</a>
+                    <a class="pure-button" href="{{ .Site.BaseURL }}/index.xml"><i class="fa fa-rss"></i><span> rss</span></a>
                 </li>
+                -->
             </ul>
         </nav>
     </div>
