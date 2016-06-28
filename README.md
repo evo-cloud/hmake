@@ -45,6 +45,7 @@ Assume [Docker](http://www.docker.com) is already installed, and make sure it's
 running properly.
 
 _TIPS_
+
 > When using `docker-machine`, many people encountered the issue docker complains
 > unable to connect to docker daemon. The cause is the environment variables are
 > not populated properly in current shell. Type the following commands:
