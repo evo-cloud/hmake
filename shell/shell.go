@@ -26,6 +26,22 @@ type Command struct {
 	Ext   map[string]interface{} `json:"*"`
 }
 
+// Args build arguments
+type Args struct {
+	Args []string
+}
+
+// NewArgs creates Args
+func NewArgs(args ...string) *Args {
+	return &Args{Args: append([]string{}, args...)}
+}
+
+// Add appends arguments
+func (a *Args) Add(args ...string) *Args {
+	a.Args = append(a.Args, args...)
+	return a
+}
+
 // ScriptFile returns the filename of script
 func ScriptFile(t *hm.Task) string {
 	return filepath.Join(t.Plan.WorkPath, t.Name()+".script")
@@ -73,12 +89,32 @@ type Executor struct {
 	Task    *hm.Task
 	Cmd     *exec.Cmd
 	Console bool
-	Output  bool
+	Stdout  bool
+	Stderr  bool
+}
+
+// AddArgs appends more arguments
+func (x *Executor) AddArgs(args ...string) *Executor {
+	x.Cmd.Args = append(x.Cmd.Args, args...)
+	return x
 }
 
 // Mute disables the output
 func (x *Executor) Mute() *Executor {
-	x.Output = false
+	x.Stdout = false
+	x.Stderr = false
+	return x
+}
+
+// MuteOut disables the stdout
+func (x *Executor) MuteOut() *Executor {
+	x.Stdout = false
+	return x
+}
+
+// MuteErr disables the stderr
+func (x *Executor) MuteErr() *Executor {
+	x.Stderr = false
 	return x
 }
 
@@ -90,7 +126,7 @@ func (x *Executor) Run(sigCh <-chan os.Signal) (err error) {
 		x.Cmd.Stdin = os.Stdin
 		x.Cmd.Stdout = os.Stdout
 		x.Cmd.Stderr = os.Stderr
-	} else if x.Output {
+	} else if x.Stdout || x.Stderr {
 		var out *os.File
 		out, err = os.OpenFile(LogFile(x.Task),
 			syscall.O_WRONLY|syscall.O_CREAT|syscall.O_TRUNC,
@@ -101,8 +137,12 @@ func (x *Executor) Run(sigCh <-chan os.Signal) (err error) {
 		}
 		defer out.Close()
 		w := io.MultiWriter(out, x.Task)
-		x.Cmd.Stdout = w
-		x.Cmd.Stderr = w
+		if x.Stdout {
+			x.Cmd.Stdout = w
+		}
+		if x.Stderr {
+			x.Cmd.Stderr = w
+		}
 	}
 
 	if sigCh == nil {
@@ -140,7 +180,13 @@ func Exec(t *hm.Task, command string, args ...string) *Executor {
 	}
 	cmd.Env = append(cmd.Env, t.EnvVars()...)
 	cmd.Dir = filepath.Join(t.Project().BaseDir, t.Target.WorkingDir())
-	return &Executor{Task: t, Cmd: cmd, Console: target.Console, Output: true}
+	return &Executor{
+		Task:    t,
+		Cmd:     cmd,
+		Console: target.Console,
+		Stdout:  true,
+		Stderr:  true,
+	}
 }
 
 // ExecScript executes generated script

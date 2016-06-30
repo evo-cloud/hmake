@@ -27,7 +27,7 @@ import (
 
 const (
 	// Release is the major release version
-	Release = "1.0.0"
+	Release = "1.1.0"
 	// Version is full version string
 	Version = Release + VersionSuffix
 	// Website is the URL to project website
@@ -85,7 +85,7 @@ type makeCmd struct {
 	Banner      bool
 	Color       bool
 	Emoji       bool
-	Debug       bool
+	DebugLog    bool `n:"debug-log"`
 	ShowSummary bool `n:"show-summary"`
 	ShowTargets bool `n:"targets"`
 	DryRun      bool
@@ -214,7 +214,7 @@ func (c *makeCmd) Execute(args []string) (err error) {
 	}
 	plan.RebuildAll = c.RebuildAll
 	plan.MaxConcurrency = c.Parallel
-	plan.DebugLog = c.Debug
+	plan.DebugLog = c.DebugLog
 	plan.DryRun = c.DryRun
 
 	if err = plan.Require(requires...); err != nil {

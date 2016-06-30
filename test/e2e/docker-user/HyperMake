@@ -1,0 +1,23 @@
+---
+format: hypermake.v0
+
+targets:
+  nopatch:
+    description: test non-root user mapping
+    image: alpine:latest
+    always: true
+    no-passwd-patch: true
+    cmds:
+      - '! grep -E "^user[[:digit:]]+:x:$(id -u):" /etc/passwd'
+
+  patch:
+    description: test non-root user mapping
+    image: alpine:latest
+    always: true
+    cmds:
+      - 'grep -E "^user[[:digit:]]+:x:$(id -u):" /etc/passwd'
+
+settings:
+  default-targets:
+    - nopatch
+    - patch

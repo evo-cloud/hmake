@@ -1,6 +1,11 @@
 package docker
 
 import (
+	"archive/tar"
+	"bufio"
+	"bytes"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -73,7 +78,14 @@ type Runner struct {
 	ShmSize           string   `json:"shm-size"`
 	ULimit            []string `json:"ulimit"`
 
+	// reserved properties
+	NoPasswdPatch bool `json:"no-passwd-patch"`
+
 	projectDir string
+}
+
+func (r *Runner) logf(format string, args ...interface{}) {
+	r.Task.Plan.Logf(format, args...)
 }
 
 func (r *Runner) addEnv(envs ...string) {
@@ -138,10 +150,23 @@ func (r *Runner) docker(args ...string) error {
 	return r.exec(args...).Mute().Run(nil)
 }
 
+func (r *Runner) dockerPiped(in io.Reader, out io.Writer, sigCh <-chan os.Signal, args ...string) error {
+	x := r.exec(args...).Mute()
+	x.Cmd.Stdin = in
+	x.Cmd.Stdout = out
+	var errOut bytes.Buffer
+	x.Cmd.Stderr = &errOut
+	err := x.Run(sigCh)
+	if err != nil {
+		r.logf("docker piped stderr: %v: %s", err, errOut.String())
+	}
+	return err
+}
+
 func (r *Runner) signal(sig os.Signal, relayCh chan os.Signal) {
 	sysSig := sig.(syscall.Signal)
 	if cid := r.cid(); cid != "" {
-		r.Task.Plan.Logf("Signal container %s %d", cid, sysSig)
+		r.logf("Signal container %s %d", cid, sysSig)
 		// HACK: in non-tty mode, docker is not going to pass the signal to init
 		// process, then the INTERRUPT/TERM signal should be translated into kill
 		if sysSig == syscall.SIGINT || sysSig == syscall.SIGTERM {
@@ -152,58 +177,57 @@ func (r *Runner) signal(sig os.Signal, relayCh chan os.Signal) {
 	} else {
 		// CID not available, probably the image is being downloaded
 		// send the signal to docker client
-		r.Task.Plan.Logf("Relay signal %d, CID not available", sysSig)
+		r.logf("Relay signal %d, CID not available", sysSig)
 		relayCh <- sig
 	}
 }
 
 func (r *Runner) removeContainer() {
 	if cid := r.cid(); cid != "" {
-		r.Task.Plan.Logf("Removing container %s", cid)
+		r.logf("Removing container %s", cid)
 		r.docker("rm", "-f", cid)
 	} else {
-		r.Task.Plan.Logf("Ignore removing container, CID not available")
+		r.logf("Ignore removing container, CID not available")
 	}
 }
 
-func (r *Runner) commonOpts(args []string) []string {
+func (r *Runner) commonOpts(args *shell.Args) {
 	if r.CPUShares != nil {
-		args = append(args, "--cpu-shares", strconv.Itoa(*r.CPUShares))
+		args.Add("--cpu-shares", strconv.Itoa(*r.CPUShares))
 	}
 	if r.CPUPeriod != nil {
-		args = append(args, "--cpu-period", strconv.Itoa(*r.CPUPeriod))
+		args.Add("--cpu-period", strconv.Itoa(*r.CPUPeriod))
 	}
 	if r.CPUQuota != nil {
-		args = append(args, "--cpu-quota", strconv.Itoa(*r.CPUQuota))
+		args.Add("--cpu-quota", strconv.Itoa(*r.CPUQuota))
 	}
 	if r.CPUSetCPUs != "" {
-		args = append(args, "--cpuset-cpus", r.CPUSetCPUs)
+		args.Add("--cpuset-cpus", r.CPUSetCPUs)
 	}
 	if r.CPUSetMems != "" {
-		args = append(args, "--cpuset-mems", r.CPUSetMems)
+		args.Add("--cpuset-mems", r.CPUSetMems)
 	}
 	if r.Memory != "" {
-		args = append(args, "-m", r.Memory)
+		args.Add("-m", r.Memory)
 	}
 	if r.MemorySwap != "" {
-		args = append(args, "--memory-swap", r.MemorySwap)
+		args.Add("--memory-swap", r.MemorySwap)
 	}
 	if r.ShmSize != "" {
-		args = append(args, "--shm-size", r.ShmSize)
+		args.Add("--shm-size", r.ShmSize)
 	}
 	for _, lim := range r.ULimit {
-		args = append(args, "--ulimit", lim)
+		args.Add("--ulimit", lim)
 	}
 	for _, label := range r.Labels {
-		args = append(args, "--label", label)
+		args.Add("--label", label)
 	}
 	for _, labelFile := range r.LabelFiles {
-		args = append(args, "--label-file", labelFile)
+		args.Add("--label-file", labelFile)
 	}
 	if r.ContentTrust != nil && !*r.ContentTrust {
-		args = append(args, "--disable-content-trust")
+		args.Add("--disable-content-trust")
 	}
-	return args
 }
 
 // Run implements Runner
@@ -225,25 +249,25 @@ func (r *Runner) Run(sigCh <-chan os.Signal) (result hm.TaskResult, err error) {
 }
 
 func (r *Runner) build(sigCh <-chan os.Signal) error {
-	dockerCmd := []string{"build", "-t", r.Image}
+	dockerCmd := shell.NewArgs("build", "-t", r.Image)
 
 	for _, arg := range r.BuildArgs {
-		dockerCmd = append(dockerCmd, "--build-arg", arg)
+		dockerCmd.Add("--build-arg", arg)
 	}
 	for _, tag := range r.Tags {
-		dockerCmd = append(dockerCmd, "-t", tag)
+		dockerCmd.Add("-t", tag)
 	}
 	if r.ForceRm {
-		dockerCmd = append(dockerCmd, "--force-rm")
+		dockerCmd.Add("--force-rm")
 	}
 	if r.Pull {
-		dockerCmd = append(dockerCmd, "--pull")
+		dockerCmd.Add("--pull")
 	}
 	if r.Cache != nil && !*r.Cache {
-		dockerCmd = append(dockerCmd, "--no-cache")
+		dockerCmd.Add("--no-cache")
 	}
 
-	dockerCmd = r.commonOpts(dockerCmd)
+	r.commonOpts(dockerCmd)
 
 	dockerFile := r.Task.WorkingDir(r.Build)
 	buildFrom := r.BuildFrom
@@ -258,23 +282,17 @@ func (r *Runner) build(sigCh <-chan os.Signal) error {
 
 	if info.IsDir() {
 		if buildFrom == "" {
-			dockerCmd = append(dockerCmd, dockerFile)
+			dockerCmd.Add(dockerFile)
 		} else {
-			dockerCmd = append(dockerCmd,
-				"-f", filepath.Join(dockerFile, Dockerfile),
-				buildFrom)
+			dockerCmd.Add("-f", filepath.Join(dockerFile, Dockerfile), buildFrom)
 		}
 	} else if buildFrom == "" {
-		dockerCmd = append(dockerCmd,
-			"-f", dockerFile,
-			filepath.Dir(dockerFile))
+		dockerCmd.Add("-f", dockerFile, filepath.Dir(dockerFile))
 	} else {
-		dockerCmd = append(dockerCmd,
-			"-f", dockerFile,
-			buildFrom)
+		dockerCmd.Add("-f", dockerFile, buildFrom)
 	}
 
-	return r.exec(dockerCmd...).Run(sigCh)
+	return r.exec(dockerCmd.Args...).Run(sigCh)
 }
 
 func (r *Runner) run(sigCh <-chan os.Signal) error {
@@ -284,84 +302,89 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 	}
 
 	workDir := filepath.Join(r.SrcVolume, r.Task.Target.WorkingDir())
-	dockerRun := []string{"run",
-		"--rm",
-		"-v", r.canonicalProjectDir() + ":" + r.SrcVolume,
+	dockerCmd := shell.NewArgs("create",
+		"-v", r.canonicalProjectDir()+":"+r.SrcVolume,
 		"-w", filepath.ToSlash(workDir),
 		"--entrypoint", filepath.ToSlash(filepath.Join(r.SrcVolume, hm.WorkFolder,
 			filepath.Base(shell.ScriptFile(r.Task)))),
 		"--cidfile", r.cidFile(),
-	}
+	)
 
 	// support console
 	var shellTarget shell.Target
 	r.Task.Target.GetExt(&shellTarget)
+
 	if shellTarget.Console {
-		dockerRun = append(dockerRun, "-it")
+		dockerCmd.Add("-it")
 	} else {
-		dockerRun = append(dockerRun, "-a", "STDOUT", "-a", "STDERR")
+		dockerCmd.Add("-a", "STDOUT", "-a", "STDERR")
 	}
+
+	var passwd passwdPatcher
 
 	// by default, use non-root user
 	if r.User == "" {
-		uid, gid, grps, err := currentUserIds()
-		if err != nil {
-			return err
+		if e := passwd.current(); e != nil {
+			return e
 		}
-		dockerRun = append(dockerRun, "-u", strconv.Itoa(uid)+":"+strconv.Itoa(gid))
+		dockerCmd.Add("-u", passwd.user())
 		if len(r.Groups) == 0 {
-			for _, grp := range grps {
-				if grp != gid {
-					dockerRun = append(dockerRun, "--group-add", strconv.Itoa(grp))
+			for _, grp := range passwd.groups {
+				if grp != passwd.gid {
+					dockerCmd.Add("--group-add", strconv.Itoa(grp))
 				}
 			}
 		}
 	} else if r.User != "root" && r.User != "0" {
-		dockerRun = append(dockerRun, "-u", r.User)
+		if e := passwd.parse(r.User); e != nil {
+			return e
+		}
+		dockerCmd.Add("-u", passwd.user())
 	}
 	for _, grp := range r.Groups {
-		dockerRun = append(dockerRun, "--group-add", grp)
+		passwd.addGroup(grp)
+		dockerCmd.Add("--group-add", grp)
 	}
 
 	for _, envFile := range r.EnvFiles {
-		dockerRun = append(dockerRun, "--env-file",
+		dockerCmd.Add("--env-file",
 			filepath.Join(r.SrcVolume, r.Task.Target.WorkingDir(envFile)))
 	}
 
 	for _, env := range r.Env {
-		dockerRun = append(dockerRun, "-e", env)
+		dockerCmd.Add("-e", env)
 	}
 
 	if r.Network == "host" {
-		dockerRun = append(dockerRun, "--net=host", "--uts=host")
+		dockerCmd.Add("--net=host", "--uts=host")
 	} else {
 		for _, host := range r.Hosts {
-			dockerRun = append(dockerRun, "--add-host", host)
+			dockerCmd.Add("--add-host", host)
 		}
 		for _, dns := range r.DNSServers {
-			dockerRun = append(dockerRun, "--dns", dns)
+			dockerCmd.Add("--dns", dns)
 		}
 		if r.DNSSearch != "" {
-			dockerRun = append(dockerRun, "--dns-search", r.DNSSearch)
+			dockerCmd.Add("--dns-search", r.DNSSearch)
 		}
 		for _, opt := range r.DNSOpts {
-			dockerRun = append(dockerRun, "--dns-opt", opt)
+			dockerCmd.Add("--dns-opt", opt)
 		}
 	}
 
 	for _, cap := range r.CapAdd {
-		dockerRun = append(dockerRun, "--cap-add", cap)
+		dockerCmd.Add("--cap-add", cap)
 	}
 	for _, cap := range r.CapDrop {
-		dockerRun = append(dockerRun, "--cap-drop", cap)
+		dockerCmd.Add("--cap-drop", cap)
 	}
 
 	for _, dev := range r.Devices {
-		dockerRun = append(dockerRun, "--device", dev)
+		dockerCmd.Add("--device", dev)
 	}
 
 	if r.Privileged {
-		dockerRun = append(dockerRun, "--privileged")
+		dockerCmd.Add("--privileged")
 	}
 
 	for _, vol := range r.Volumes {
@@ -369,48 +392,65 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 		if !filepath.IsAbs(hostVol) {
 			hostVol = filepath.Join(r.projectDir, r.Task.Target.WorkingDir(vol))
 		}
-		dockerRun = append(dockerRun, "-v", hostVol)
+		dockerCmd.Add("-v", hostVol)
 	}
 
 	if r.BlkIoWeight != nil {
-		dockerRun = append(dockerRun, "--blkio-weight", strconv.Itoa(*r.BlkIoWeight))
+		dockerCmd.Add("--blkio-weight", strconv.Itoa(*r.BlkIoWeight))
 	}
 	for _, w := range r.BlkIoWeightDevs {
-		dockerRun = append(dockerRun, "--blkio-weight-device", w)
+		dockerCmd.Add("--blkio-weight-device", w)
 	}
 	for _, bps := range r.DevReadBps {
-		dockerRun = append(dockerRun, "--device-read-bps", bps)
+		dockerCmd.Add("--device-read-bps", bps)
 	}
 	for _, bps := range r.DevWriteBps {
-		dockerRun = append(dockerRun, "--device-write-bps", bps)
+		dockerCmd.Add("--device-write-bps", bps)
 	}
 	for _, iops := range r.DevReadIops {
-		dockerRun = append(dockerRun, "--device-read-iops", iops)
+		dockerCmd.Add("--device-read-iops", iops)
 	}
 	for _, iops := range r.DevWriteIops {
-		dockerRun = append(dockerRun, "--device-write-iops", iops)
+		dockerCmd.Add("--device-write-iops", iops)
 	}
 
-	dockerRun = r.commonOpts(dockerRun)
+	r.commonOpts(dockerCmd)
 
 	if r.KernelMemory != "" {
-		dockerRun = append(dockerRun, "--kernel-memory", r.KernelMemory)
+		dockerCmd.Add("--kernel-memory", r.KernelMemory)
 	}
 	if r.MemorySwappiness != nil {
-		dockerRun = append(dockerRun, "--memory-swappiness", strconv.Itoa(*r.MemorySwappiness))
+		dockerCmd.Add("--memory-swappiness", strconv.Itoa(*r.MemorySwappiness))
 	}
 	if r.MemoryReservation != "" {
-		dockerRun = append(dockerRun, "--memory-reservation", r.MemoryReservation)
+		dockerCmd.Add("--memory-reservation", r.MemoryReservation)
 	}
 
-	dockerRun = append(dockerRun, r.Image)
+	dockerCmd.Add(r.Image)
 
 	script, err := shell.BuildScriptFile(r.Task)
 	if err != nil || script == "" {
 		return err
 	}
 
-	x := r.exec(dockerRun...)
+	// create container
+	if err = r.exec(dockerCmd.Args...).MuteOut().Run(sigCh); err != nil {
+		return err
+	}
+
+	if !r.NoPasswdPatch {
+		if err = passwd.patch(r, sigCh); err != nil {
+			return err
+		}
+	}
+
+	dockerCmd = shell.NewArgs("start", "-a")
+	if shellTarget.Console {
+		dockerCmd.Add("-i")
+	}
+	dockerCmd.Add(r.cid())
+
+	x := r.exec(dockerCmd.Args...)
 
 	if shellTarget.Console {
 		// tty mode, CtrlC is handled by docker client
@@ -479,6 +519,91 @@ func Factory(task *hm.Task) (hm.Runner, error) {
 	r.addEnv("HMAKE_DOCKER_VOL_HOST=" + r.canonicalProjectDir())
 	r.addEnv("HMAKE_DOCKER_VOL_CNTR=" + r.SrcVolume)
 	return r, nil
+}
+
+type passwdPatcher struct {
+	uid, gid int
+	groups   []int
+}
+
+func (p *passwdPatcher) current() (err error) {
+	p.uid, p.gid, p.groups, err = currentUserIds()
+	return
+}
+
+func (p *passwdPatcher) user() string {
+	return strconv.Itoa(p.uid) + ":" + strconv.Itoa(p.gid)
+}
+
+func (p *passwdPatcher) parse(user string) (err error) {
+	p.uid, p.gid, err = userID(user)
+	return
+}
+
+func (p *passwdPatcher) addGroup(grp string) {
+	if gid, err := strconv.Atoi(grp); err == nil {
+		p.groups = append(p.groups, gid)
+	}
+}
+
+func (p *passwdPatcher) patch(r *Runner, sigCh <-chan os.Signal) (err error) {
+	if p.uid == 0 {
+		// no need
+		return
+	}
+	uidStr := strconv.Itoa(p.uid)
+
+	var out bytes.Buffer
+	err = r.dockerPiped(nil, &out, sigCh, "cp", r.cid()+":/etc/passwd", "-")
+	if err != nil {
+		return
+	}
+	tarRd := tar.NewReader(bytes.NewBuffer(out.Bytes()))
+	header, err := tarRd.Next()
+	if err != nil {
+		if err == io.EOF {
+			// TODO skip?
+			err = nil
+		}
+		r.logf("untar /etc/passwd error: %v", err)
+		return
+	}
+
+	var lines []string
+	scanner := bufio.NewScanner(tarRd)
+	for scanner.Scan() {
+		line := scanner.Text()
+		tokens := strings.Split(line, ":")
+		if len(tokens) >= 3 && tokens[2] == uidStr {
+			// already exist, no need to patch
+			return
+		}
+		lines = append(lines, line)
+	}
+	if err = scanner.Err(); err != nil {
+		r.logf("scan /etc/passwd error: %v", err)
+		return
+	}
+
+	lines = append(lines, fmt.Sprintf("user%d:x:%d:%d::/tmp:/sbin/nologin", p.uid, p.uid, p.gid))
+	content := []byte(strings.Join(lines, "\n"))
+
+	var gen bytes.Buffer
+	w := tar.NewWriter(&gen)
+	header.Size = int64(len(content))
+	if err = w.WriteHeader(header); err != nil {
+		r.logf("write back tar header error: %v", err)
+		return
+	}
+	if _, err = w.Write(content); err != nil {
+		r.logf("write back tar content error: %v", err)
+		return
+	}
+	w.Close()
+
+	err = r.dockerPiped(bytes.NewBuffer(gen.Bytes()), nil, sigCh, "cp", "-", r.cid()+":/etc")
+
+	return
 }
 
 func init() {

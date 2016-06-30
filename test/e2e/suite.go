@@ -72,4 +72,14 @@ var _ = Describe("docker", func() {
 		session.Wait(30 * time.Second)
 		Eventually(session).Should(gexec.Exit(1))
 	})
+
+	It("fix /etc/passwd", func() {
+		wd, err := os.Getwd()
+		Expect(err).Should(Succeed())
+		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker-user"), "-v")
+		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+		Expect(err).Should(Succeed())
+		session.Wait(15 * time.Minute)
+		Eventually(session).Should(gexec.Exit(0))
+	})
 })
