@@ -7,6 +7,7 @@ targets:
   test:
     description: test env
     image: alpine:latest
+    always: true
     env:
       - TEST_VAR=TEST_VAL
     cmds:

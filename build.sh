@@ -78,7 +78,7 @@ build() {
         OUT=$OUT-$GOOS-$GOARCH
         PKG_SUFFIX=-$GOOS-$GOARCH
     fi
-    go build -o $OUT \
+    CGO_ENABLED=0 go build -o $OUT \
         -a -tags "$TAGS" -installsuffix netgo \
         -ldflags '-extldflags -static' \
         .

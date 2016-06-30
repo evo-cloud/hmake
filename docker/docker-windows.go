@@ -31,6 +31,9 @@ func (r *Runner) exposeDocker() {
 }
 
 func currentUserIds() (uid, gid int, grps []int, err error) {
-	uid, gid, grps, err = currentUserIdsFromDockerMachine()
-	return
+	return currentUserIdsFromDockerMachine()
+}
+
+func userID(name string) (uid, gid int, err error) {
+	return userIDFromDockerMachine(name)
 }

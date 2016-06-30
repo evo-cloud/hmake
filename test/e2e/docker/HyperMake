@@ -12,6 +12,7 @@ targets:
     description: test docker client
     after:
       - builder
+    always: true
     cmds:
       - docker version
 
