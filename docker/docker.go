@@ -389,7 +389,9 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 
 	for _, vol := range r.Volumes {
 		hostVol := vol
-		if !filepath.IsAbs(hostVol) {
+		if strings.HasPrefix(hostVol, "~/") {
+			hostVol = filepath.Join(os.Getenv("HOME"), hostVol[2:])
+		} else if !filepath.IsAbs(hostVol) {
 			hostVol = filepath.Join(r.projectDir, r.Task.Target.WorkingDir(vol))
 		}
 		dockerCmd.Add("-v", hostVol)
