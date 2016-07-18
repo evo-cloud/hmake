@@ -35,6 +35,7 @@ type Runner struct {
 	Build             string   `json:"build"`
 	BuildFrom         string   `json:"build-from"`
 	BuildArgs         []string `json:"build-args"`
+	Commit            []string `json:"commit"`
 	Tags              []string `json:"tags"`
 	Labels            []string `json:"labels"`
 	LabelFiles        []string `json:"label-files"`
@@ -241,6 +242,9 @@ func (r *Runner) Run(sigCh <-chan os.Signal) (result hm.TaskResult, err error) {
 	if err == nil {
 		err = r.run(sigCh)
 	}
+	if err == nil && len(r.Commit) > 0 {
+		err = r.commit(sigCh)
+	}
 	if err != nil {
 		result = hm.Failure
 	}
@@ -293,6 +297,25 @@ func (r *Runner) build(sigCh <-chan os.Signal) error {
 	}
 
 	return r.exec(dockerCmd.Args...).Run(sigCh)
+}
+
+func (r *Runner) commit(sigCh <-chan os.Signal) error {
+	imageName := r.Commit[0]
+	commitCmd := shell.NewArgs("commit", r.cid(), imageName)
+	err := r.exec(commitCmd.Args...).Run(sigCh)
+	if err != nil {
+		return err
+	}
+	var tagCmd *shell.Args
+	for i := 1; i < len(r.Commit); i++ {
+		tagCmd = shell.NewArgs("tag", imageName, r.Commit[i])
+		err = r.exec(tagCmd.Args...).Run(sigCh)
+		if err != nil {
+			return err
+		}
+		tagCmd = nil
+	}
+	return err
 }
 
 func (r *Runner) run(sigCh <-chan os.Signal) error {

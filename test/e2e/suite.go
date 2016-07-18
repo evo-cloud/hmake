@@ -28,7 +28,7 @@ var _ = Describe("docker", func() {
 	It("makes", func() {
 		wd, err := os.Getwd()
 		Expect(err).Should(Succeed())
-		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker"), "-v")
+		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker"), "-vR")
 		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 		Expect(err).Should(Succeed())
 		session.Wait(15 * time.Minute)
@@ -40,7 +40,7 @@ var _ = Describe("docker", func() {
 		Expect(err).Should(Succeed())
 		logfile := filepath.Join(wd, "docker-env", "test.log")
 		os.Remove(logfile)
-		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker-env"), "-v")
+		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker-env"), "-vR")
 		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 		Expect(err).Should(Succeed())
 		session.Wait(15 * time.Minute)
@@ -54,7 +54,7 @@ var _ = Describe("docker", func() {
 	It("makes with correct dir", func() {
 		wd, err := os.Getwd()
 		Expect(err).Should(Succeed())
-		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker-dir"), "-v")
+		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker-dir"), "-vR")
 		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 		Expect(err).Should(Succeed())
 		session.Wait(15 * time.Minute)
@@ -64,7 +64,7 @@ var _ = Describe("docker", func() {
 	It("aborts docker execution", func() {
 		wd, err := os.Getwd()
 		Expect(err).Should(Succeed())
-		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker-abort"), "abort0", "-v")
+		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker-abort"), "abort0", "-vR")
 		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 		Expect(err).Should(Succeed())
 		time.Sleep(time.Second)
@@ -76,10 +76,22 @@ var _ = Describe("docker", func() {
 	It("fix /etc/passwd", func() {
 		wd, err := os.Getwd()
 		Expect(err).Should(Succeed())
-		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker-user"), "-v")
+		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker-user"), "-vR")
 		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 		Expect(err).Should(Succeed())
 		session.Wait(15 * time.Minute)
 		Eventually(session).Should(gexec.Exit(0))
 	})
+
+	It("commit", func() {
+		wd, err := os.Getwd()
+		Expect(err).Should(Succeed())
+		exec.Command("docker", "rmi", "hmake-test-commit:newtag", "hmake-test-commit:tag2").Run()
+		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker-commit"), "test", "-vR")
+		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+		Expect(err).Should(Succeed())
+		session.Wait(30 * time.Second)
+		Eventually(session).Should(gexec.Exit(0))
+	})
+
 })
