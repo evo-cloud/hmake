@@ -81,9 +81,25 @@ docker container.
   `Dockerfile` as required by `docker build`;
 
 - `build-args`: list of args, corresponding to `docker build` option;
+
 - `image`: with `build` it's the image name and tag to build,
   without `build`, it's the image used to create the container;
+
 - `tags`: a list of tags in addition to `image` when do `docker build`;
+
+- `commit`: commit running container into new image. Support multiple tags. 
+  Image tag will be 'latest', if not self-defined in image name. E.g.
+
+  ```yaml
+  target:
+      image: new-image-name:newtag
+      cmds:
+          <Some commands>
+      commit: 
+            - new-image-name:tag1
+            - new-image-name:tag2
+  ```
+
 - `cache`: only used to specify `false` which adds `--no-cache` to `docker build`;
 - `content-trust`: only used to specify `false` which adds
   `--disable-content-trust` to `docker build/run`;
@@ -96,7 +112,7 @@ docker container.
 - `privileged`: run container in privileged mode, default is `false`;
 - `net`: when specified, only allowed value is `host`, when specified, run
   container with `--net=host --uts=host`;
-- `user`: passed to `docker run --user...`, by default, current `uid:gid` are
+- `user`: passed to `docker run --user...`, by default, current `uid:gid` are 
   passed (with _docker-machine_ the `uid:gid` is queried from the virtual machine
   running docker daemon).
   It must be explicitly specified `root` if the script is executed as root
