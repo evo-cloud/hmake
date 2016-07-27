@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -628,6 +629,35 @@ func (p *passwdPatcher) patch(r *Runner, sigCh <-chan os.Signal) (err error) {
 
 	err = r.dockerPiped(bytes.NewBuffer(gen.Bytes()), nil, sigCh, "cp", "-", r.cid()+":/etc")
 
+	return
+}
+
+func currentUserIds() (uid, gid int, grps []int, err error) {
+	if usingDockerMachine() {
+		return currentUserIdsFromDockerMachine()
+	}
+	uid = os.Getuid()
+	gid = os.Getgid()
+	grps, err = os.Getgroups()
+	return
+}
+
+func userID(name string) (uid, gid int, err error) {
+	if usingDockerMachine() {
+		return userIDFromDockerMachine(name)
+	}
+	var u *user.User
+	if uid, err = strconv.Atoi(name); err == nil {
+		u, err = user.LookupId(name)
+	} else {
+		u, err = user.Lookup(name)
+	}
+	if err == nil {
+		uid, err = strconv.Atoi(u.Uid)
+		if err == nil {
+			gid, err = strconv.Atoi(u.Gid)
+		}
+	}
 	return
 }
 

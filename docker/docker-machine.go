@@ -12,6 +12,10 @@ var (
 	errDockerMachineUnknown = fmt.Errorf("unknown DOCKER_MACHINE_NAME")
 )
 
+func usingDockerMachine() bool {
+	return os.Getenv("DOCKER_MACHINE_NAME") != "" && os.Getenv("DOCKER_HOST") != ""
+}
+
 func inspectIds(opt, name string) (ids []int, err error) {
 	machine := os.Getenv("DOCKER_MACHINE_NAME")
 	if machine == "" {

@@ -2,7 +2,16 @@
 
 package docker
 
+import (
+	"fmt"
+	"strings"
+)
+
 func (r *Runner) checkProjectDir() error {
+	if !strings.HasPrefix(r.projectDir, "/Users/") {
+		return fmt.Errorf("The project path must be prefixed with /Users/ on Mac OS")
+	}
+
 	return nil
 }
 
@@ -12,12 +21,4 @@ func (r *Runner) canonicalProjectDir() string {
 
 func (r *Runner) exposeDocker() {
 	r.exposeDockerEnv()
-}
-
-func currentUserIds() (uid, gid int, grps []int, err error) {
-	return currentUserIdsFromDockerMachine()
-}
-
-func userID(name string) (uid, gid int, err error) {
-	return userIDFromDockerMachine(name)
 }

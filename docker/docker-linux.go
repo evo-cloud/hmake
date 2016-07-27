@@ -2,11 +2,7 @@
 
 package docker
 
-import (
-	"os"
-	"os/user"
-	"strconv"
-)
+import "os"
 
 const (
 	dockerSockPath = "/var/run/docker.sock"
@@ -32,27 +28,4 @@ func (r *Runner) exposeDocker() {
 		}
 		r.Volumes = append(r.Volumes, sockPath+":"+sockPath)
 	}
-}
-
-func currentUserIds() (uid, gid int, grps []int, err error) {
-	uid = os.Getuid()
-	gid = os.Getgid()
-	grps, err = os.Getgroups()
-	return
-}
-
-func userID(name string) (uid, gid int, err error) {
-	var u *user.User
-	if uid, err = strconv.Atoi(name); err == nil {
-		u, err = user.LookupId(name)
-	} else {
-		u, err = user.Lookup(name)
-	}
-	if err == nil {
-		uid, err = strconv.Atoi(u.Uid)
-		if err == nil {
-			gid, err = strconv.Atoi(u.Gid)
-		}
-	}
-	return
 }
