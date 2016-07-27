@@ -29,11 +29,3 @@ func (r *Runner) canonicalProjectDir() string {
 func (r *Runner) exposeDocker() {
 	r.exposeDockerEnv()
 }
-
-func currentUserIds() (uid, gid int, grps []int, err error) {
-	return currentUserIdsFromDockerMachine()
-}
-
-func userID(name string) (uid, gid int, err error) {
-	return userIDFromDockerMachine(name)
-}
