@@ -1,0 +1,8 @@
+---
+format: hypermake.v0
+
+targets:
+  docker-cmd:
+    image: alpine:latest
+    cmds:
+      - 'echo changed >test.log'

@@ -6,5 +6,6 @@ bin
 .hmake
 .hmakerc
 hmake
+.release
 /vendor/*
 !/vendor/manifest

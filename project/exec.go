@@ -56,7 +56,7 @@ type ExecPlan struct {
 	// EventHandler handles the events during execution
 	EventHandler EventHandler
 	// Summary is the report of all executed targets
-	Summary []map[string]interface{}
+	Summary ExecSummary
 
 	finishCh chan completion
 	logger   *log.Logger
@@ -157,6 +157,34 @@ func (r TaskResult) IsOK() bool {
 	return r == Success || r == Skipped
 }
 
+// MarshalJSON implements Marshaller
+func (r *TaskResult) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + r.String() + `"`), nil
+}
+
+// UnmarshalJSON implements Unmarshaller
+func (r *TaskResult) UnmarshalJSON(data []byte) error {
+	str, err := unquotJSONString(string(data))
+	if err != nil {
+		return err
+	}
+	switch str {
+	case Unknown.String():
+		*r = Unknown
+	case Success.String():
+		*r = Success
+	case Skipped.String():
+		*r = Skipped
+	case Failure.String():
+		*r = Failure
+	case Aborted.String():
+		*r = Aborted
+	default:
+		return fmt.Errorf("invalid result value: " + str)
+	}
+	return nil
+}
+
 // TaskState indicates the state of task
 type TaskState int
 
@@ -165,7 +193,7 @@ const (
 	Waiting TaskState = iota
 	Queued
 	Running
-	Abadoned
+	Abandoned
 	Finished
 )
 
@@ -179,10 +207,68 @@ func (r TaskState) String() string {
 		return "Running"
 	case Finished:
 		return "Finished"
-	case Abadoned:
-		return "Abadoned"
+	case Abandoned:
+		return "Abandoned"
 	}
 	panic("invalid TaskState " + strconv.Itoa(int(r)))
+}
+
+// MarshalJSON implements Marshaller
+func (r *TaskState) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + r.String() + `"`), nil
+}
+
+// UnmarshalJSON implements Unmarshaller
+func (r *TaskState) UnmarshalJSON(data []byte) error {
+	str, err := unquotJSONString(string(data))
+	if err != nil {
+		return err
+	}
+	switch str {
+	case Waiting.String():
+		*r = Waiting
+	case Queued.String():
+		*r = Queued
+	case Running.String():
+		*r = Running
+	case Abandoned.String():
+		*r = Abandoned
+	case Finished.String():
+		*r = Finished
+	default:
+		return fmt.Errorf("invalid state value: " + str)
+	}
+	return nil
+}
+
+func unquotJSONString(jsonStr string) (string, error) {
+	if strings.HasPrefix(jsonStr, `"`) && strings.HasSuffix(jsonStr, `"`) {
+		return jsonStr[1 : len(jsonStr)-1], nil
+	}
+	return jsonStr, fmt.Errorf("invalid JSON string: " + jsonStr)
+}
+
+// TaskSummary is the execution summary of the task
+type TaskSummary struct {
+	Target   string     `json:"target"`
+	State    TaskState  `json:"state"`
+	StartAt  time.Time  `json:"start-at,omitempty"`
+	FinishAt time.Time  `json:"finish-at,omitempty"`
+	Result   TaskResult `json:"result"`
+	Error    string     `json:"error,omitempty"`
+}
+
+// ExecSummary is the summary of plan execution
+type ExecSummary []*TaskSummary
+
+// ByTarget find target execution summary by target name
+func (s ExecSummary) ByTarget(target string) *TaskSummary {
+	for _, sum := range s {
+		if sum.Target == target {
+			return sum
+		}
+	}
+	return nil
 }
 
 // Runner is the handler execute a target
@@ -403,7 +489,7 @@ func (p *ExecPlan) Execute(abortCh <-chan os.Signal) error {
 
 // GenerateSummary dumps summary to summary file
 func (p *ExecPlan) GenerateSummary() (err error) {
-	var sum []map[string]interface{}
+	var sum ExecSummary
 	for _, t := range p.FinishedTasks {
 		sum = append(sum, t.Summary())
 	}
@@ -417,8 +503,12 @@ func (p *ExecPlan) GenerateSummary() (err error) {
 		sum = append(sum, t.Summary())
 	}
 	p.Summary = sum
-	encoded, _ := json.Marshal(sum)
-	p.Logf("Summary\n%s", string(encoded))
+	encoded, err := json.Marshal(sum)
+	if err != nil {
+		p.Logf("Summary encode error: %v", err)
+	} else {
+		p.Logf("Summary\n%s", string(encoded))
+	}
 	if !p.DryRun {
 		err = ioutil.WriteFile(p.Project.SummaryFile(), encoded, 0644)
 		if err != nil {
@@ -589,36 +679,19 @@ func (t *Task) Duration() time.Duration {
 	return t.FinishTime.Sub(t.StartTime)
 }
 
-func timeToString(t time.Time) string {
-	if t.IsZero() {
-		return ""
-	}
-	encoded, err := t.MarshalText()
-	if err != nil {
-		return ""
-	}
-	return string(encoded)
-}
-
 // Summary generates summary info of the task
-func (t *Task) Summary() map[string]interface{} {
-	info := map[string]interface{}{
-		"target": t.Name(),
-		"state":  t.State.String(),
+func (t *Task) Summary() *TaskSummary {
+	sum := &TaskSummary{
+		Target:   t.Name(),
+		State:    t.State,
+		StartAt:  t.StartTime,
+		FinishAt: t.FinishTime,
+		Result:   t.Result,
 	}
-	if s := timeToString(t.StartTime); s != "" {
-		info["start-at"] = s
+	if t.Error != nil {
+		sum.Error = t.Error.Error()
 	}
-	if s := timeToString(t.FinishTime); s != "" {
-		info["finish-at"] = s
-	}
-	if t.State == Finished {
-		info["result"] = t.Result.String()
-		if t.Error != nil {
-			info["error"] = t.Error.Error()
-		}
-	}
-	return info
+	return sum
 }
 
 type digester struct {
@@ -792,7 +865,7 @@ func (t *Task) Abort(abandon bool, signal os.Signal) {
 	if abandon {
 		t.Result = Aborted
 		t.Error = t.Target.Errorf("aborted")
-		t.State = Abadoned
+		t.State = Abandoned
 	}
 }
 

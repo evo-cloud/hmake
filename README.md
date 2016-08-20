@@ -150,7 +150,7 @@ See [Docker Driver](docs/DockerDriver.md) for details.
 
 If you meet any issues or have specific problems, please check
 [FAQ and Best Practices](docs/FAQ.md) if there's already a solution.
-Feel free to email the maintainers for any questions.
+Feel free to email the MAINTAINERS for any questions.
 
 ## License
 
