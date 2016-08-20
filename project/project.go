@@ -16,8 +16,6 @@ import (
 const (
 	// Format is the supported format
 	Format = "hypermake.v0"
-	// RootFile is hmake filename sits on root
-	RootFile = "HyperMake"
 	// RcFile is the filename of local setting file to override some settings
 	RcFile = ".hmakerc"
 	// WorkFolder is the name of project WorkFolder
@@ -28,8 +26,13 @@ const (
 	LogFileName = "hmake.debug.log"
 )
 
-// ErrUnsupportedFormat indicates the file is not recognized
-var ErrUnsupportedFormat = fmt.Errorf("unsupported format")
+var (
+	// RootFile is hmake filename sits on root
+	RootFile = "HyperMake"
+
+	// ErrUnsupportedFormat indicates the file is not recognized
+	ErrUnsupportedFormat = fmt.Errorf("unsupported format")
+)
 
 // File defines the content of HyperMake or .hmake file
 type File struct {
@@ -140,7 +143,7 @@ func LoadFile(baseDir, path string) (*File, error) {
 }
 
 // LocateProjectFrom creates a project by locating the root file from startDir
-func LocateProjectFrom(startDir string) (*Project, error) {
+func LocateProjectFrom(startDir, projectFile string) (*Project, error) {
 	wd, err := filepath.Abs(startDir)
 	if err != nil {
 		return nil, err
@@ -149,7 +152,7 @@ func LocateProjectFrom(startDir string) (*Project, error) {
 
 	for {
 		p := &Project{BaseDir: wd, LaunchPath: launchPath}
-		_, err := p.Load(RootFile)
+		_, err := p.Load(projectFile)
 		if err == nil {
 			return p, nil
 		}
@@ -173,12 +176,12 @@ func LocateProject() (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	return LocateProjectFrom(wd)
+	return LocateProjectFrom(wd, RootFile)
 }
 
 // LoadProjectFrom locates, resolves and finalizes project from startDir
-func LoadProjectFrom(startDir string) (p *Project, err error) {
-	if p, err = LocateProjectFrom(startDir); err != nil {
+func LoadProjectFrom(startDir, projectFile string) (p *Project, err error) {
+	if p, err = LocateProjectFrom(startDir, projectFile); err != nil {
 		return
 	}
 	if err = p.Resolve(); err != nil {
@@ -194,7 +197,7 @@ func LoadProject() (p *Project, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return LoadProjectFrom(wd)
+	return LoadProjectFrom(wd, RootFile)
 }
 
 // RelPath translate a source relative path to project relative path

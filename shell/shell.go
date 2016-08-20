@@ -220,11 +220,17 @@ func (r *Runner) Run(sigCh <-chan os.Signal) (hm.TaskResult, error) {
 	return hm.Success, nil
 }
 
+// Signature implements Runner
+func (r *Runner) Signature() string {
+	return BuildScript(r.Task)
+}
+
+// ValidateArtifacts implements Runner
+func (r *Runner) ValidateArtifacts() bool {
+	return true
+}
+
 // Factory is runner factory
 func Factory(task *hm.Task) (hm.Runner, error) {
 	return &Runner{Task: task}, nil
-}
-
-func init() {
-	hm.RegisterExecDriver(ExecDriverName, Factory)
 }

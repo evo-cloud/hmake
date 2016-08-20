@@ -1,0 +1,17 @@
+---
+format: hypermake.v0
+
+name: task-change
+
+targets:
+  t0:
+    do: something
+  t1:
+    do: something
+  t2:
+    after:
+      - t0
+      - t1
+  all:
+    after:
+      - t2

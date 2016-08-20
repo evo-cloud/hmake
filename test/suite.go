@@ -43,17 +43,49 @@ func LoadProject(base, file string) *hm.Project {
 	return proj
 }
 
+// LoadFixtureProject loads project from fixtures
+func LoadFixtureProject(fixtures ...string) *hm.Project {
+	proj, err := hm.LoadProjectFrom(Fixtures(fixtures...), hm.RootFile)
+	Expect(err).Should(Succeed())
+	return proj
+}
+
 type testRunner struct {
 	task *hm.Task
 	run  func(task *hm.Task) (hm.TaskResult, error)
 }
 
-// Run implements Runner
+type testRunnerExt struct {
+	Touch string `json:"touch"`
+	Do    string `json:"do"`
+}
+
 func (r *testRunner) Run(sigCh <-chan os.Signal) (hm.TaskResult, error) {
+	var ext testRunnerExt
+	r.task.Target.GetExt(&ext)
+	r.task.Result = hm.Success
+	if ext.Touch != "" {
+		if f, err := os.Create(r.task.WorkingDir(ext.Touch)); err != nil {
+			r.task.Result = hm.Failure
+			r.task.Error = err
+		} else {
+			f.Close()
+		}
+	}
 	if r.run != nil {
 		return r.run(r.task)
 	}
-	return hm.Success, nil
+	return r.task.Result, r.task.Error
+}
+
+func (r *testRunner) Signature() string {
+	var ext testRunnerExt
+	r.task.Target.GetExt(&ext)
+	return ext.Do
+}
+
+func (r *testRunner) ValidateArtifacts() bool {
+	return true
 }
 
 type testSetting struct {
@@ -78,6 +110,8 @@ var _ = BeforeSuite(func() {
 	TestDir = filepath.Join(ProjectDir, "test")
 	FixturesDir = filepath.Join(TestDir, "fixtures")
 	Expect(FixturesDir).To(BeADirectory())
+	// register shell driver for testing
+	hm.RegisterExecDriver(sh.ExecDriverName, sh.Factory)
 })
 
 var _ = Describe("HyperMake", func() {
@@ -99,19 +133,13 @@ var _ = Describe("HyperMake", func() {
 		})
 
 		It("locates the project", func() {
-			proj, err := hm.LoadProjectFrom(Fixtures(
-				"project0", "subproject", "subdir", "subdir2"))
-			Expect(err).Should(Succeed())
+			proj := LoadFixtureProject("project0", "subproject", "subdir", "subdir2")
 			Expect(proj.Name).To(Equal("subdir"))
-			proj, err = hm.LoadProjectFrom(Fixtures(
-				"project0", "subproject", "subdir"))
-			Expect(err).Should(Succeed())
+			proj = LoadFixtureProject("project0", "subproject", "subdir")
 			Expect(proj.Name).To(Equal("subdir"))
-			proj, err = hm.LoadProjectFrom(Fixtures(
-				"project0", "subproject"))
-			Expect(err).Should(Succeed())
+			proj = LoadFixtureProject("project0", "subproject")
 			Expect(proj.Name).To(Equal("project0"))
-			_, err = hm.LoadProjectFrom("/")
+			_, err := hm.LoadProjectFrom("/", hm.RootFile)
 			Expect(err).Should(MatchError(os.ErrNotExist))
 		})
 
@@ -147,8 +175,7 @@ var _ = Describe("HyperMake", func() {
 		})
 
 		It("matches target names", func() {
-			proj, err := hm.LoadProjectFrom(Fixtures("project1"))
-			Expect(err).Should(Succeed())
+			proj := LoadFixtureProject("project1")
 			names, err := proj.TargetNamesMatch("t?")
 			Expect(err).Should(Succeed())
 			Expect(names).To(Equal([]string{"t0", "t2"}))
@@ -182,9 +209,7 @@ var _ = Describe("HyperMake", func() {
 		})
 
 		It("retreives settings", func() {
-			proj, err := hm.LoadProjectFrom(Fixtures(
-				"project0", "subproject", "subdir", "subdir2"))
-			Expect(err).Should(Succeed())
+			proj := LoadFixtureProject("project0", "subproject", "subdir", "subdir2")
 			var v struct{}
 			Expect(proj.GetSettings(&v)).Should(Succeed())
 
@@ -203,14 +228,13 @@ var _ = Describe("HyperMake", func() {
 		})
 
 		It("merges settings from flat map", func() {
-			proj, err := hm.LoadProjectFrom(Fixtures("project0"))
-			Expect(err).Should(Succeed())
+			proj := LoadFixtureProject("project0")
 
 			v := &testSetting{}
 			Expect(proj.GetSettingsIn("t0", v)).Should(Succeed())
 			Expect(v.TopLevel).To(Equal("project0"))
 
-			err = proj.MergeSettingsFlat(map[string]interface{}{
+			err := proj.MergeSettingsFlat(map[string]interface{}{
 				"t0": map[string]interface{}{
 					"dict": map[string]interface{}{
 						"key": "value",
@@ -238,15 +262,13 @@ var _ = Describe("HyperMake", func() {
 		})
 
 		It("loads rcfiles", func() {
-			proj, err := hm.LoadProjectFrom(Fixtures("project2"))
-			Expect(err).Should(Succeed())
+			proj := LoadFixtureProject("project2")
 			Expect(proj.LoadRcFiles()).Should(Succeed())
 			set := &testSetting{}
 			Expect(proj.GetSettings(set)).Should(Succeed())
 			Expect(set.TopLevel).To(Equal("value1"))
 
-			proj, err = hm.LoadProjectFrom(Fixtures("project2", "subdir"))
-			Expect(err).Should(Succeed())
+			proj = LoadFixtureProject("project2", "subdir")
 			Expect(proj.LoadRcFiles()).Should(Succeed())
 			Expect(proj.GetSettings(set)).Should(Succeed())
 			Expect(set.TopLevel).To(Equal("value2"))
@@ -255,8 +277,7 @@ var _ = Describe("HyperMake", func() {
 
 	Describe("Target", func() {
 		It("gets settings and ext", func() {
-			proj, err := hm.LoadProjectFrom(Fixtures("project0", "subproject"))
-			Expect(err).Should(Succeed())
+			proj := LoadFixtureProject("project0", "subproject")
 			Expect(proj.Targets).NotTo(BeEmpty())
 			t := proj.Targets["t0"]
 			Expect(t).NotTo(BeNil())
@@ -288,8 +309,7 @@ var _ = Describe("HyperMake", func() {
 
 		Describe("WatchList", func() {
 			It("builds watch list", func() {
-				proj, err := hm.LoadProjectFrom(Fixtures("project0", "subproject"))
-				Expect(err).Should(Succeed())
+				proj := LoadFixtureProject("project0", "subproject")
 				Expect(proj.Targets).NotTo(BeEmpty())
 				t := proj.Targets["t0"]
 				Expect(t).NotTo(BeNil())
@@ -302,7 +322,6 @@ var _ = Describe("HyperMake", func() {
 				Expect(strs[0]).To(HavePrefix("subproject/subdir/HyperMake"))
 				Expect(strs[1]).To(HavePrefix("subproject/subdir/subdir2/somefile"))
 				Expect(strs[2]).To(BeEmpty())
-				Expect(wl.Digest()).NotTo(BeEmpty())
 			})
 		})
 	})
@@ -313,8 +332,7 @@ var _ = Describe("HyperMake", func() {
 		})
 
 		It("generates env", func() {
-			proj, err := hm.LoadProjectFrom(Fixtures("project0", "subproject"))
-			Expect(err).Should(Succeed())
+			proj := LoadFixtureProject("project0", "subproject")
 			plan := proj.Plan()
 			Expect(plan.WorkPath).To(Equal(Fixtures("project0", hm.WorkFolder)))
 			Expect(plan.Project).To(Equal(proj))
@@ -328,9 +346,15 @@ var _ = Describe("HyperMake", func() {
 		})
 
 		execProject := func(project string, targets ...string) (plan *hm.ExecPlan, execOrder []string) {
-			proj, err := hm.LoadProjectFrom(Fixtures(project))
-			Expect(err).Should(Succeed())
-			plan = proj.Plan()
+			if len(targets) > 0 && strings.HasPrefix(targets[0], "-f:") {
+				projectFile := targets[0][3:]
+				targets = targets[1:]
+				proj, err := hm.LoadProjectFrom(Fixtures(project), projectFile)
+				Expect(err).Should(Succeed())
+				plan = proj.Plan()
+			} else {
+				plan = LoadFixtureProject(project).Plan()
+			}
 			plan.DebugLog = true
 			execCh := make(chan string)
 			plan.RunnerFactory = func(task *hm.Task) (hm.Runner, error) {
@@ -372,7 +396,8 @@ var _ = Describe("HyperMake", func() {
 		}
 
 		It("executes tasks in right order", func() {
-			plan, execOrder := execProject("project1", "all")
+			os.RemoveAll(Fixtures("exec-order", hm.WorkFolder))
+			plan, execOrder := execProject("exec-order", "all")
 			names := plan.Project.TargetNames()
 			Expect(execOrder).Should(HaveLen(len(names)))
 			startNum := 0
@@ -388,7 +413,7 @@ var _ = Describe("HyperMake", func() {
 		})
 
 		It("skips tasks without file changes", func() {
-			os.RemoveAll(Fixtures("project1", "touch.log"))
+			os.Remove(Fixtures("project1", "touch.log"))
 			_, execOrder0 := execProject("project1", "all")
 			_, execOrder1 := execProject("project1", "all")
 			Expect(execOrder1).Should(BeEmpty())
@@ -404,8 +429,21 @@ var _ = Describe("HyperMake", func() {
 			Expect(execOrder2).Should(HaveLen(len(execOrder0)))
 		})
 
+		It("rebuilds task with task changed", func() {
+			os.RemoveAll(Fixtures("task-change", hm.WorkFolder))
+			plan, execOrder0 := execProject("task-change", "all")
+			Expect(plan.Project.MasterFile.Source).Should(Equal("HyperMake"))
+			Expect(execOrder0).Should(HaveLen(2))
+			plan, execOrder1 := execProject("task-change", "all")
+			Expect(plan.Project.MasterFile.Source).Should(Equal("HyperMake"))
+			Expect(execOrder1).Should(BeEmpty())
+			plan, execOrder2 := execProject("task-change", "-f:HyperMake.changed", "all")
+			Expect(plan.Project.MasterFile.Source).Should(Equal("HyperMake.changed"))
+			Expect(execOrder2).Should(HaveLen(1))
+		})
+
 		It("rebuilds task when explicitly specified", func() {
-			os.RemoveAll(Fixtures("project1", "touch.log"))
+			os.Remove(Fixtures("project1", "touch.log"))
 			_, execOrder0 := execProject("project1", "all")
 			_, execOrder1 := execProject("project1", "all")
 			Expect(execOrder1).Should(BeEmpty())
@@ -415,8 +453,44 @@ var _ = Describe("HyperMake", func() {
 			Expect(execOrder3).Should(HaveLen(len(execOrder0)))
 		})
 
+		It("rebuilds task when artifacts missing", func() {
+			os.Remove(Fixtures("artifacts", "test.log"))
+			_, execOrder0 := execProject("artifacts", "t0")
+			Expect(execOrder0).Should(HaveLen(1))
+			_, execOrder1 := execProject("artifacts", "t0")
+			Expect(execOrder1).Should(BeEmpty())
+			os.Remove(Fixtures("artifacts", "test.log"))
+			_, execOrder2 := execProject("artifacts", "t0")
+			Expect(execOrder2).Should(HaveLen(1))
+		})
+
+		It("fail the task if artifacts are incomplete", func() {
+			os.Remove(Fixtures("artifacts", "test2.log"))
+			plan := LoadFixtureProject("artifacts").Plan()
+			var taskErr error
+			plan.RunnerFactory = func(task *hm.Task) (hm.Runner, error) {
+				return &testRunner{
+					task: task,
+					run: func(task *hm.Task) (hm.TaskResult, error) {
+						return hm.Success, nil
+					},
+				}, nil
+			}
+			plan.Require("t2")
+			plan.OnEvent(func(event interface{}) {
+				switch evt := event.(type) {
+				case *hm.EvtTaskFinish:
+					if evt.Task.Result == hm.Failure {
+						taskErr = evt.Task.Error
+					}
+				}
+			})
+			Expect(plan.Execute(nil)).ShouldNot(Succeed())
+			Expect(taskErr).ShouldNot(Succeed())
+		})
+
 		It("skips task when explicitly specified", func() {
-			os.RemoveAll(Fixtures("project1", "touch.log"))
+			os.Remove(Fixtures("project1", "touch.log"))
 			_, execOrder0 := execProject("project1", "all")
 			_, execOrder1 := execProject("project1", "all", "-R", "-s:t2")
 			Expect(execOrder1).Should(HaveLen(len(execOrder0) - 1))
@@ -434,7 +508,7 @@ var _ = Describe("HyperMake", func() {
 		})
 
 		It("emits event and task failure", func() {
-			os.RemoveAll(Fixtures("project1", "touch.log"))
+			os.Remove(Fixtures("project1", "touch.log"))
 			execProject("project1", "all")
 
 			taskFails := map[string]bool{
@@ -443,9 +517,7 @@ var _ = Describe("HyperMake", func() {
 
 			taskResults := make(map[string]hm.TaskResult)
 
-			proj, err := hm.LoadProjectFrom(Fixtures("project1"))
-			Expect(err).Should(Succeed())
-			plan := proj.Plan()
+			plan := LoadFixtureProject("project1").Plan()
 			plan.RunnerFactory = func(task *hm.Task) (hm.Runner, error) {
 				return &testRunner{
 					task: task,
@@ -481,9 +553,7 @@ var _ = Describe("HyperMake", func() {
 		})
 
 		It("provides default script/log paths", func() {
-			proj, err := hm.LoadProjectFrom(Fixtures("project1"))
-			Expect(err).Should(Succeed())
-			plan := proj.Plan()
+			plan := LoadFixtureProject("project1").Plan()
 			plan.Require("all", "t2", "t3.0")
 			os.MkdirAll(plan.WorkPath, 0755)
 			task := plan.Tasks["all"]
@@ -507,9 +577,7 @@ var _ = Describe("HyperMake", func() {
 		})
 
 		It("terminates the running targets", func() {
-			proj, err := hm.LoadProjectFrom(Fixtures("project-abort"))
-			Expect(err).Should(Succeed())
-			plan := proj.Plan()
+			plan := LoadFixtureProject("project-abort").Plan()
 			plan.Require("abort0")
 			os.MkdirAll(plan.WorkPath, 0755)
 
@@ -535,8 +603,7 @@ var _ = Describe("HyperMake", func() {
 		})
 
 		It("skips transit targets when all dependencies are skipped", func() {
-			proj, err := hm.LoadProjectFrom(Fixtures("skip-transit-targets"))
-			Expect(err).Should(Succeed())
+			proj := LoadFixtureProject("skip-transit-targets")
 			plan := proj.Plan()
 			plan.Require("all")
 			os.MkdirAll(plan.WorkPath, 0755)
@@ -572,8 +639,7 @@ var _ = Describe("HyperMake", func() {
 		})
 
 		It("always build target with property always set to true", func() {
-			proj, err := hm.LoadProjectFrom(Fixtures("always-target"))
-			Expect(err).Should(Succeed())
+			proj := LoadFixtureProject("always-target")
 			plan := proj.Plan()
 			plan.Require("all")
 			os.MkdirAll(plan.WorkPath, 0755)

@@ -1,0 +1,13 @@
+---
+format: hypermake.v0
+
+name: artifacts
+
+targets:
+  t0:
+    touch: test.log
+    artifacts:
+      - test.log
+  t2:
+    artifacts:
+      - test2.log
