@@ -10,10 +10,12 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"syscall"
 
+	"github.com/easeway/langx.go/mapper"
 	hm "github.com/evo-cloud/hmake/project"
 	"github.com/evo-cloud/hmake/shell"
 )
@@ -36,7 +38,7 @@ type Runner struct {
 	Build             string   `json:"build"`
 	BuildFrom         string   `json:"build-from"`
 	BuildArgs         []string `json:"build-args"`
-	Commit            []string `json:"commit"`
+	Commits           []string `json:"commit"`
 	Tags              []string `json:"tags"`
 	Labels            []string `json:"labels"`
 	LabelFiles        []string `json:"label-files"`
@@ -243,7 +245,7 @@ func (r *Runner) Run(sigCh <-chan os.Signal) (result hm.TaskResult, err error) {
 	if err == nil {
 		err = r.run(sigCh)
 	}
-	if err == nil && len(r.Commit) > 0 {
+	if err == nil && len(r.Commits) > 0 {
 		err = r.commit(sigCh)
 	}
 	if err != nil {
@@ -301,15 +303,15 @@ func (r *Runner) build(sigCh <-chan os.Signal) error {
 }
 
 func (r *Runner) commit(sigCh <-chan os.Signal) error {
-	imageName := r.Commit[0]
+	imageName := r.Commits[0]
 	commitCmd := shell.NewArgs("commit", r.cid(), imageName)
 	err := r.exec(commitCmd.Args...).Run(sigCh)
 	if err != nil {
 		return err
 	}
 	var tagCmd *shell.Args
-	for i := 1; i < len(r.Commit); i++ {
-		tagCmd = shell.NewArgs("tag", imageName, r.Commit[i])
+	for i := 1; i < len(r.Commits); i++ {
+		tagCmd = shell.NewArgs("tag", imageName, r.Commits[i])
 		err = r.exec(tagCmd.Args...).Run(sigCh)
 		if err != nil {
 			return err
@@ -501,6 +503,89 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 	return err
 }
 
+func sortStrs(src []string) []string {
+	dst := make([]string, len(src))
+	copy(dst, src)
+	sort.Strings(dst)
+	return dst
+}
+
+// Signature implements Runner
+func (r *Runner) Signature() string {
+	dict := make(map[string]interface{})
+	err := mapper.Map(dict, r)
+	if err != nil {
+		panic(err)
+	}
+	keys := make([]string, 0, len(dict))
+	for k, v := range dict {
+		keys = append(keys, k)
+		switch k {
+		case "commit", "tags", "labels", "label-files",
+			"cap-add", "cap-drop", "devices":
+			dict[k] = sortStrs(v.([]string))
+		case "env":
+			// environment variables need special handling
+			// skip environment variables which changes but
+			// should not affect signature
+			sorted := sortStrs(v.([]string))
+			vars := make([]string, 0, len(sorted))
+			for _, item := range sorted {
+				if strings.HasPrefix(item, "HMAKE_") {
+					continue
+				}
+				vars = append(vars, item)
+			}
+			dict[k] = vars
+		}
+	}
+	sort.Strings(keys)
+	items := make([]string, len(keys))
+	for n, k := range keys {
+		item := k + "="
+		val := dict[k]
+		switch v := val.(type) {
+		case []string:
+			item += "[" + strings.Join(v, ",") + "]"
+		case *bool:
+			if v != nil {
+				item += fmt.Sprintf("%v", v)
+			}
+		case *int:
+			if v != nil {
+				item += fmt.Sprintf("%v", v)
+			}
+		default:
+			item += fmt.Sprintf("%v", v)
+		}
+		items[n] = item
+	}
+	return strings.Join(items, ",")
+}
+
+// ValidateArtifacts implements Runner
+func (r *Runner) ValidateArtifacts() bool {
+	var images []string
+	if r.Build != "" || r.BuildFrom != "" {
+		images = append(images, r.Image)
+		if len(r.Commits) > 0 {
+			images = append(images, r.Commits...)
+		}
+		if len(r.Tags) > 0 {
+			images = append(images, r.Tags...)
+		}
+
+		for _, image := range images {
+			if err := r.docker("inspect", "-f", "{{.Id}}", image); err != nil {
+				r.logf("docker artifact invalid: %s: %v", image, err)
+				return false
+			}
+			r.logf("docker artifact ok: %s", image)
+		}
+	}
+	return true
+}
+
 // Factory is runner factory
 func Factory(task *hm.Task) (hm.Runner, error) {
 	r := &Runner{Task: task}
@@ -510,8 +595,7 @@ func Factory(task *hm.Task) (hm.Runner, error) {
 	}
 
 	if r.Image == "" {
-		// image not present, fallback to shell
-		return shell.Factory(task)
+		return nil, fmt.Errorf("missing property image")
 	}
 
 	if r.SrcVolume == "" {

@@ -35,11 +35,13 @@ Common Unix command line option parsing rule is adopted:
 ## Options
 
 - `--chdir=PATH, -C PATH`: Chdir to specified PATH first before doing anything
+- `--file=FILE, -f FILE`: Override the default project file name `HyperMake`
 - `--include=FILE, -I FILE`: Include additional files (must be relative path under project root), can be specified multiple times
-- `--define=key=value, -D key=value`: Define property in global `settings` section, `key` may include `.` to specify the hierarchy
+- `--property=key=value, -P key=value`: Define property in global `settings` section, `key` may include `.` to specify the hierarchy
 - `--parallel=N, -p N`: Set maximum number of targets executed in parallel, 0 for auto, -1 for unlimited
 - `--rebuild-all, -R`: Force rebuild all needed targets
-- `--rebuild TARGET, -r TARGET`: Force rebuild specified target, this can repeat
+- `--rebuild-target TARGET, -r TARGET`: Force rebuild specified target, this can repeat
+- `--rebuild, -b`: Force rebuild targets specified on command line
 - `--skip TARGET, -S TARGET`: Skip specified target (mark as Skipped), this can repeat
 - `--json`: Dump execution events to stdout each encoded in single line json
 - `--summary, -s`: Show execution summary before exit

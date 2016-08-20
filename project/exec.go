@@ -1,6 +1,8 @@
 package project
 
 import (
+	"crypto/sha1"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -186,6 +188,8 @@ func (r TaskState) String() string {
 // Runner is the handler execute a target
 type Runner interface {
 	Run(<-chan os.Signal) (TaskResult, error)
+	Signature() string
+	ValidateArtifacts() bool
 }
 
 // RunnerFactory creates a runner from a task
@@ -197,6 +201,9 @@ const (
 )
 
 var (
+	// ErrMissingArtifacts indicates some of the artifacts not found
+	ErrMissingArtifacts = fmt.Errorf("missing artifacts")
+
 	// DefaultExecDriver specify the default exec-driver to use
 	DefaultExecDriver string
 
@@ -458,6 +465,8 @@ func (p *ExecPlan) startTask(task *Task) {
 		skipped = true
 	} else if p.RebuildAll || p.RebuildTargets[task.Name()] {
 		skipped = false
+	} else if skipped {
+		skipped = task.ValidateArtifacts()
 	}
 
 	if skipped {
@@ -483,6 +492,15 @@ func (p *ExecPlan) finishTask(task *Task) {
 		p.Logf("OUT-OF-DATE %s Result = %s, Err = %v",
 			task.Name(), task.Result.String(), task.Error)
 		return
+	}
+
+	if task.Result == Success && !task.Target.IsTransit() {
+		// make sure artifacts exist
+		p.Logf("Check Finishing Condition %s", task.Name())
+		if !task.ValidateArtifacts() {
+			task.Result = Failure
+			task.Error = ErrMissingArtifacts
+		}
 	}
 
 	p.Logf("Finish %s Result = %s, Err = %v",
@@ -603,12 +621,43 @@ func (t *Task) Summary() map[string]interface{} {
 	return info
 }
 
+type digester struct {
+	items []string
+}
+
+func (d *digester) add(name, item string) {
+	d.items = append(d.items, name+"="+item)
+}
+
+func (d *digester) final() string {
+	str := strings.Join(d.items, ",")
+	h := sha1.Sum([]byte(str))
+	return base64.StdEncoding.EncodeToString(h[0:])
+}
+
 // CalcSuccessMark calculates the watchlist digest and
 // checks if the task can be skipped
 func (t *Task) CalcSuccessMark() bool {
-	wl := t.Target.BuildWatchList()
-	t.Plan.Logf("%s WatchList:\n%s", t.Name(), wl.String())
-	t.currentDigest = wl.Digest()
+	t.Plan.Logf("%s Calculating SuccessMark", t.Name())
+	if t.Target.IsTransit() {
+		t.currentDigest = ""
+	} else {
+		var digest digester
+		if runner := t.createRunnerErrIgnored(); runner != nil {
+			runnerSignature := runner.Signature()
+			t.Plan.Logf("%s Runner Signature:\n%s", t.Name(), runnerSignature)
+			digest.add("runner", runnerSignature)
+		}
+
+		t.Plan.Logf("%s WorkDir: %s", t.Name(), t.Target.WorkDir)
+		digest.add("workdir", t.Target.WorkDir)
+
+		wlStr := t.Target.BuildWatchList().String()
+		t.Plan.Logf("%s WatchList:\n%s", t.Name(), wlStr)
+		digest.add("watches", wlStr)
+
+		t.currentDigest = digest.final()
+	}
 	t.Plan.Logf("%s Digest: %s", t.Name(), t.currentDigest)
 
 	if t.alwaysBuild || t.Target.Always {
@@ -649,40 +698,84 @@ func (t *Task) BuildSuccessMark() error {
 	return nil
 }
 
-// Run runs the task
-func (t *Task) Run() (result TaskResult, err error) {
+// ValidateArtifacts verifies if artifacts are present
+func (t *Task) ValidateArtifacts() bool {
+	if t.Target.IsTransit() {
+		return true
+	}
+	t.Plan.Logf("%s Validating Artifacts", t.Name())
+	for _, artifact := range t.Target.Artifacts {
+		fullPath := filepath.Join(t.Plan.Project.BaseDir, artifact)
+		if _, err := os.Stat(fullPath); err != nil {
+			t.Plan.Logf("%s invalid artifact %s: %v", t.Name(), artifact, err)
+			return false
+		}
+		t.Plan.Logf("%s ok artifact: %s", t.Name(), artifact)
+	}
+	if runner := t.createRunnerErrIgnored(); runner != nil {
+		ok := runner.ValidateArtifacts()
+		if !ok {
+			t.Plan.Logf("%s invalid artifacts reported from runner", t.Name())
+			return false
+		}
+	}
+	t.Plan.Logf("%s Artifacts Validated", t.Name())
+	return true
+}
+
+func (t *Task) createRunnerErrIgnored() Runner {
+	runner, err := t.CreateRunner()
+	if err != nil {
+		t.Plan.Logf("%s create runner failed: %v", t.Name(), err)
+		return nil
+	}
+	return runner
+}
+
+// CreateRunner creates a runner for current task
+func (t *Task) CreateRunner() (Runner, error) {
 	factory := t.Plan.RunnerFactory
 	if factory == nil {
 		driver := t.Target.ExecDriver
 		if driver == "" {
-			err = t.Target.GetSettings(SettingExecDriver, &driver)
-		}
-		if err == nil {
-			if driver == "" {
-				driver = DefaultExecDriver
+			if err := t.Target.GetSettings(SettingExecDriver, &driver); err != nil {
+				return nil, err
 			}
-			factory = drivers[driver]
 		}
+		if driver == "" {
+			driver = DefaultExecDriver
+		}
+		factory = drivers[driver]
 		if factory == nil {
-			err = fmt.Errorf("invalid exec-driver: %s", driver)
+			return nil, fmt.Errorf("invalid exec-driver: %s", driver)
 		}
 	}
+	return factory(t)
+}
 
+// Run runs the task
+func (t *Task) Run() (result TaskResult, err error) {
+	if t.Target.IsTransit() {
+		t.Result = Success
+		t.FinishTime = t.StartTime
+		t.Plan.finishTask(t)
+		result = t.Result
+		return
+	}
+	var runner Runner
+	runner, err = t.CreateRunner()
 	if err == nil {
-		var runner Runner
-		if runner, err = factory(t); err == nil {
-			go func() {
-				var c completion
-				c.task = t
-				if t.Plan.DryRun {
-					c.result = Success
-				} else {
-					c.result, c.err = runner.Run(t.sigCh)
-				}
-				c.finishTime = time.Now()
-				t.Plan.finishCh <- c
-			}()
-		}
+		go func() {
+			var c completion
+			c.task = t
+			if t.Plan.DryRun {
+				c.result = Success
+			} else {
+				c.result, c.err = runner.Run(t.sigCh)
+			}
+			c.finishTime = time.Now()
+			t.Plan.finishCh <- c
+		}()
 	}
 	if err != nil {
 		t.Error = err

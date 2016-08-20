@@ -1,30 +1,20 @@
 #!/bin/sh
 
 set -ex
-env
-
-genver() {
-    if [ -n "$HMAKE_RELEASE" ]; then
-        SUFFIX=""
-    elif [ -n "$HMAKE_VER_SUFFIX" ]; then
-        SUFFIX="$HMAKE_VER_SUFFIX"
-    else
-        SUFFIX=$(git log -1 --format=%h)
-        test -n "$SUFFIX"
-        SUFFIX="-g$SUFFIX"
-    fi
-    cat <<EOF >hmake-ver.gen.go
-// +build genver
-
-package main
-
-// VersionSuffix of hmake
-const VersionSuffix = "${SUFFIX}"
-EOF
-}
 
 versuffix() {
-    grep 'const VersionSuffix =' $1 | sed -r 's/^.+"([^"]*)".*$/\1/'
+    if [ -n "$HMAKE_RELEASE" ]; then
+        echo -n ""
+    elif [ -n "$HMAKE_RC" ]; then
+        echo -n "$HMAKE_RC"
+    else
+        local suffix=$(git log -1 --format=%h || true)
+        if [ -n "$suffix" ]; then
+            echo -n -g$suffix
+        else
+            echo -n dev
+        fi
+    fi
 }
 
 gensite() {
@@ -63,32 +53,30 @@ lint() {
 }
 
 build() {
-    TAGS="static_build netgo"
+    VERSION_SUFFIX=$(versuffix)
     RELEASE=$(grep 'Release = ' main.go | sed -r 's/^.+"([^"]+)".*$/\1/')
-    if [ -f "hmake-ver.gen.go" ]; then
-        SUFFIX=$(versuffix hmake-ver.gen.go)
-        TAGS="$TAGS genver"
-    else
-        SUFFIX=$(versuffix hmake-ver.go)
-    fi
-    OUT=bin/hmake-${RELEASE}${SUFFIX}
+    VERSION=${RELEASE}${VERSION_SUFFIX}
+    OUT=bin/hmake
     if [ -n "$1" -a -n "$2" ]; then
         export GOOS="$1"
         export GOARCH="$2"
-        OUT=$OUT-$GOOS-$GOARCH
+        OUT=bin/$GOOS/$GOARCH/hmake
         PKG_SUFFIX=-$GOOS-$GOARCH
+        if [ "$GOOS" == "windows" ]; then
+            OUT=$OUT.exe
+        fi
     fi
+    mkdir -p $(dirname $OUT)
     CGO_ENABLED=0 go build -o $OUT \
-        -a -tags "$TAGS" -installsuffix netgo \
-        -ldflags '-extldflags -static' \
+        -a -tags "static_build netgo" -installsuffix netgo \
+        -ldflags "-X main.VersionSuffix=${VERSION_SUFFIX} -extldflags -static" \
         .
 
     PKG=bin/hmake
     if [ "$GOOS" == "windows" ]; then
-        cp -f $OUT bin/hmake.exe
         PKG=${PKG}${PKG_SUFFIX}.zip
         rm -f $PKG
-        zip -jX9 $PKG bin/hmake.exe
+        zip -jX9 $PKG $OUT
     else
         PKG=${PKG}${PKG_SUFFIX}.tar.gz
         rm -f $PKG
@@ -96,11 +84,10 @@ build() {
             --transform="s/$(basename $OUT)/hmake/" \
             -C $(dirname $OUT) -czf $PKG $(basename $OUT)
     fi
-    cat $PKG | sha1sum >$PKG.sha1sum
+    cat $PKG | sha256sum >$PKG.sha256sum
 }
 
 case "$1" in
-    genver) genver ;;
     gensite) gensite ;;
     lint) lint ;;
     checkfmt) checkfmt ;;

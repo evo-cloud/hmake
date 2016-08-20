@@ -28,13 +28,14 @@ import (
 const (
 	// Release is the major release version
 	Release = "1.1.0"
-	// Version is full version string
-	Version = Release + VersionSuffix
 	// Website is the URL to project website
 	Website = "https://github.com/evo-cloud/hmake"
 
 	timeFmt = "15:04:05.000"
 )
+
+// VersionSuffix is pre-release info
+var VersionSuffix = "dev"
 
 const (
 	faceGo int = iota
@@ -71,25 +72,27 @@ type projectSettings struct {
 
 type makeCmd struct {
 	// command line options
-	Chdir       string
-	Include     []string
-	Define      map[string]interface{}
-	Parallel    int
-	RebuildAll  bool `n:"rebuild-all"`
-	Rebuild     []string
-	Skip        []string
-	RcFile      bool
-	JSON        bool
-	Summary     bool
-	Verbose     bool
-	Banner      bool
-	Color       bool
-	Emoji       bool
-	DebugLog    bool `n:"debug-log"`
-	ShowSummary bool `n:"show-summary"`
-	ShowTargets bool `n:"targets"`
-	DryRun      bool
-	Version     bool
+	Chdir          string
+	File           string
+	Include        []string
+	Properties     map[string]interface{} `n:"property"`
+	Parallel       int
+	RebuildAll     bool     `n:"rebuild-all"`
+	RebuildTargets []string `n:"rebuild-target"`
+	Rebuild        bool
+	Skip           []string
+	RcFile         bool
+	JSON           bool
+	Summary        bool
+	Verbose        bool
+	Banner         bool
+	Color          bool
+	Emoji          bool
+	DebugLog       bool `n:"debug-log"`
+	ShowSummary    bool `n:"show-summary"`
+	ShowTargets    bool `n:"targets"`
+	DryRun         bool
+	Version        bool
 
 	settings  projectSettings
 	tasks     map[string]*taskState
@@ -110,15 +113,24 @@ func pad(str string, l int) string {
 	return str
 }
 
+// Version returns the full version string
+func Version() string {
+	return Release + VersionSuffix
+}
+
 func (c *makeCmd) Execute(args []string) (err error) {
 	if c.Version {
 		if c.JSON {
-			encoded, _ := json.Marshal(c.Version)
+			encoded, _ := json.Marshal(Version())
 			fmt.Println(string(encoded))
 		} else {
-			term.Println(Version)
+			term.Println(Version())
 		}
 		return
+	}
+
+	if c.File != "" {
+		hm.RootFile = c.File
 	}
 
 	if c.Chdir != "" {
@@ -134,7 +146,7 @@ func (c *makeCmd) Execute(args []string) (err error) {
 	var p *hm.Project
 	if p, err = hm.LocateProject(); err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("Unable to find HyperMake")
+			return fmt.Errorf("Unable to find %s", hm.RootFile)
 		}
 		return
 	}
@@ -163,8 +175,8 @@ func (c *makeCmd) Execute(args []string) (err error) {
 		return
 	}
 
-	if c.Define != nil {
-		if err = p.MergeSettingsFlat(c.Define); err != nil {
+	if c.Properties != nil {
+		if err = p.MergeSettingsFlat(c.Properties); err != nil {
 			return
 		}
 	}
@@ -203,14 +215,17 @@ func (c *makeCmd) Execute(args []string) (err error) {
 	}
 
 	plan := p.Plan()
-	plan.Env["HMAKE_VERSION"] = Version
+	plan.Env["HMAKE_VERSION"] = Version()
 	plan.OnEvent(c.onEvent)
 	errs := &errors.AggregatedError{}
-	plan.Rebuild(p.Targets.CompleteNames(c.Rebuild, errs)...)
+	plan.Rebuild(p.Targets.CompleteNames(c.RebuildTargets, errs)...)
 	plan.Skip(p.Targets.CompleteNames(c.Skip, errs)...)
 	requires := p.Targets.CompleteNames(args, errs)
 	if err = errs.Aggregate(); err != nil {
 		return
+	}
+	if c.Rebuild {
+		plan.Rebuild(requires...)
 	}
 	plan.RebuildAll = c.RebuildAll
 	plan.MaxConcurrency = c.Parallel
@@ -239,7 +254,7 @@ func (c *makeCmd) Execute(args []string) (err error) {
 func (c *makeCmd) showBanner() {
 	out := term.NewPrinter(term.Std)
 	out.Styles("lightyellow", term.StyleB).Print("HyperMake").Pop().
-		Styles(term.StyleHi).Print(" v"+Version+" ").Pop().
+		Styles(term.StyleHi).Print(" v"+Version()+" ").Pop().
 		Styles("lightblue", "underline").Println(Website).Pop().
 		Println()
 }

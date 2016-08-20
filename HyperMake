@@ -21,48 +21,75 @@ targets:
         cmds:
             - gvt restore
 
-    generate:
-        description: generate source code
-        after:
-            - vendor
-        watches:
-            - build.sh
-        env:
-            - HMAKE_VER_SUFFIX
-            - HMAKE_RELEASE
-        cmds:
-            - mkdir -p bin
-            - ./build.sh genver
-
     hmake-linux-amd64:
         description: static linked hmake binary for Linux AMD64
         after:
-            - generate
+            - vendor
         watches:
             - '**/**/*.go'
             - build.sh
         cmds:
             - ./build.sh linux amd64
+        artifacts:
+            - bin/linux/amd64/hmake
+            - bin/hmake-linux-amd64.tar.gz
+            - bin/hmake-linux-amd64.tar.gz.sha256sum
+
+    hmake-linux-arm:
+        description: static linked hmake binary for Linux ARM v7
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+            - build.sh
+        cmds:
+            - GOARM=7 ./build.sh linux arm
+        artifacts:
+            - bin/linux/arm/hmake
+            - bin/hmake-linux-arm.tar.gz
+            - bin/hmake-linux-arm.tar.gz.sha256sum
+
+    hmake-linux-arm64:
+        description: static linked hmake binary for Linux ARM v8 (aarch64)
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+            - build.sh
+        cmds:
+            - ./build.sh linux arm64
+        artifacts:
+            - bin/linux/arm64/hmake
+            - bin/hmake-linux-arm64.tar.gz
+            - bin/hmake-linux-arm64.tar.gz.sha256sum
 
     hmake-darwin-amd64:
         description: static linked hmake binary for Mac OS
         after:
-            - generate
+            - vendor
         watches:
             - '**/**/*.go'
             - build.sh
         cmds:
             - ./build.sh darwin amd64
+        artifacts:
+            - bin/darwin/amd64/hmake
+            - bin/hmake-darwin-amd64.tar.gz
+            - bin/hmake-darwin-amd64.tar.gz.sha256sum
 
     hmake-windows-amd64:
         description: static linked hmake binary for Windows
         after:
-            - generate
+            - vendor
         watches:
             - '**/**/*.go'
             - build.sh
         cmds:
             - ./build.sh windows amd64
+        artifacts:
+            - bin/windows/amd64/hmake.exe
+            - bin/hmake-windows-amd64.zip
+            - bin/hmake-windows-amd64.zip.sha256sum
 
     site:
         description: generate document site
@@ -132,9 +159,7 @@ targets:
     all:
         description: the default make target
         after:
-            - hmake-linux-amd64
-            - hmake-darwin-amd64
-            - hmake-windows-amd64
+            - 'hmake-*'
 
 settings:
     default-targets:

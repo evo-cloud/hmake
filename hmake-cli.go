@@ -15,6 +15,13 @@ func cliDef() *flag.CliDef {
 					Tags:  map[string]interface{}{"help-var": "PATH"},
 				},
 				&flag.Option{
+					Name:  "file",
+					Alias: []string{"f"},
+					Desc:  "Specify the project filename instead of default HyperMake",
+					Tags:  map[string]interface{}{"help-var": "FILE"},
+					Type:  "string",
+				},
+				&flag.Option{
 					Name:    "include",
 					Alias:   []string{"I"},
 					Desc:    "Include additional files inside project directory, relative path",
@@ -23,10 +30,10 @@ func cliDef() *flag.CliDef {
 					Tags:    map[string]interface{}{"help-var": "FILE"},
 				},
 				&flag.Option{
-					Name:    "define",
-					Alias:   []string{"D"},
-					Desc:    "Define additional settings",
-					Example: "--define docker.src-volume=/tmp/src -D docker.image=myimage",
+					Name:    "property",
+					Alias:   []string{"P"},
+					Desc:    "Define additional setting property",
+					Example: "--property docker.src-volume=/tmp/src -P docker.image=myimage",
 					Type:    "dict",
 					Tags:    map[string]interface{}{"help-var": "KEY=VAL"},
 				},
@@ -46,11 +53,17 @@ func cliDef() *flag.CliDef {
 					Type:  "bool",
 				},
 				&flag.Option{
-					Name:  "rebuild",
+					Name:  "rebuild-target",
 					Alias: []string{"r"},
 					Desc:  "Rebuild specified targets",
 					List:  true,
 					Tags:  map[string]interface{}{"help-var": "TARGET"},
+				},
+				&flag.Option{
+					Name:  "rebuild",
+					Alias: []string{"b"},
+					Desc:  "Rebuild targets specified on command line",
+					Type:  "bool",
 				},
 				&flag.Option{
 					Name:  "skip",

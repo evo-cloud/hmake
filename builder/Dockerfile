@@ -1,4 +1,4 @@
-FROM golang:1.6-alpine
+FROM golang:1.7-alpine
 RUN apk update && apk add curl git tar zip && rm -fr /var/cache/apk/* && \
     curl -sSL https://get.docker.com/builds/Linux/x86_64/docker-1.10.0.tgz | tar -C / -xz && \
     go get -v github.com/alecthomas/gometalinter && \

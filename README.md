@@ -71,7 +71,7 @@ brew install hmake
 Alternatively, download from Github [releases](https://github.com/evo-cloud/hmake/releases)
 
 ```
-curl -s https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
+curl -s https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc2/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 chmod a+rx /usr/local/bin/hmake
 ```
 
@@ -128,6 +128,7 @@ Please read the following documents if more detailed information is needed
 - Examples are always helpful
   - [Cross Compile Linux kernel](examples/linux/README.md)
   - [Cross Compile drone](examples/drone/README.md)
+- [FAQ and Best Practices](docs/FAQ.md)
 
 ## Supported Platform and Software
 
@@ -144,6 +145,12 @@ Please read the following documents if more detailed information is needed
 - `docker-machine` is not supported on Linux;
 
 See [Docker Driver](docs/DockerDriver.md) for details.
+
+#### Issues
+
+If you meet any issues or have specific problems, please check
+[FAQ and Best Practices](docs/FAQ.md) if there's already a solution.
+Feel free to email the maintainers for any questions.
 
 ## License
 

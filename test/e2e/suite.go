@@ -87,6 +87,10 @@ var _ = Describe("docker", func() {
 		wd, err := os.Getwd()
 		Expect(err).Should(Succeed())
 		exec.Command("docker", "rmi", "hmake-test-commit:newtag", "hmake-test-commit:tag2").Run()
+		// clean up
+		defer func() {
+			exec.Command("docker", "rmi", "hmake-test-commit:newtag", "hmake-test-commit:tag2").Run()
+		}()
 		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker-commit"), "test", "-vR")
 		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 		Expect(err).Should(Succeed())

@@ -1,8 +1,6 @@
 package project
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -25,6 +23,7 @@ type Target struct {
 	WorkDir    string                 `json:"workdir"`
 	Watches    []string               `json:"watches"`
 	Always     bool                   `json:"always"`
+	Artifacts  []string               `json:"artifacts"`
 	Ext        map[string]interface{} `json:"*"`
 
 	// Runtime fields
@@ -62,7 +61,10 @@ func (t *Target) Initialize(name string, project *Project) {
 
 // IsTransit indicates the targets doesn't have actual work to do
 func (t *Target) IsTransit() bool {
-	return t.ExecDriver == "" && len(t.Ext) == 0 && len(t.Watches) == 0
+	return t.ExecDriver == "" &&
+		len(t.Ext) == 0 &&
+		len(t.Watches) == 0 &&
+		len(t.Artifacts) == 0
 }
 
 // GetExt maps Ext to provided value
@@ -364,13 +366,4 @@ func (w WatchList) String() string {
 		str += fmt.Sprintf("%s %d\n", item.Path, item.ModTime.Unix())
 	}
 	return str
-}
-
-// Digest calculates the digest based watched items
-func (w WatchList) Digest() string {
-	if w.IsEmpty() {
-		return ""
-	}
-	h := sha1.Sum([]byte(w.String()))
-	return hex.EncodeToString(h[0:])
 }

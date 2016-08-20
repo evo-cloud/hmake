@@ -35,14 +35,28 @@ targets:
         watches:
             - builder
 
+    vendor:
+        description: pull all vendor packages
+        after:
+            - builder
+        watches:
+            - 'vendor/manifest'
+        cmds:
+            - gvt restore
+
     hmake-linux-amd64:
         description: static linked hmake binary for Linux AMD64
         after:
             - vendor
         watches:
             - '**/**/*.go'
+            - build.sh
         cmds:
             - ./build.sh linux amd64
+        artifacts:
+            - bin/linux/amd64/hmake
+            - bin/hmake-linux-amd64.tar.gz
+            - bin/hmake-linux-amd64.tar.gz.sha256sum
 
     hmake-darwin-amd64:
         description: static linked hmake binary for Mac OS
@@ -50,30 +64,70 @@ targets:
             - vendor
         watches:
             - '**/**/*.go'
+            - build.sh
         cmds:
             - ./build.sh darwin amd64
+        artifacts:
+            - bin/darwin/amd64/hmake
+            - bin/hmake-darwin-amd64.tar.gz
+            - bin/hmake-darwin-amd64.tar.gz.sha256sum
 
-    vendor:
-        description: pull all vendor packages
+    hmake-windows-amd64:
+        description: static linked hmake binary for Windows
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+            - build.sh
+        cmds:
+            - ./build.sh windows amd64
+        artifacts:
+            - bin/windows/amd64/hmake.exe
+            - bin/hmake-windows-amd64.zip
+            - bin/hmake-windows-amd64.zip.sha256sum
+
+    site:
+        description: generate document site
         after:
             - builder
         watches:
-            - vendor/manifest
-        env:
-            - HMAKE_VER_SUFFIX
-            - HMAKE_RELEASE            
+            - site/gh-pages/config.toml
+            - site/gh-pages/themes/**/**/*
+            - site/gh-pages/static/**/**/*
+            - README.md
+            - docs/**/**/*
+            - examples/*/README.md
+            - build.sh
         cmds:
-            - gvt restore
-            - mkdir -p bin
-            - ./build.sh genver
+            - ./build.sh gensite
+
+    checkfmt:
+        description: check code format
+        after:
+            - builder
+        always: true
+        cmds:
+            - ./build.sh checkfmt
+
+    lint:
+        description: check code using metalint
+        after:
+            - builder
+        always: true
+        cmds:
+            - ./build.sh lint
+
+    check:
+        description: check source code
+        after:
+            - checkfmt
+            - lint
 
     test:
         description: run tests
         after:
             - vendor
-        watches:
-            - '**/**/*.go'
-            - test
+        always: true
         cmds:
             - ginkgo ./test
 
@@ -81,20 +135,28 @@ targets:
         description: run tests with coverage
         after:
             - vendor
-        watches:
-            - '**/**/*.go'
-            - test
+        always: true
         cmds:
             - >
                 go test -coverprofile cover.out
                 -coverpkg ./project
                 ./test
 
+    e2e:
+        description: end-to-end tests
+        after:
+            - vendor
+        expose-docker: true
+        always: true
+        cmds:
+            - ginkgo ./test/e2e
+
     all:
         description: the default make target
         after:
             - hmake-linux-amd64
             - hmake-darwin-amd64
+            - hmake-windows-amd64
 
 # settings shared across targets
 settings:
@@ -146,6 +208,8 @@ Usually, it defines
   and all dependencies are skipped;
 - `always`: always build the target regardless of last execution state and results
   of all dependencies (the `.PHONY` target in `make`);
+- `artifacts`: a list of files/directory must be present after the execution of
+  the target (aka. the output of the target), in relative path to project root.
 
 Other properties are specific to execution driver which executes the target.
 The currently supported execution driver is `docker`, please read
