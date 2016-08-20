@@ -112,14 +112,28 @@ targets:
         watches:
             - builder
 
+    vendor:
+        description: pull all vendor packages
+        after:
+            - builder
+        watches:
+            - 'vendor/manifest'
+        cmds:
+            - gvt restore
+
     hmake-linux-amd64:
         description: static linked hmake binary for Linux AMD64
         after:
             - vendor
         watches:
             - '**/**/*.go'
+            - build.sh
         cmds:
             - ./build.sh linux amd64
+        artifacts:
+            - bin/linux/amd64/hmake
+            - bin/hmake-linux-amd64.tar.gz
+            - bin/hmake-linux-amd64.tar.gz.sha256sum
 
     hmake-darwin-amd64:
         description: static linked hmake binary for Mac OS
@@ -127,30 +141,70 @@ targets:
             - vendor
         watches:
             - '**/**/*.go'
+            - build.sh
         cmds:
             - ./build.sh darwin amd64
+        artifacts:
+            - bin/darwin/amd64/hmake
+            - bin/hmake-darwin-amd64.tar.gz
+            - bin/hmake-darwin-amd64.tar.gz.sha256sum
 
-    vendor:
-        description: pull all vendor packages
+    hmake-windows-amd64:
+        description: static linked hmake binary for Windows
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+            - build.sh
+        cmds:
+            - ./build.sh windows amd64
+        artifacts:
+            - bin/windows/amd64/hmake.exe
+            - bin/hmake-windows-amd64.zip
+            - bin/hmake-windows-amd64.zip.sha256sum
+
+    site:
+        description: generate document site
         after:
             - builder
         watches:
-            - vendor/manifest
-        env:
-            - HMAKE_VER_SUFFIX
-            - HMAKE_RELEASE            
+            - site/gh-pages/config.toml
+            - site/gh-pages/themes/**/**/*
+            - site/gh-pages/static/**/**/*
+            - README.md
+            - docs/**/**/*
+            - examples/*/README.md
+            - build.sh
         cmds:
-            - gvt restore
-            - mkdir -p bin
-            - ./build.sh genver
+            - ./build.sh gensite
+
+    checkfmt:
+        description: check code format
+        after:
+            - builder
+        always: true
+        cmds:
+            - ./build.sh checkfmt
+
+    lint:
+        description: check code using metalint
+        after:
+            - builder
+        always: true
+        cmds:
+            - ./build.sh lint
+
+    check:
+        description: check source code
+        after:
+            - checkfmt
+            - lint
 
     test:
         description: run tests
         after:
             - vendor
-        watches:
-            - '**/**/*.go'
-            - test
+        always: true
         cmds:
             - ginkgo ./test
 
@@ -158,20 +212,28 @@ targets:
         description: run tests with coverage
         after:
             - vendor
-        watches:
-            - '**/**/*.go'
-            - test
+        always: true
         cmds:
             - &gt;
                 go test -coverprofile cover.out
                 -coverpkg ./project
                 ./test
 
+    e2e:
+        description: end-to-end tests
+        after:
+            - vendor
+        expose-docker: true
+        always: true
+        cmds:
+            - ginkgo ./test/e2e
+
     all:
         description: the default make target
         after:
             - hmake-linux-amd64
             - hmake-darwin-amd64
+            - hmake-windows-amd64
 
 # settings shared across targets
 settings:
@@ -226,6 +288,8 @@ property, the target is automatically skipped if the last execution was successf
 and all dependencies are skipped;</li>
 <li><code>always</code>: always build the target regardless of last execution state and results
 of all dependencies (the <code>.PHONY</code> target in <code>make</code>);</li>
+<li><code>artifacts</code>: a list of files/directory must be present after the execution of
+the target (aka. the output of the target), in relative path to project root.</li>
 </ul>
 
 <p>Other properties are specific to execution driver which executes the target.
@@ -344,7 +408,7 @@ local development environment.
             <h1 class="brand-title"><a href="https://github.com/evo-cloud/hmake/releases">Releases</a></h1>
             
             <h2 class="brand-tagline">
-                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.0.0">1.0.0</a>
+                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.1.0rc2">1.1.0rc2</a>
             </h2>
             
         </hgroup>
@@ -353,21 +417,21 @@ local development environment.
             <ul class="nav-list">
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-linux-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc2/hmake-linux-amd64.tar.gz">
                         <i class="os fa fa-linux"></i>
                         <span>linux</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-darwin-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc2/hmake-darwin-amd64.tar.gz">
                         <i class="os fa fa-apple"></i>
                         <span>Mac OS X</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-windows-amd64.zip">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc2/hmake-windows-amd64.zip">
                         <i class="os fa fa-windows"></i>
                         <span>windows</span>
                     </a>

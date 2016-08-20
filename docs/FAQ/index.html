@@ -63,7 +63,7 @@
 <section class="post">
     <header class="post-header">
 
-        <a href="http://evo-cloud.github.com/hmake/examples/drone/README/" class="post-title"></a>
+        <a href="http://evo-cloud.github.com/hmake/docs/FAQ/" class="post-title"></a>
 
         <p class="post-meta">
             
@@ -74,42 +74,51 @@
     <div class="post-description">
         
 
-<h1 id="example-cross-build-drone">Example - Cross build Drone</h1>
-
-<p>This example demonstrates how to use HyperMake to cross build
-<a href="https://github.com/drone/drone">drone</a> for different platforms.</p>
-
-<h2 id="get-started">Get Started</h2>
-
-<pre><code class="language-sh">hmake -sv
-</code></pre>
-
-<h2 id="how-it-works">How it works</h2>
-
-<p>Simply a few steps:</p>
+<h1 id="questions-and-best-practices">Questions and Best Practices</h1>
 
 <ul>
-<li>Build a docker image containing all tools</li>
-<li>Install dependencies (Go get)</li>
-<li>Git clone latest source code</li>
-<li>Go generate</li>
-<li>Go build for (in parallel)
+<li><p><strong>Q</strong>: Why I can&rsquo;t <code>git clone</code> private repositories?
+<strong>A</strong>: HyperMake runs the build inside containers which may not have the right
+SSH keys or credentials. There&rsquo;re two options:</p>
 
 <ul>
-<li>linux-amd64</li>
-<li>linux-arm64</li>
-<li>linux-arm</li>
-<li>windows-amd64</li>
-<li>darwin-amd64</li>
-</ul></li>
+<li>Mapping <code>~/.ssh</code> into the container using <code>volumes</code> property:</li>
 </ul>
 
-<p>The output is under <code>release/OS/ARCH/drone</code>.</p>
+<pre><code class="language-yaml">volumes:
+  - '~/.ssh:/src/.ssh:ro'
+</code></pre>
 
-<h2 id="notes">Notes</h2>
+<ul>
+<li>Mapping <code>~/.netrc</code> into the container:</li>
+</ul>
 
-<p>The <code>go generate</code> step requires <code>sassc</code> which is built from source in the first
-step building docker image. See <code>builder.Dockerfile</code> for details.</p>
+<p>first, create a file <code>~/.netrc</code>. See the
+<a href="https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html">manual</a>
+for the format and content. E.g.</p>
+
+<pre><code>machine github.com
+protocol https
+login username
+password password
+</code></pre>
+
+<p>Then use <code>volumes</code> property to map into the container.</p>
+
+<pre><code class="language-yaml">volumes:
+  - '~/.netrc:/src/.netrc:ro'
+</code></pre></li>
+
+<li><p><strong>Q</strong>: Can I build projects for Windows?<br>
+<strong>A</strong>: Depending on toolchain. HyperMake builds on Linux, for C/C++,
+install <a href="http://www.mingw.org">mingw</a> toolchain in the container and do
+the cross complication.</p></li>
+
+<li><p><strong>Q</strong>: Can I build projects for native Mac OS?<br>
+<strong>A</strong>: Depending. If it&rsquo;s a project in Go, yes. If it depends on native Mac OS
+libraries, it&rsquo;s possible when cross compiling toolchain and libraries are
+installed on Linux.</p></li>
+</ul>
 
     </div>
     

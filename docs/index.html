@@ -114,11 +114,13 @@ It can also be specified with a value in the long option format
 
 <ul>
 <li><code>--chdir=PATH, -C PATH</code>: Chdir to specified PATH first before doing anything</li>
+<li><code>--file=FILE, -f FILE</code>: Override the default project file name <code>HyperMake</code></li>
 <li><code>--include=FILE, -I FILE</code>: Include additional files (must be relative path under project root), can be specified multiple times</li>
-<li><code>--define=key=value, -D key=value</code>: Define property in global <code>settings</code> section, <code>key</code> may include <code>.</code> to specify the hierarchy</li>
+<li><code>--property=key=value, -P key=value</code>: Define property in global <code>settings</code> section, <code>key</code> may include <code>.</code> to specify the hierarchy</li>
 <li><code>--parallel=N, -p N</code>: Set maximum number of targets executed in parallel, 0 for auto, -1 for unlimited</li>
 <li><code>--rebuild-all, -R</code>: Force rebuild all needed targets</li>
-<li><code>--rebuild TARGET, -r TARGET</code>: Force rebuild specified target, this can repeat</li>
+<li><code>--rebuild-target TARGET, -r TARGET</code>: Force rebuild specified target, this can repeat</li>
+<li><code>--rebuild, -b</code>: Force rebuild targets specified on command line</li>
 <li><code>--skip TARGET, -S TARGET</code>: Skip specified target (mark as Skipped), this can repeat</li>
 <li><code>--json</code>: Dump execution events to stdout each encoded in single line json</li>
 <li><code>--summary, -s</code>: Show execution summary before exit</li>
@@ -430,36 +432,42 @@ without <code>build</code>, it&rsquo;s the image used to create the container;</
 
 <li><p><code>tags</code>: a list of tags in addition to <code>image</code> when do <code>docker build</code>;</p></li>
 
-<li><p><code>cache</code>: only used to specify <code>false</code> which adds <code>--no-cache</code> to <code>docker build</code>;</p></li>
+<li><p><code>commit</code>: commit running container into new image. Support multiple tags.
+Image tag will be <code>latest</code>, if not self-defined in image name. E.g.</p></li>
+</ul>
 
-<li><p><code>content-trust</code>: only used to specify <code>false</code> which adds
-<code>--disable-content-trust</code> to <code>docker build/run</code>;</p></li>
+<pre><code class="language-yaml">  target:
+      image: new-image-name:newtag
+      cmds:
+          &lt;Some commands&gt;
+      commit:
+            - new-image-name:tag1
+            - new-image-name:tag2
+</code></pre>
 
-<li><p><code>src-volume</code>: the full path inside container where project root is mapped to.
-Default is <code>/src</code>;</p></li>
-
-<li><p><code>expose-docker</code>: when set <code>true</code>, expose the host docker server connectivity
+<ul>
+<li><code>cache</code>: only used to specify <code>false</code> which adds <code>--no-cache</code> to <code>docker build</code>;</li>
+<li><code>content-trust</code>: only used to specify <code>false</code> which adds
+<code>--disable-content-trust</code> to <code>docker build/run</code>;</li>
+<li><code>src-volume</code>: the full path inside container where project root is mapped to.
+Default is <code>/src</code>;</li>
+<li><code>expose-docker</code>: when set <code>true</code>, expose the host docker server connectivity
 into container to allow docker client run from inside the container.
 This is very useful when docker is required for build and avoid problematic
-docker-in-docker;</p></li>
-
-<li><p><code>privileged</code>: run container in privileged mode, default is <code>false</code>;</p></li>
-
-<li><p><code>net</code>: when specified, only allowed value is <code>host</code>, when specified, run
-container with <code>--net=host --uts=host</code>;</p></li>
-
-<li><p><code>user</code>: passed to <code>docker run --user...</code>, by default, current <code>uid:gid</code> are
+docker-in-docker;</li>
+<li><code>privileged</code>: run container in privileged mode, default is <code>false</code>;</li>
+<li><code>net</code>: when specified, only allowed value is <code>host</code>, when specified, run
+container with <code>--net=host --uts=host</code>;</li>
+<li><code>user</code>: passed to <code>docker run --user...</code>, by default, current <code>uid:gid</code> are
 passed (with <em>docker-machine</em> the <code>uid:gid</code> is queried from the virtual machine
 running docker daemon).
 It must be explicitly specified <code>root</code> if the script is executed as root
 inside container.
 When a non-root user is explicitly specified, all group IDs are automatically
-passed using <code>--group-add</code>l;</p></li>
-
-<li><p><code>groups</code>: explicitly specify group IDs to pass into container, instead of
-passing all of them;</p></li>
-
-<li><p><code>volumes</code>: a list of volume mappings passed to <code>-v</code> option of <code>docker run</code>.</p></li>
+passed using <code>--group-add</code>l;</li>
+<li><code>groups</code>: explicitly specify group IDs to pass into container, instead of
+passing all of them;</li>
+<li><code>volumes</code>: a list of volume mappings passed to <code>-v</code> option of <code>docker run</code>.</li>
 </ul>
 
 <p>The following properties directly maps to <code>docker build/run</code> options:</p>
@@ -524,6 +532,72 @@ host running <em>hmake</em>.</p>
 <section class="post">
     <header class="post-header">
 
+        <a href="http://evo-cloud.github.com/hmake/docs/FAQ/" class="post-title"></a>
+
+        <p class="post-meta">
+            
+            
+        </p>
+    </header>
+    
+    <div class="post-description">
+        
+
+<h1 id="questions-and-best-practices">Questions and Best Practices</h1>
+
+<ul>
+<li><p><strong>Q</strong>: Why I can&rsquo;t <code>git clone</code> private repositories?
+<strong>A</strong>: HyperMake runs the build inside containers which may not have the right
+SSH keys or credentials. There&rsquo;re two options:</p>
+
+<ul>
+<li>Mapping <code>~/.ssh</code> into the container using <code>volumes</code> property:</li>
+</ul>
+
+<pre><code class="language-yaml">volumes:
+  - '~/.ssh:/src/.ssh:ro'
+</code></pre>
+
+<ul>
+<li>Mapping <code>~/.netrc</code> into the container:</li>
+</ul>
+
+<p>first, create a file <code>~/.netrc</code>. See the
+<a href="https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html">manual</a>
+for the format and content. E.g.</p>
+
+<pre><code>machine github.com
+protocol https
+login username
+password password
+</code></pre>
+
+<p>Then use <code>volumes</code> property to map into the container.</p>
+
+<pre><code class="language-yaml">volumes:
+  - '~/.netrc:/src/.netrc:ro'
+</code></pre></li>
+
+<li><p><strong>Q</strong>: Can I build projects for Windows?<br>
+<strong>A</strong>: Depending on toolchain. HyperMake builds on Linux, for C/C++,
+install <a href="http://www.mingw.org">mingw</a> toolchain in the container and do
+the cross complication.</p></li>
+
+<li><p><strong>Q</strong>: Can I build projects for native Mac OS?<br>
+<strong>A</strong>: Depending. If it&rsquo;s a project in Go, yes. If it depends on native Mac OS
+libraries, it&rsquo;s possible when cross compiling toolchain and libraries are
+installed on Linux.</p></li>
+</ul>
+
+    </div>
+    
+</section>
+
+                
+                
+<section class="post">
+    <header class="post-header">
+
         <a href="http://evo-cloud.github.com/hmake/docs/FileFormat/" class="post-title"></a>
 
         <p class="post-meta">
@@ -573,14 +647,28 @@ targets:
         watches:
             - builder
 
+    vendor:
+        description: pull all vendor packages
+        after:
+            - builder
+        watches:
+            - 'vendor/manifest'
+        cmds:
+            - gvt restore
+
     hmake-linux-amd64:
         description: static linked hmake binary for Linux AMD64
         after:
             - vendor
         watches:
             - '**/**/*.go'
+            - build.sh
         cmds:
             - ./build.sh linux amd64
+        artifacts:
+            - bin/linux/amd64/hmake
+            - bin/hmake-linux-amd64.tar.gz
+            - bin/hmake-linux-amd64.tar.gz.sha256sum
 
     hmake-darwin-amd64:
         description: static linked hmake binary for Mac OS
@@ -588,30 +676,70 @@ targets:
             - vendor
         watches:
             - '**/**/*.go'
+            - build.sh
         cmds:
             - ./build.sh darwin amd64
+        artifacts:
+            - bin/darwin/amd64/hmake
+            - bin/hmake-darwin-amd64.tar.gz
+            - bin/hmake-darwin-amd64.tar.gz.sha256sum
 
-    vendor:
-        description: pull all vendor packages
+    hmake-windows-amd64:
+        description: static linked hmake binary for Windows
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+            - build.sh
+        cmds:
+            - ./build.sh windows amd64
+        artifacts:
+            - bin/windows/amd64/hmake.exe
+            - bin/hmake-windows-amd64.zip
+            - bin/hmake-windows-amd64.zip.sha256sum
+
+    site:
+        description: generate document site
         after:
             - builder
         watches:
-            - vendor/manifest
-        env:
-            - HMAKE_VER_SUFFIX
-            - HMAKE_RELEASE            
+            - site/gh-pages/config.toml
+            - site/gh-pages/themes/**/**/*
+            - site/gh-pages/static/**/**/*
+            - README.md
+            - docs/**/**/*
+            - examples/*/README.md
+            - build.sh
         cmds:
-            - gvt restore
-            - mkdir -p bin
-            - ./build.sh genver
+            - ./build.sh gensite
+
+    checkfmt:
+        description: check code format
+        after:
+            - builder
+        always: true
+        cmds:
+            - ./build.sh checkfmt
+
+    lint:
+        description: check code using metalint
+        after:
+            - builder
+        always: true
+        cmds:
+            - ./build.sh lint
+
+    check:
+        description: check source code
+        after:
+            - checkfmt
+            - lint
 
     test:
         description: run tests
         after:
             - vendor
-        watches:
-            - '**/**/*.go'
-            - test
+        always: true
         cmds:
             - ginkgo ./test
 
@@ -619,20 +747,28 @@ targets:
         description: run tests with coverage
         after:
             - vendor
-        watches:
-            - '**/**/*.go'
-            - test
+        always: true
         cmds:
             - &gt;
                 go test -coverprofile cover.out
                 -coverpkg ./project
                 ./test
 
+    e2e:
+        description: end-to-end tests
+        after:
+            - vendor
+        expose-docker: true
+        always: true
+        cmds:
+            - ginkgo ./test/e2e
+
     all:
         description: the default make target
         after:
             - hmake-linux-amd64
             - hmake-darwin-amd64
+            - hmake-windows-amd64
 
 # settings shared across targets
 settings:
@@ -687,6 +823,8 @@ property, the target is automatically skipped if the last execution was successf
 and all dependencies are skipped;</li>
 <li><code>always</code>: always build the target regardless of last execution state and results
 of all dependencies (the <code>.PHONY</code> target in <code>make</code>);</li>
+<li><code>artifacts</code>: a list of files/directory must be present after the execution of
+the target (aka. the output of the target), in relative path to project root.</li>
 </ul>
 
 <p>Other properties are specific to execution driver which executes the target.
@@ -808,7 +946,7 @@ local development environment.
             <h1 class="brand-title"><a href="https://github.com/evo-cloud/hmake/releases">Releases</a></h1>
             
             <h2 class="brand-tagline">
-                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.0.0">1.0.0</a>
+                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.1.0rc2">1.1.0rc2</a>
             </h2>
             
         </hgroup>
@@ -817,21 +955,21 @@ local development environment.
             <ul class="nav-list">
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-linux-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc2/hmake-linux-amd64.tar.gz">
                         <i class="os fa fa-linux"></i>
                         <span>linux</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-darwin-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc2/hmake-darwin-amd64.tar.gz">
                         <i class="os fa fa-apple"></i>
                         <span>Mac OS X</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-windows-amd64.zip">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc2/hmake-windows-amd64.zip">
                         <i class="os fa fa-windows"></i>
                         <span>windows</span>
                     </a>

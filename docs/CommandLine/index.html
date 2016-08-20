@@ -113,11 +113,13 @@ It can also be specified with a value in the long option format
 
 <ul>
 <li><code>--chdir=PATH, -C PATH</code>: Chdir to specified PATH first before doing anything</li>
+<li><code>--file=FILE, -f FILE</code>: Override the default project file name <code>HyperMake</code></li>
 <li><code>--include=FILE, -I FILE</code>: Include additional files (must be relative path under project root), can be specified multiple times</li>
-<li><code>--define=key=value, -D key=value</code>: Define property in global <code>settings</code> section, <code>key</code> may include <code>.</code> to specify the hierarchy</li>
+<li><code>--property=key=value, -P key=value</code>: Define property in global <code>settings</code> section, <code>key</code> may include <code>.</code> to specify the hierarchy</li>
 <li><code>--parallel=N, -p N</code>: Set maximum number of targets executed in parallel, 0 for auto, -1 for unlimited</li>
 <li><code>--rebuild-all, -R</code>: Force rebuild all needed targets</li>
-<li><code>--rebuild TARGET, -r TARGET</code>: Force rebuild specified target, this can repeat</li>
+<li><code>--rebuild-target TARGET, -r TARGET</code>: Force rebuild specified target, this can repeat</li>
+<li><code>--rebuild, -b</code>: Force rebuild targets specified on command line</li>
 <li><code>--skip TARGET, -S TARGET</code>: Skip specified target (mark as Skipped), this can repeat</li>
 <li><code>--json</code>: Dump execution events to stdout each encoded in single line json</li>
 <li><code>--summary, -s</code>: Show execution summary before exit</li>
@@ -168,7 +170,7 @@ It can also be specified with a value in the long option format
             <h1 class="brand-title"><a href="https://github.com/evo-cloud/hmake/releases">Releases</a></h1>
             
             <h2 class="brand-tagline">
-                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.0.0">1.0.0</a>
+                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.1.0rc2">1.1.0rc2</a>
             </h2>
             
         </hgroup>
@@ -177,21 +179,21 @@ It can also be specified with a value in the long option format
             <ul class="nav-list">
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-linux-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc2/hmake-linux-amd64.tar.gz">
                         <i class="os fa fa-linux"></i>
                         <span>linux</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-darwin-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc2/hmake-darwin-amd64.tar.gz">
                         <i class="os fa fa-apple"></i>
                         <span>Mac OS X</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.0.0/hmake-windows-amd64.zip">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc2/hmake-windows-amd64.zip">
                         <i class="os fa fa-windows"></i>
                         <span>windows</span>
                     </a>
