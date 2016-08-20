@@ -11,7 +11,7 @@ githubName = "evo-cloud/hmake"
 description = "build without pre-requisites"
 hideShareOptions = true
 hidePostTime = true
-releaseVersion = "1.0.0"
+releaseVersion = "1.1.0rc2"
 
 [[params.artifacts]]
 os = "linux"
