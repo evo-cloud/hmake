@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"strings"
@@ -434,7 +433,7 @@ func (c *makeCmd) dumpEvent(event string, task *hm.Task) {
 	if task.State >= hm.Running {
 		e["start-at"] = task.StartTime
 	}
-	if task.State >= hm.Abadoned {
+	if task.State >= hm.Abandoned {
 		e["result"] = task.Result.String()
 	}
 	if task.State >= hm.Finished {
@@ -507,29 +506,19 @@ func errorStyler(class, text string, data interface{}) string {
 }
 
 func timeFetcher(col cv.Column, row map[string]interface{}) interface{} {
-	if strVal, ok := row[col.Field].(string); ok && strVal != "" {
-		var t time.Time
-		if t.UnmarshalText([]byte(strVal)) == nil {
-			return t.Format(timeFmt)
-		}
+	if timeVal, ok := row[col.Field].(time.Time); ok && !timeVal.IsZero() {
+		return timeVal.Format(timeFmt)
 	}
 	return ""
 }
 
 func durationFetcher(col cv.Column, row map[string]interface{}) interface{} {
-	var startAtStr, finishAtStr string
 	var startAt, finishAt time.Time
 	var ok bool
-	if startAtStr, ok = row["start-at"].(string); !ok || startAtStr == "" {
+	if startAt, ok = row["start-at"].(time.Time); !ok || startAt.IsZero() {
 		return ""
 	}
-	if finishAtStr, ok = row["finish-at"].(string); !ok || finishAtStr == "" {
-		return ""
-	}
-	if err := startAt.UnmarshalText([]byte(startAtStr)); err != nil {
-		return ""
-	}
-	if err := finishAt.UnmarshalText([]byte(finishAtStr)); err != nil {
+	if finishAt, ok = row["finish-at"].(time.Time); !ok || finishAt.IsZero() {
 		return ""
 	}
 	duration := finishAt.Sub(startAt)
@@ -539,27 +528,35 @@ func durationFetcher(col cv.Column, row map[string]interface{}) interface{} {
 	return duration.String()
 }
 
-func (c *makeCmd) showSummary(p *hm.Project, plan *hm.ExecPlan) error {
-	var sum []map[string]interface{}
+func (c *makeCmd) showSummary(p *hm.Project, plan *hm.ExecPlan) (err error) {
+	var sum hm.ExecSummary
 	if plan != nil {
 		sum = plan.Summary
 	} else {
-		data, err := ioutil.ReadFile(p.SummaryFile())
+		sum, err = p.Summary()
 		if err != nil {
-			return err
-		}
-
-		err = json.Unmarshal(data, &sum)
-		if err != nil {
-			return err
+			return
 		}
 	}
 
 	if c.JSON {
 		encoded, _ := json.Marshal(sum)
 		fmt.Println(string(encoded))
+		return
 	}
 
+	sumData := make([]map[string]interface{}, len(sum))
+	for n, s := range sum {
+		sumData[n] = map[string]interface{}{
+			"target":    s.Target,
+			"start-at":  s.StartAt,
+			"finish-at": s.FinishAt,
+			"error":     s.Error,
+		}
+		if s.Result != hm.Unknown {
+			sumData[n]["result"] = s.Result.String()
+		}
+	}
 	table := &cv.Table{
 		Output: cv.Output{
 			Writer: term.Std,
@@ -581,7 +578,7 @@ func (c *makeCmd) showSummary(p *hm.Project, plan *hm.ExecPlan) error {
 		w = 80
 	}
 	table.MaxWidth = w
-	table.Print(sum)
+	table.Print(sumData)
 	return nil
 }
 

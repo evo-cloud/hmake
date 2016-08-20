@@ -1,6 +1,7 @@
 package project
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -405,4 +406,15 @@ func (p *Project) DebugLogFile() string {
 // SummaryFile returns the fullpath to summary file
 func (p *Project) SummaryFile() string {
 	return filepath.Join(p.WorkPath(), SummaryFileName)
+}
+
+// Summary loads the execution summary
+func (p *Project) Summary() (ExecSummary, error) {
+	f, err := os.Open(p.SummaryFile())
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var summary ExecSummary
+	return summary, json.NewDecoder(f).Decode(&summary)
 }

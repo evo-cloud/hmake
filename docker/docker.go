@@ -560,7 +560,7 @@ func (r *Runner) Signature() string {
 		}
 		items[n] = item
 	}
-	return strings.Join(items, ",")
+	return strings.Join(items, ",") + "\n" + shell.BuildScript(r.Task)
 }
 
 // ValidateArtifacts implements Runner

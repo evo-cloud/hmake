@@ -1,6 +1,6 @@
 # Questions and Best Practices
 
-- **Q**: Why I can't `git clone` private repositories?
+- **Q**: Why I can't `git clone` private repositories?<br>
   **A**: HyperMake runs the build inside containers which may not have the right
   SSH keys or credentials. There're two options:
 

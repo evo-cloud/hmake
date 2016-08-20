@@ -10,6 +10,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+
+	hm "github.com/evo-cloud/hmake/project"
 )
 
 var pathToHmake string
@@ -24,27 +26,50 @@ var _ = AfterSuite(func() {
 	gexec.CleanupBuildArtifacts()
 })
 
+func projectDir(project string, dir ...string) string {
+	wd, err := os.Getwd()
+	Expect(err).Should(Succeed())
+	d := filepath.Join(wd, project)
+	if dir != nil {
+		d = filepath.Join(append([]string{d}, dir...)...)
+	}
+	return d
+}
+
+func hmakeCmd(project string, args ...string) *exec.Cmd {
+	args = append([]string{"-C", projectDir(project)}, args...)
+	return exec.Command(pathToHmake, args...)
+}
+
+func execHmake(project string, args ...string) *gexec.Session {
+	session, err := gexec.Start(hmakeCmd(project, args...), GinkgoWriter, GinkgoWriter)
+	Expect(err).Should(Succeed())
+	return session
+}
+
+func waitHmake(project string, args ...string) *gexec.Session {
+	session := execHmake(project, args...)
+	session.Wait(15 * time.Minute)
+	return session
+}
+
+func loadSummary(project string) hm.ExecSummary {
+	proj, err := hm.LocateProjectFrom(projectDir(project), hm.RootFile)
+	Expect(err).Should(Succeed())
+	sum, err := proj.Summary()
+	Expect(err).Should(Succeed())
+	return sum
+}
+
 var _ = Describe("docker", func() {
 	It("makes", func() {
-		wd, err := os.Getwd()
-		Expect(err).Should(Succeed())
-		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker"), "-vR")
-		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-		Expect(err).Should(Succeed())
-		session.Wait(15 * time.Minute)
-		Eventually(session).Should(gexec.Exit(0))
+		Eventually(waitHmake("docker", "-vR")).Should(gexec.Exit(0))
 	})
 
 	It("makes with correct env", func() {
-		wd, err := os.Getwd()
-		Expect(err).Should(Succeed())
-		logfile := filepath.Join(wd, "docker-env", "test.log")
+		logfile := projectDir("docker-env", "test.log")
 		os.Remove(logfile)
-		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker-env"), "-vR")
-		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-		Expect(err).Should(Succeed())
-		session.Wait(15 * time.Minute)
-		Eventually(session).Should(gexec.Exit(0))
+		Eventually(waitHmake("docker-env", "-vR")).Should(gexec.Exit(0))
 		Expect(logfile).Should(BeAnExistingFile())
 		data, err := ioutil.ReadFile(logfile)
 		Expect(err).Should(Succeed())
@@ -52,21 +77,11 @@ var _ = Describe("docker", func() {
 	})
 
 	It("makes with correct dir", func() {
-		wd, err := os.Getwd()
-		Expect(err).Should(Succeed())
-		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker-dir"), "-vR")
-		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-		Expect(err).Should(Succeed())
-		session.Wait(15 * time.Minute)
-		Eventually(session).Should(gexec.Exit(0))
+		Eventually(waitHmake("docker-dir", "-vR")).Should(gexec.Exit(0))
 	})
 
 	It("aborts docker execution", func() {
-		wd, err := os.Getwd()
-		Expect(err).Should(Succeed())
-		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker-abort"), "abort0", "-vR")
-		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-		Expect(err).Should(Succeed())
+		session := execHmake("docker-abort", "abort0", "-vR")
 		time.Sleep(time.Second)
 		session.Interrupt()
 		session.Wait(30 * time.Second)
@@ -74,28 +89,33 @@ var _ = Describe("docker", func() {
 	})
 
 	It("fix /etc/passwd", func() {
-		wd, err := os.Getwd()
-		Expect(err).Should(Succeed())
-		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker-user"), "-vR")
-		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-		Expect(err).Should(Succeed())
-		session.Wait(15 * time.Minute)
-		Eventually(session).Should(gexec.Exit(0))
+		Eventually(waitHmake("docker-user", "-vR")).Should(gexec.Exit(0))
+	})
+
+	It("rebuild target if changed", func() {
+		Eventually(waitHmake("docker-cmds-change", "docker-cmd", "-vR")).Should(gexec.Exit(0))
+		sum := loadSummary("docker-cmds-change").ByTarget("docker-cmd")
+		Expect(sum).ShouldNot(BeNil())
+		Expect(sum.Result).Should(Equal(hm.Success))
+
+		Eventually(waitHmake("docker-cmds-change", "docker-cmd", "-v")).Should(gexec.Exit(0))
+		sum = loadSummary("docker-cmds-change").ByTarget("docker-cmd")
+		Expect(sum).ShouldNot(BeNil())
+		Expect(sum.Result).Should(Equal(hm.Skipped))
+
+		Eventually(waitHmake("docker-cmds-change", "-f", "HyperMake.changed", "docker-cmd", "-v")).Should(gexec.Exit(0))
+		sum = loadSummary("docker-cmds-change").ByTarget("docker-cmd")
+		Expect(sum).ShouldNot(BeNil())
+		Expect(sum.Result).Should(Equal(hm.Success))
 	})
 
 	It("commit", func() {
-		wd, err := os.Getwd()
-		Expect(err).Should(Succeed())
 		exec.Command("docker", "rmi", "hmake-test-commit:newtag", "hmake-test-commit:tag2").Run()
 		// clean up
 		defer func() {
 			exec.Command("docker", "rmi", "hmake-test-commit:newtag", "hmake-test-commit:tag2").Run()
 		}()
-		cmd := exec.Command(pathToHmake, "-C", filepath.Join(wd, "docker-commit"), "test", "-vR")
-		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-		Expect(err).Should(Succeed())
-		session.Wait(30 * time.Second)
-		Eventually(session).Should(gexec.Exit(0))
+		Eventually(waitHmake("docker-commit", "test", "-vR")).Should(gexec.Exit(0))
 	})
 
 })

@@ -3,6 +3,9 @@
 set -ex
 
 versuffix() {
+    if [ -f ".release" ]; then
+        . .release
+    fi
     if [ -n "$HMAKE_RELEASE" ]; then
         echo -n ""
     elif [ -n "$HMAKE_RC" ]; then
@@ -53,9 +56,6 @@ lint() {
 }
 
 build() {
-    VERSION_SUFFIX=$(versuffix)
-    RELEASE=$(grep 'Release = ' main.go | sed -r 's/^.+"([^"]+)".*$/\1/')
-    VERSION=${RELEASE}${VERSION_SUFFIX}
     OUT=bin/hmake
     if [ -n "$1" -a -n "$2" ]; then
         export GOOS="$1"
@@ -69,7 +69,7 @@ build() {
     mkdir -p $(dirname $OUT)
     CGO_ENABLED=0 go build -o $OUT \
         -a -tags "static_build netgo" -installsuffix netgo \
-        -ldflags "-X main.VersionSuffix=${VERSION_SUFFIX} -extldflags -static" \
+        -ldflags "-X main.VersionSuffix=$(versuffix) -extldflags -static" \
         .
 
     PKG=bin/hmake
