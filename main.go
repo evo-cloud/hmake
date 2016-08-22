@@ -84,6 +84,7 @@ type makeCmd struct {
 	JSON           bool
 	Summary        bool
 	Verbose        bool
+	Quiet          bool
 	Banner         bool
 	Color          bool
 	Emoji          bool
@@ -211,6 +212,11 @@ func (c *makeCmd) Execute(args []string) (err error) {
 
 	if c.Emoji {
 		faces = facesEmoji
+	}
+
+	// setup verbosity
+	if !c.Quiet {
+		c.Verbose = true
 	}
 
 	plan := p.Plan()

@@ -1,6 +1,8 @@
 ---
 format: hypermake.v0
 
+name: docker-dir
+
 targets:
   builder:
     description: create builder image

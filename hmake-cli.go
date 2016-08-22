@@ -84,15 +84,22 @@ func cliDef() *flag.CliDef {
 					Type: "bool",
 				},
 				&flag.Option{
-					Name:  "summary",
-					Alias: []string{"s"},
-					Desc:  "Show summary when make completes",
-					Type:  "bool",
+					Name:    "summary",
+					Alias:   []string{"s"},
+					Desc:    "Show summary when make completes",
+					Type:    "bool",
+					Default: true,
 				},
 				&flag.Option{
 					Name:  "verbose",
 					Alias: []string{"v"},
 					Desc:  "Display more information",
+					Type:  "bool",
+				},
+				&flag.Option{
+					Name:  "quiet",
+					Alias: []string{"q"},
+					Desc:  "Display less information, suppress the output",
 					Type:  "bool",
 				},
 				&flag.Option{

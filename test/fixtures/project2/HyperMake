@@ -1,5 +1,7 @@
 ---
 format: hypermake.v0
 
+name: project2
+
 settings:
   toplevel: value0

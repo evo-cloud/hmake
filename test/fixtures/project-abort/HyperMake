@@ -1,6 +1,8 @@
 ---
 format: hypermake.v0
 
+name: abort
+
 targets:
   abort0:
     cmds:

@@ -1,6 +1,8 @@
 ---
 format: hypermake.v0
 
+name: include-nonexist
+
 includes:
   - non-exist.hmake
   - inc-a.hmake

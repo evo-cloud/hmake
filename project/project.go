@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"unicode"
 
 	"github.com/easeway/langx.go/errors"
 	"github.com/easeway/langx.go/mapper"
@@ -25,6 +26,8 @@ const (
 	SummaryFileName = "hmake.summary.json"
 	// LogFileName is the filename of hmake debug log
 	LogFileName = "hmake.debug.log"
+	// MaxNameLen restricts the maximum length of project/target name
+	MaxNameLen = 1024
 )
 
 var (
@@ -33,6 +36,14 @@ var (
 
 	// ErrUnsupportedFormat indicates the file is not recognized
 	ErrUnsupportedFormat = fmt.Errorf("unsupported format")
+	// ErrNameMissing indicates name is required, but missing
+	ErrNameMissing = fmt.Errorf("name is required")
+	// ErrNameTooLong indicates the length of name exceeds MaxNameLen
+	ErrNameTooLong = fmt.Errorf("name is too long")
+	// ErrNameFirstChar indicates the first char in name is illegal
+	ErrNameFirstChar = fmt.Errorf("name must start from a letter or an underscore")
+	// ErrProjectNameMissing indicates project name is absent
+	ErrProjectNameMissing = fmt.Errorf("project name is required")
 )
 
 // File defines the content of HyperMake or .hmake file
@@ -210,6 +221,36 @@ func RelPath(source, path string) string {
 	return path
 }
 
+// ValidateName checks if a name is legal: starting from a letter/underscore
+// and following characters are from letters/digits/underscore/dash/dot
+func ValidateName(name string) error {
+	if name == "" {
+		return ErrNameMissing
+	}
+	if len(name) > MaxNameLen {
+		return ErrNameTooLong
+	}
+	for n, r := range name {
+		if n == 0 {
+			if !unicode.IsLetter(r) && r != '_' {
+				return ErrNameFirstChar
+			}
+		} else if !unicode.IsLetter(r) && !unicode.IsDigit(r) &&
+			r != '_' && r != '-' && r != '.' {
+			return fmt.Errorf("invalid character in name %v", r)
+		}
+	}
+	return nil
+}
+
+// ValidateProjectName validates if project name is legal
+func ValidateProjectName(name string) error {
+	if name == "" {
+		return ErrProjectNameMissing
+	}
+	return ValidateName(name)
+}
+
 // Merge merges content from another file
 func (f *File) Merge(s *File) error {
 	errs := &errors.AggregatedError{}
@@ -256,7 +297,11 @@ func (p *Project) Load(path string) (*File, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, t := range f.Targets {
+	for name, t := range f.Targets {
+		if err = ValidateName(name); err != nil {
+			return nil, fmt.Errorf("%s: illegal target name '%s': %v",
+				f.Source, name, err.Error())
+		}
 		t.File = f
 	}
 	p.Files = append(p.Files, f)
@@ -266,8 +311,9 @@ func (p *Project) Load(path string) (*File, error) {
 	if len(p.Files) == 1 {
 		p.MasterFile.Source = f.Source
 		p.Name = f.Name
+		err = ValidateProjectName(p.Name)
 	}
-	return f, nil
+	return f, err
 }
 
 // LoadRcFiles load .hmakerc files inside project directories

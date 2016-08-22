@@ -1,6 +1,8 @@
 ---
 format: hypermake.v0
 
+name: inc-a
+
 targets:
   inc-a: {}
 
