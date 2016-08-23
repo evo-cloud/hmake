@@ -96,7 +96,7 @@ brew install hmake
 
 &lt;p&gt;Alternatively, download from Github &lt;a href=&#34;https://github.com/evo-cloud/hmake/releases&#34;&gt;releases&lt;/a&gt;&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;curl -s https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc2/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
+&lt;pre&gt;&lt;code&gt;curl -s https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc3/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 chmod a+rx /usr/local/bin/hmake
 &lt;/code&gt;&lt;/pre&gt;
 
@@ -186,7 +186,7 @@ contribute to this project.&lt;/li&gt;
 
 &lt;p&gt;If you meet any issues or have specific problems, please check
 &lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/docs/FAQ/&#34;&gt;FAQ and Best Practices&lt;/a&gt; if there&amp;rsquo;s already a solution.
-Feel free to email the maintainers for any questions.&lt;/p&gt;
+Feel free to email the MAINTAINERS for any questions.&lt;/p&gt;
 
 &lt;h2 id=&#34;license&#34;&gt;License&lt;/h2&gt;
 
@@ -227,9 +227,9 @@ followed by a word (or a few words concated with hyphen)
 for long option, the value follows directly with &lt;code&gt;=&lt;/code&gt; in the same argument
 (e.g. &lt;code&gt;--chdir=/tmp/proj&lt;/code&gt;);&lt;/li&gt;
 &lt;li&gt;Some option can be specified multiple times to provide a list or a map
-(e.g.
-  list: &lt;code&gt;--include=a.hmake --include=b.hmake&lt;/code&gt; or &lt;code&gt;-I a.hmake -I b.hmake&lt;/code&gt;;
-  map: &lt;code&gt;--define=ARCH=x86_64 --define=OS=linux&lt;/code&gt; or &lt;code&gt;-D ARCH=x86_64 -D OS=linux&lt;/code&gt;
+(e.g.&lt;br&gt;
+&lt;em&gt;list&lt;/em&gt;: &lt;code&gt;--include=a.hmake --include=b.hmake&lt;/code&gt; or &lt;code&gt;-I a.hmake -I b.hmake&lt;/code&gt;;&lt;br&gt;
+&lt;em&gt;map&lt;/em&gt;: &lt;code&gt;--define=ARCH=x86_64 --define=OS=linux&lt;/code&gt; or &lt;code&gt;-D ARCH=x86_64 -D OS=linux&lt;/code&gt;
 );&lt;/li&gt;
 &lt;li&gt;Bool options can be specified without value as &lt;code&gt;true&lt;/code&gt; or prefixed by &lt;code&gt;no-&lt;/code&gt; as
 &lt;code&gt;false&lt;/code&gt; (e.g. &lt;code&gt;--verbose&lt;/code&gt; for &lt;code&gt;true&lt;/code&gt;, &lt;code&gt;--no-verbose&lt;/code&gt; for &lt;code&gt;false&lt;/code&gt;);
@@ -249,9 +249,42 @@ It can also be specified with a value in the long option format
 &lt;li&gt;&lt;code&gt;--rebuild-target TARGET, -r TARGET&lt;/code&gt;: Force rebuild specified target, this can repeat&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;--rebuild, -b&lt;/code&gt;: Force rebuild targets specified on command line&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;--skip TARGET, -S TARGET&lt;/code&gt;: Skip specified target (mark as Skipped), this can repeat&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--exec, -x&lt;/code&gt;: Execute a shell command in the context of a target.
+The target name must be specified in &lt;code&gt;settings.exec-target&lt;/code&gt; or use &lt;code&gt;--exec-with=TARGET&lt;/code&gt;.
+It&amp;rsquo;s extremely useful to run arbitrary command in the context of a target.
+It should come as the last option, as the rest command-line arguments will be
+treated as command.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;For example:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;  hmake -x go version
+  hmake -x   # enter an interactive shell inside the container
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The commands parsing after &lt;code&gt;-x&lt;/code&gt; is directly executed by &lt;code&gt;execvp&lt;/code&gt; system call,
+  not a command to be parsed by shell. So shell syntax like &lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt; won&amp;rsquo;t work.&lt;/p&gt;
+
+&lt;p&gt;To run as a shell command&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;  hmake -x /bin/sh -c &#39;go version || echo &amp;quot;go version failed&amp;quot;&#39;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;--exec-with=TARGET&lt;/code&gt;: Explicitly specify the target for &lt;code&gt;--exec&lt;/code&gt; instead of
+fetching from &lt;code&gt;settings.exec-target&lt;/code&gt;.
+As it implies &lt;code&gt;--exec&lt;/code&gt;, it should come as the last option.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;For example:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;  hmake --exec-with=vendor go version
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
 &lt;li&gt;&lt;code&gt;--json&lt;/code&gt;: Dump execution events to stdout each encoded in single line json&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;--summary, -s&lt;/code&gt;: Show execution summary before exit&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;--verbose, -v&lt;/code&gt;: Show execution output to stderr for each target&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--quiet, -q&lt;/code&gt;: Suppress output from each target&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;--rcfile|--no-rcfile&lt;/code&gt;: Load .hmakerc inside project directories, default is true&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;--color|--no-color&lt;/code&gt;: Explicitly specify print with color/no-color&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;--emoji|--no-emoji&lt;/code&gt;: Explicitly specify print with emoji/no-emoji&lt;/li&gt;
@@ -261,6 +294,16 @@ It can also be specified with a value in the long option format
 &lt;li&gt;&lt;code&gt;--dryrun&lt;/code&gt;: When specified, run targets as normal but without invoking execution drivers (simply mark task Success)&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;--version&lt;/code&gt;: When specified, print version and exit&lt;/li&gt;
 &lt;/ul&gt;
+
+&lt;p&gt;The parsing of options stops when &lt;code&gt;--&lt;/code&gt; is encountered. The rest of arguments will be
+treated as target names. Except &lt;code&gt;--exec&lt;/code&gt;/&lt;code&gt;--exec-with&lt;/code&gt; already implies end of
+options parsing, &lt;code&gt;--&lt;/code&gt; should not be used.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;Note: &lt;code&gt;--exec&lt;/code&gt;/&lt;code&gt;--exec-with&lt;/code&gt; doesn&amp;rsquo;t affect the last execution result of the
+target, though it displays the result and updates the summary. So the target
+may still be skipped next time if nothing changed.&lt;/p&gt;
+&lt;/blockquote&gt;
 
 &lt;h2 id=&#34;exit-code&#34;&gt;Exit Code&lt;/h2&gt;
 
@@ -643,7 +686,7 @@ host running &lt;em&gt;hmake&lt;/em&gt;.&lt;/p&gt;
 &lt;h1 id=&#34;questions-and-best-practices&#34;&gt;Questions and Best Practices&lt;/h1&gt;
 
 &lt;ul&gt;
-&lt;li&gt;&lt;p&gt;&lt;strong&gt;Q&lt;/strong&gt;: Why I can&amp;rsquo;t &lt;code&gt;git clone&lt;/code&gt; private repositories?
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;Q&lt;/strong&gt;: Why I can&amp;rsquo;t &lt;code&gt;git clone&lt;/code&gt; private repositories?&lt;br&gt;
 &lt;strong&gt;A&lt;/strong&gt;: HyperMake runs the build inside containers which may not have the right
 SSH keys or credentials. There&amp;rsquo;re two options:&lt;/p&gt;
 
