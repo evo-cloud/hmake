@@ -30,6 +30,8 @@ type Target struct {
 
 	Project   *Project      `json:"-"`
 	File      *File         `json:"-"`
+	Exec      bool          `json:"-"`
+	Args      []string      `json:"-"`
 	Depends   TargetNameMap `json:"-"`
 	Activates TargetNameMap `json:"-"`
 }

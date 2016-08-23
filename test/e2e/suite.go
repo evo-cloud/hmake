@@ -118,4 +118,26 @@ var _ = Describe("docker", func() {
 		Eventually(waitHmake("docker-commit", "test", "-vR")).Should(gexec.Exit(0))
 	})
 
+	Describe("exec", func() {
+		It("exec", func() {
+			Eventually(waitHmake("docker", "-x", "true")).Should(gexec.Exit(0))
+		})
+
+		It("not impact target result", func() {
+			Eventually(waitHmake("docker", "exec", "-R")).Should(gexec.Exit(0))
+			// try to fail --exec, can't use "false" because of docker bug
+			//    docker create -it --name=test image /bin/false
+			//    echo '' | docker start -a -i test
+			//    echo $? => 0
+			// However
+			//    echo '' | /bin/false
+			//    echo $? => 1
+			// So use a non-exist command
+			Eventually(waitHmake("docker", "-x", "non-exist")).Should(gexec.Exit(1))
+			Eventually(waitHmake("docker", "exec")).Should(gexec.Exit(0))
+			sum := loadSummary("docker").ByTarget("exec")
+			Expect(sum).ShouldNot(BeNil())
+			Expect(sum.Result).Should(Equal(hm.Skipped))
+		})
+	})
 })

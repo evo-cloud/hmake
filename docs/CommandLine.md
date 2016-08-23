@@ -23,9 +23,9 @@ Common Unix command line option parsing rule is adopted:
   for long option, the value follows directly with `=` in the same argument
   (e.g. `--chdir=/tmp/proj`);
 - Some option can be specified multiple times to provide a list or a map
-  (e.g.
-      list: `--include=a.hmake --include=b.hmake` or `-I a.hmake -I b.hmake`;
-      map: `--define=ARCH=x86_64 --define=OS=linux` or `-D ARCH=x86_64 -D OS=linux`
+  (e.g.<br>
+  _list_: `--include=a.hmake --include=b.hmake` or `-I a.hmake -I b.hmake`;<br>
+  _map_: `--define=ARCH=x86_64 --define=OS=linux` or `-D ARCH=x86_64 -D OS=linux`
   );
 - Bool options can be specified without value as `true` or prefixed by `no-` as
   `false` (e.g. `--verbose` for `true`, `--no-verbose` for `false`);
@@ -43,9 +43,38 @@ Common Unix command line option parsing rule is adopted:
 - `--rebuild-target TARGET, -r TARGET`: Force rebuild specified target, this can repeat
 - `--rebuild, -b`: Force rebuild targets specified on command line
 - `--skip TARGET, -S TARGET`: Skip specified target (mark as Skipped), this can repeat
+- `--exec, -x`: Execute a shell command in the context of a target.
+  The target name must be specified in `settings.exec-target` or use `--exec-with=TARGET`.
+  It's extremely useful to run arbitrary command in the context of a target.
+  It should come as the last option, as the rest command-line arguments will be
+  treated as command.
+
+  For example:
+  ```sh
+  hmake -x go version
+  hmake -x   # enter an interactive shell inside the container
+  ```
+
+  The commands parsing after `-x` is directly executed by `execvp` system call,
+  not a command to be parsed by shell. So shell syntax like `&&` won't work.
+
+  To run as a shell command
+  ```sh
+  hmake -x /bin/sh -c 'go version || echo "go version failed"'
+  ```
+
+- `--exec-with=TARGET`: Explicitly specify the target for `--exec` instead of
+  fetching from `settings.exec-target`.
+  As it implies `--exec`, it should come as the last option.
+
+  For example:
+  ```sh
+  hmake --exec-with=vendor go version
+  ```
+
 - `--json`: Dump execution events to stdout each encoded in single line json
 - `--summary, -s`: Show execution summary before exit
-- `--verbose, -v`: Show execution output to stderr for each target
+- `--quiet, -q`: Suppress output from each target
 - `--rcfile|--no-rcfile`: Load .hmakerc inside project directories, default is true
 - `--color|--no-color`: Explicitly specify print with color/no-color
 - `--emoji|--no-emoji`: Explicitly specify print with emoji/no-emoji
@@ -54,6 +83,14 @@ Common Unix command line option parsing rule is adopted:
 - `--targets`: When specified, print list of target names and exit
 - `--dryrun`: When specified, run targets as normal but without invoking execution drivers (simply mark task Success)
 - `--version`: When specified, print version and exit
+
+The parsing of options stops when `--` is encountered. The rest of arguments will be
+treated as target names. Except `--exec`/`--exec-with` already implies end of
+options parsing, `--` should not be used.
+
+> Note: `--exec`/`--exec-with` doesn't affect the last execution result of the
+> target, though it displays the result and updates the summary. So the target
+> may still be skipped next time if nothing changed.
 
 ## Exit Code
 

@@ -239,14 +239,18 @@ func (r *Runner) Run(sigCh <-chan os.Signal) (result hm.TaskResult, err error) {
 	result = hm.Success
 
 	os.Remove(r.cidFile())
-	if r.Build != "" {
-		err = r.build(sigCh)
-	}
-	if err == nil {
+	if r.Task.Target.Exec {
 		err = r.run(sigCh)
-	}
-	if err == nil && len(r.Commits) > 0 {
-		err = r.commit(sigCh)
+	} else {
+		if r.Build != "" {
+			err = r.build(sigCh)
+		}
+		if err == nil {
+			err = r.run(sigCh)
+		}
+		if err == nil && len(r.Commits) > 0 {
+			err = r.commit(sigCh)
+		}
 	}
 	if err != nil {
 		result = hm.Failure
@@ -331,16 +335,28 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 	dockerCmd := shell.NewArgs("create",
 		"-v", r.canonicalProjectDir()+":"+r.SrcVolume,
 		"-w", filepath.ToSlash(workDir),
-		"--entrypoint", filepath.ToSlash(filepath.Join(r.SrcVolume, hm.WorkFolder,
-			filepath.Base(shell.ScriptFile(r.Task)))),
 		"--cidfile", r.cidFile(),
 	)
+
+	execArgs := r.Task.Target.Args
+	dockerCmd.Add("--entrypoint")
+	if r.Task.Target.Exec {
+		if len(execArgs) > 0 {
+			dockerCmd.Add(execArgs[0])
+			execArgs = execArgs[1:]
+		} else {
+			dockerCmd.Add("/bin/sh")
+		}
+	} else {
+		dockerCmd.Add(filepath.ToSlash(filepath.Join(r.SrcVolume, hm.WorkFolder,
+			filepath.Base(shell.ScriptFile(r.Task)))))
+	}
 
 	// support console
 	var shellTarget shell.Target
 	r.Task.Target.GetExt(&shellTarget)
-
-	if shellTarget.Console {
+	console := r.Task.Target.Exec || shellTarget.Console
+	if console {
 		dockerCmd.Add("-it")
 	} else {
 		dockerCmd.Add("-a", "STDOUT", "-a", "STDERR")
@@ -456,9 +472,13 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 
 	dockerCmd.Add(r.Image)
 
-	script, err := shell.BuildScriptFile(r.Task)
-	if err != nil || script == "" {
-		return err
+	if r.Task.Target.Exec {
+		dockerCmd.Add(execArgs...)
+	} else {
+		script, e := shell.BuildScriptFile(r.Task)
+		if e != nil || script == "" {
+			return e
+		}
 	}
 
 	// create container
@@ -473,14 +493,14 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 	}
 
 	dockerCmd = shell.NewArgs("start", "-a")
-	if shellTarget.Console {
+	if console {
 		dockerCmd.Add("-i")
 	}
 	dockerCmd.Add(r.cid())
 
 	x := r.exec(dockerCmd.Args...)
 
-	if shellTarget.Console {
+	if console {
 		// tty mode, CtrlC is handled by docker client
 		err = x.Run(sigCh)
 	} else {
