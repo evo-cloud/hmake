@@ -1,8 +1,29 @@
 package main
 
-import "github.com/codingbrain/clix.go/flag"
+import (
+	"strings"
 
-func cliDef() *flag.CliDef {
+	"github.com/codingbrain/clix.go/exts/bind"
+	"github.com/codingbrain/clix.go/exts/help"
+	"github.com/codingbrain/clix.go/flag"
+	"github.com/codingbrain/clix.go/term"
+)
+
+type execFilterExt struct {
+}
+
+func (x *execFilterExt) RegisterExt(parser *flag.Parser) {
+	parser.AddParseExt(flag.EvtAssignOpt, x)
+}
+
+func (x *execFilterExt) HandleParseEvent(event string, ctx *flag.ParseContext) {
+	if ctx.Option != nil &&
+		strings.HasPrefix(ctx.Option.Name, "exec") {
+		ctx.ParseEnd()
+	}
+}
+
+func cliDef(cmd *makeCmd) *flag.CliDef {
 	d := &flag.CliDef{
 		Cli: &flag.Command{
 			Name: "hmake",
@@ -71,6 +92,28 @@ func cliDef() *flag.CliDef {
 					Desc:  "Skip the execution of specified target",
 					List:  true,
 					Tags:  map[string]interface{}{"help-var": "TARGET"},
+				},
+				&flag.Option{
+					Name:  "exec",
+					Alias: []string{"x"},
+					Desc: "Execute a shell command in the context of a target.\n" +
+						"The target name must be specified in settings.exec-target " +
+						"or use --exec-with=TARGET.\n" +
+						"It's extremely useful to run arbitrary command in the context " +
+						"of a target.\n" +
+						"It should come as the last option, " +
+						"as the rest command-line arguments will be treated as a shell command.",
+					Example: "hmake -x go version\n" +
+						"hmake -x   # enter an interactive shell\n",
+					Type: "bool",
+				},
+				&flag.Option{
+					Name: "exec-with",
+					Desc: "Explicitly specify the target for --exec instead of fetching " +
+						"from settings.exec-target.\n" +
+						"As it implies --exec, it should come as the last option.",
+					Example: "hmake --exec-with=vendor go version\n",
+					Type:    "string",
 				},
 				&flag.Option{
 					Name:    "rcfile",
@@ -150,5 +193,8 @@ func cliDef() *flag.CliDef {
 		},
 	}
 	d.Normalize()
-	return d
+	return d.Use(term.NewExt()).
+		Use(&execFilterExt{}).
+		Use(bind.NewExt().Bind(cmd)).
+		Use(help.NewExt())
 }

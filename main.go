@@ -15,8 +15,6 @@ import (
 	"github.com/easeway/langx.go/errors"
 	"github.com/ttacon/emoji"
 
-	"github.com/codingbrain/clix.go/exts/bind"
-	"github.com/codingbrain/clix.go/exts/help"
 	"github.com/codingbrain/clix.go/term"
 
 	"github.com/evo-cloud/hmake/docker"
@@ -67,6 +65,7 @@ type taskState struct {
 
 type projectSettings struct {
 	DefaultTargets []string `json:"default-targets"`
+	ExecTarget     string   `json:"exec-target"`
 }
 
 type makeCmd struct {
@@ -79,6 +78,8 @@ type makeCmd struct {
 	RebuildAll     bool     `n:"rebuild-all"`
 	RebuildTargets []string `n:"rebuild-target"`
 	Rebuild        bool
+	Exec           bool
+	ExecWith       string `n:"exec-with"`
 	Skip           []string
 	RcFile         bool
 	JSON           bool
@@ -201,15 +202,6 @@ func (c *makeCmd) Execute(args []string) (err error) {
 		}
 	}
 
-	if len(args) == 0 {
-		p.GetSettings(&c.settings)
-		args = c.settings.DefaultTargets
-		if len(args) == 0 {
-			c.showTargets(p, names, padLen)
-			return fmt.Errorf("No targets selected, please choose at least one from above")
-		}
-	}
-
 	if c.Emoji {
 		faces = facesEmoji
 	}
@@ -219,13 +211,43 @@ func (c *makeCmd) Execute(args []string) (err error) {
 		c.Verbose = true
 	}
 
+	p.GetSettings(&c.settings)
+
+	if c.ExecWith != "" {
+		c.Exec = true
+	} else if c.Exec {
+		c.ExecWith = c.settings.ExecTarget
+		if c.ExecWith == "" {
+			return fmt.Errorf("exec requires settings.exec-target or use --exec-with")
+		}
+	}
+
+	if !c.Exec && len(args) == 0 {
+		args = c.settings.DefaultTargets
+		if len(args) == 0 {
+			c.showTargets(p, names, padLen)
+			return fmt.Errorf("No targets selected, please choose at least one from above")
+		}
+	}
+
 	plan := p.Plan()
 	plan.Env["HMAKE_VERSION"] = Version()
 	plan.OnEvent(c.onEvent)
 	errs := &errors.AggregatedError{}
 	plan.Rebuild(p.Targets.CompleteNames(c.RebuildTargets, errs)...)
 	plan.Skip(p.Targets.CompleteNames(c.Skip, errs)...)
-	requires := p.Targets.CompleteNames(args, errs)
+	var requires []string
+	if c.Exec {
+		requires = p.Targets.CompleteNames([]string{c.ExecWith}, errs)
+		if len(requires) > 0 {
+			t := p.Targets[requires[0]]
+			t.Args = args
+			t.Exec = true
+			plan.Rebuild(requires[0])
+		}
+	} else {
+		requires = p.Targets.CompleteNames(args, errs)
+	}
 	if err = errs.Aggregate(); err != nil {
 		return
 	}
@@ -593,10 +615,5 @@ func init() {
 }
 
 func main() {
-	cliDef().
-		Use(term.NewExt()).
-		Use(bind.NewExt().Bind(&makeCmd{})).
-		Use(help.NewExt()).
-		Parse().
-		Exec()
+	cliDef(&makeCmd{}).Parse().Exec()
 }

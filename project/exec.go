@@ -550,26 +550,28 @@ func (p *ExecPlan) startTask(task *Task) {
 	task.StartTime = time.Now()
 	p.emit(&EvtTaskStart{Task: task})
 
-	skipped := task.CalcSuccessMark()
-	if p.SkippedTargets[task.Name()] {
-		skipped = true
-	} else if p.RebuildAll || p.RebuildTargets[task.Name()] {
-		skipped = false
-	} else if skipped {
-		skipped = task.ValidateArtifacts()
-	}
+	if !task.Target.Exec {
+		skipped := task.CalcSuccessMark()
+		if p.SkippedTargets[task.Name()] {
+			skipped = true
+		} else if p.RebuildAll || p.RebuildTargets[task.Name()] {
+			skipped = false
+		} else if skipped {
+			skipped = task.ValidateArtifacts()
+		}
 
-	if skipped {
-		task.Result = Skipped
-		task.FinishTime = task.StartTime
-		p.finishTask(task)
-		return
-	}
+		if skipped {
+			task.Result = Skipped
+			task.FinishTime = task.StartTime
+			p.finishTask(task)
+			return
+		}
 
-	task.ClearSuccessMark()
-	for name := range task.Target.Activates {
-		if t := p.Tasks[name]; t != nil {
-			t.ClearSuccessMark()
+		task.ClearSuccessMark()
+		for name := range task.Target.Activates {
+			if t := p.Tasks[name]; t != nil {
+				t.ClearSuccessMark()
+			}
 		}
 	}
 
@@ -600,7 +602,7 @@ func (p *ExecPlan) finishTask(task *Task) {
 	task.State = Finished
 	delete(p.RunningTasks, task.Name())
 	p.FinishedTasks = append(p.FinishedTasks, task)
-	if !p.DryRun {
+	if !p.DryRun && !task.Target.Exec {
 		err := task.BuildSuccessMark()
 		if err != nil {
 			p.Logf("IGNORED: %s BuildSuccessMark Error: %v",
@@ -610,7 +612,7 @@ func (p *ExecPlan) finishTask(task *Task) {
 
 	p.emit(&EvtTaskFinish{Task: task})
 
-	if !task.Result.IsOK() {
+	if !task.Result.IsOK() || task.Target.Exec {
 		return
 	}
 

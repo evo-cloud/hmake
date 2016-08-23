@@ -18,8 +18,16 @@ targets:
     cmds:
       - docker version
 
+  exec:
+    description: target for exec
+    after:
+      - builder
+    cmds:
+      - docker version
+
 settings:
   default-targets: [test]
+  exec-target: exec
   docker:
     image: hmake-test-builder:latest
     expose-docker: true

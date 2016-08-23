@@ -101,6 +101,7 @@ func (x *Executor) AddArgs(args ...string) *Executor {
 
 // Mute disables the output
 func (x *Executor) Mute() *Executor {
+	x.Console = false
 	x.Stdout = false
 	x.Stderr = false
 	return x
@@ -108,12 +109,14 @@ func (x *Executor) Mute() *Executor {
 
 // MuteOut disables the stdout
 func (x *Executor) MuteOut() *Executor {
+	x.Console = false
 	x.Stdout = false
 	return x
 }
 
 // MuteErr disables the stderr
 func (x *Executor) MuteErr() *Executor {
+	x.Console = false
 	x.Stderr = false
 	return x
 }
@@ -183,7 +186,7 @@ func Exec(t *hm.Task, command string, args ...string) *Executor {
 	return &Executor{
 		Task:    t,
 		Cmd:     cmd,
-		Console: target.Console,
+		Console: target.Console || t.Target.Exec,
 		Stdout:  true,
 		Stderr:  true,
 	}
