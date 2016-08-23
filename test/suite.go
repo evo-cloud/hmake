@@ -132,6 +132,18 @@ var _ = Describe("HyperMake", func() {
 				Should(MatchError(ContainSubstring("unsupported format")))
 		})
 
+		It("project name is required", func() {
+			_, err := hm.LoadProjectFrom(Fixtures("missing-project-name"), hm.RootFile)
+			Expect(err).
+				Should(MatchError(ContainSubstring("project name is required")))
+		})
+
+		It("checks project name", func() {
+			_, err := hm.LoadProjectFrom(Fixtures("bad-project-name"), hm.RootFile)
+			Expect(err).
+				Should(MatchError(ContainSubstring("invalid character")))
+		})
+
 		It("locates the project", func() {
 			proj := LoadFixtureProject("project0", "subproject", "subdir", "subdir2")
 			Expect(proj.Name).To(Equal("subdir"))
@@ -276,6 +288,14 @@ var _ = Describe("HyperMake", func() {
 	})
 
 	Describe("Target", func() {
+		It("checks target name", func() {
+			_, err := hm.LoadProjectFrom(Fixtures("bad-target-name"), hm.RootFile)
+			Expect(err).
+				Should(MatchError(ContainSubstring("illegal target name")))
+			Expect(err).
+				Should(MatchError(ContainSubstring("must start")))
+		})
+
 		It("gets settings and ext", func() {
 			proj := LoadFixtureProject("project0", "subproject")
 			Expect(proj.Targets).NotTo(BeEmpty())

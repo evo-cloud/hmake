@@ -1,6 +1,8 @@
 ---
 format: hypermake.v0
 
+name: docker-abort
+
 targets:
   abort0:
     image: alpine:3.3

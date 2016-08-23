@@ -1,31 +1,32 @@
 ---
 format: hypermake.v0
 
+name: docker-commit
+
 targets:
-    
+
     commit:
         image: alpine:latest
         cmds:
             - echo "Hello" > /tmp/hello
-        commit: 
+        commit:
             - hmake-test-commit:newtag
             - hmake-test-commit:tag2
-               
+
     verify1:
-        after: 
-            - commit 
+        after:
+            - commit
         image: hmake-test-commit:newtag
         cmds:
-            - test $(cat /tmp/hello) == "Hello" 
+            - test $(cat /tmp/hello) == "Hello"
 
     verify2:
-        after: 
-            - commit 
+        after:
+            - commit
         image: hmake-test-commit:tag2
         cmds:
-            - test $(cat /tmp/hello) == "Hello" 
+            - test $(cat /tmp/hello) == "Hello"
     test:
         after:
             - verify1
             - verify2
-                    

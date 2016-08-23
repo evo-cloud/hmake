@@ -1,4 +1,4 @@
 ---
 format: hypermake.v0
 
-name: load
+name: proj$1

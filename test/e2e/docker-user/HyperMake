@@ -1,6 +1,8 @@
 ---
 format: hypermake.v0
 
+name: docker-user
+
 targets:
   nopatch:
     description: test non-root user mapping

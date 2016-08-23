@@ -1,0 +1,8 @@
+---
+format: hypermake.v0
+
+name: bad-target-name
+
+targets:
+  '0ldName':
+    description: the name is bad

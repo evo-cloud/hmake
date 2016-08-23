@@ -1,6 +1,8 @@
 ---
 format: hypermake.v0
 
+name: docker-cmds-change
+
 targets:
   docker-cmd:
     image: alpine:latest

@@ -1,6 +1,8 @@
 ---
 format: hypermake.v0
 
+name: always-target
+
 targets:
     t0:
         cmds:
