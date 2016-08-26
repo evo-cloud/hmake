@@ -239,6 +239,24 @@ default value is <code>/src</code>.
 As the script is a shell script, the executable <code>/bin/sh</code> must be present in
 the container.</p>
 
+<p>The host side path is translated with the following rule:</p>
+
+<ul>
+<li>It&rsquo;s relative path, it&rsquo;s relative to working directory (property <code>workdir</code>);</li>
+<li>It&rsquo;s absolute path (including starting with <code>~/</code>, <code>~</code> expands to home), it&rsquo;s absolute on the host;</li>
+<li>It starts with <code>-/</code>, it&rsquo;s relative to project root.</li>
+</ul>
+
+<p>Example:</p>
+
+<pre><code class="language-yaml">targets:
+  volumes:
+    - 'abc:/var/lib/abc'  # host path is $HMAKE_PROJECT_DIR/$HMAKE_TARGET_DIR/abc
+    - '~/.ssh:/root/.ssh' # host path is $HOME/.ssh
+    - '/var/lib:/var/lib' # host path is /var/lib
+    - '-/src:/src'        # host path is $HMAKE_PROJECT_DIR/src
+</code></pre>
+
 <p><em>NOTE</em></p>
 
 <p>On Mac OS, only paths under <code>/Users</code> can be mapped into the container.
@@ -289,7 +307,7 @@ host running <em>hmake</em>.</p>
             <h1 class="brand-title"><a href="https://github.com/evo-cloud/hmake/releases">Releases</a></h1>
             
             <h2 class="brand-tagline">
-                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.1.0rc3">1.1.0rc3</a>
+                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.1.0rc4">1.1.0rc4</a>
             </h2>
             
         </hgroup>
@@ -298,21 +316,21 @@ host running <em>hmake</em>.</p>
             <ul class="nav-list">
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc3/hmake-linux-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc4/hmake-linux-amd64.tar.gz">
                         <i class="os fa fa-linux"></i>
                         <span>linux</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc3/hmake-darwin-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc4/hmake-darwin-amd64.tar.gz">
                         <i class="os fa fa-apple"></i>
                         <span>Mac OS X</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc3/hmake-windows-amd64.zip">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc4/hmake-windows-amd64.zip">
                         <i class="os fa fa-windows"></i>
                         <span>windows</span>
                     </a>

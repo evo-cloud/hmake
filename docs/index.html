@@ -144,7 +144,7 @@ treated as command.</li>
 </code></pre>
 
 <ul>
-<li><code>--exec-with=TARGET</code>: Explicitly specify the target for <code>--exec</code> instead of
+<li><code>--exec-with=TARGET, -X TARGET</code>: Explicitly specify the target for <code>--exec</code> instead of
 fetching from <code>settings.exec-target</code>.
 As it implies <code>--exec</code>, it should come as the last option.</li>
 </ul>
@@ -544,6 +544,24 @@ default value is <code>/src</code>.
 As the script is a shell script, the executable <code>/bin/sh</code> must be present in
 the container.</p>
 
+<p>The host side path is translated with the following rule:</p>
+
+<ul>
+<li>It&rsquo;s relative path, it&rsquo;s relative to working directory (property <code>workdir</code>);</li>
+<li>It&rsquo;s absolute path (including starting with <code>~/</code>, <code>~</code> expands to home), it&rsquo;s absolute on the host;</li>
+<li>It starts with <code>-/</code>, it&rsquo;s relative to project root.</li>
+</ul>
+
+<p>Example:</p>
+
+<pre><code class="language-yaml">targets:
+  volumes:
+    - 'abc:/var/lib/abc'  # host path is $HMAKE_PROJECT_DIR/$HMAKE_TARGET_DIR/abc
+    - '~/.ssh:/root/.ssh' # host path is $HOME/.ssh
+    - '/var/lib:/var/lib' # host path is /var/lib
+    - '-/src:/src'        # host path is $HMAKE_PROJECT_DIR/src
+</code></pre>
+
 <p><em>NOTE</em></p>
 
 <p>On Mac OS, only paths under <code>/Users</code> can be mapped into the container.
@@ -859,7 +877,9 @@ like docker image, workdir, and options for <code>docker run</code>;</li>
 <li><code>before</code>: a list of names of targets which can only execute after this target;</li>
 <li><code>after</code>: a list of names of targets on which this targets depends;</li>
 <li><code>workdir</code>: the current working directory for commands in the target,
-relative to project root;</li>
+relative to <code>.hmake</code> file defining the target;
+if it&rsquo;s absolute (starting with <code>/</code>), it&rsquo;s relative to project root;
+by default, it&rsquo;s the current directory containing the <code>.hmake</code> file.</li>
 <li><code>watches</code>: a list of path/filenames (wildcard supported) whose mtime will be
 checked to determine if the target is out-of-date, without specifying this
 property, the target is automatically skipped if the last execution was successful
@@ -867,7 +887,8 @@ and all dependencies are skipped;</li>
 <li><code>always</code>: always build the target regardless of last execution state and results
 of all dependencies (the <code>.PHONY</code> target in <code>make</code>);</li>
 <li><code>artifacts</code>: a list of files/directory must be present after the execution of
-the target (aka. the output of the target), in relative path to project root.</li>
+the target (aka. the output of the target), in relative path to current <code>.hmake</code>
+file, or if it&rsquo;s absolute path, it&rsquo;s relative to project root.</li>
 </ul>
 
 <p>Other properties are specific to execution driver which executes the target.
@@ -989,7 +1010,7 @@ local development environment.
             <h1 class="brand-title"><a href="https://github.com/evo-cloud/hmake/releases">Releases</a></h1>
             
             <h2 class="brand-tagline">
-                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.1.0rc3">1.1.0rc3</a>
+                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.1.0rc4">1.1.0rc4</a>
             </h2>
             
         </hgroup>
@@ -998,21 +1019,21 @@ local development environment.
             <ul class="nav-list">
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc3/hmake-linux-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc4/hmake-linux-amd64.tar.gz">
                         <i class="os fa fa-linux"></i>
                         <span>linux</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc3/hmake-darwin-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc4/hmake-darwin-amd64.tar.gz">
                         <i class="os fa fa-apple"></i>
                         <span>Mac OS X</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc3/hmake-windows-amd64.zip">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc4/hmake-windows-amd64.zip">
                         <i class="os fa fa-windows"></i>
                         <span>windows</span>
                     </a>

@@ -96,7 +96,7 @@ brew install hmake
 
 &lt;p&gt;Alternatively, download from Github &lt;a href=&#34;https://github.com/evo-cloud/hmake/releases&#34;&gt;releases&lt;/a&gt;&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;curl -s https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc3/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
+&lt;pre&gt;&lt;code&gt;curl -s https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc4/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 chmod a+rx /usr/local/bin/hmake
 &lt;/code&gt;&lt;/pre&gt;
 
@@ -271,7 +271,7 @@ treated as command.&lt;/li&gt;
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;ul&gt;
-&lt;li&gt;&lt;code&gt;--exec-with=TARGET&lt;/code&gt;: Explicitly specify the target for &lt;code&gt;--exec&lt;/code&gt; instead of
+&lt;li&gt;&lt;code&gt;--exec-with=TARGET, -X TARGET&lt;/code&gt;: Explicitly specify the target for &lt;code&gt;--exec&lt;/code&gt; instead of
 fetching from &lt;code&gt;settings.exec-target&lt;/code&gt;.
 As it implies &lt;code&gt;--exec&lt;/code&gt;, it should come as the last option.&lt;/li&gt;
 &lt;/ul&gt;
@@ -651,6 +651,24 @@ default value is &lt;code&gt;/src&lt;/code&gt;.
 As the script is a shell script, the executable &lt;code&gt;/bin/sh&lt;/code&gt; must be present in
 the container.&lt;/p&gt;
 
+&lt;p&gt;The host side path is translated with the following rule:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;It&amp;rsquo;s relative path, it&amp;rsquo;s relative to working directory (property &lt;code&gt;workdir&lt;/code&gt;);&lt;/li&gt;
+&lt;li&gt;It&amp;rsquo;s absolute path (including starting with &lt;code&gt;~/&lt;/code&gt;, &lt;code&gt;~&lt;/code&gt; expands to home), it&amp;rsquo;s absolute on the host;&lt;/li&gt;
+&lt;li&gt;It starts with &lt;code&gt;-/&lt;/code&gt;, it&amp;rsquo;s relative to project root.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Example:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;targets:
+  volumes:
+    - &#39;abc:/var/lib/abc&#39;  # host path is $HMAKE_PROJECT_DIR/$HMAKE_TARGET_DIR/abc
+    - &#39;~/.ssh:/root/.ssh&#39; # host path is $HOME/.ssh
+    - &#39;/var/lib:/var/lib&#39; # host path is /var/lib
+    - &#39;-/src:/src&#39;        # host path is $HMAKE_PROJECT_DIR/src
+&lt;/code&gt;&lt;/pre&gt;
+
 &lt;p&gt;&lt;em&gt;NOTE&lt;/em&gt;&lt;/p&gt;
 
 &lt;p&gt;On Mac OS, only paths under &lt;code&gt;/Users&lt;/code&gt; can be mapped into the container.
@@ -946,7 +964,9 @@ like docker image, workdir, and options for &lt;code&gt;docker run&lt;/code&gt;;
 &lt;li&gt;&lt;code&gt;before&lt;/code&gt;: a list of names of targets which can only execute after this target;&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;after&lt;/code&gt;: a list of names of targets on which this targets depends;&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;workdir&lt;/code&gt;: the current working directory for commands in the target,
-relative to project root;&lt;/li&gt;
+relative to &lt;code&gt;.hmake&lt;/code&gt; file defining the target;
+if it&amp;rsquo;s absolute (starting with &lt;code&gt;/&lt;/code&gt;), it&amp;rsquo;s relative to project root;
+by default, it&amp;rsquo;s the current directory containing the &lt;code&gt;.hmake&lt;/code&gt; file.&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;watches&lt;/code&gt;: a list of path/filenames (wildcard supported) whose mtime will be
 checked to determine if the target is out-of-date, without specifying this
 property, the target is automatically skipped if the last execution was successful
@@ -954,7 +974,8 @@ and all dependencies are skipped;&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;always&lt;/code&gt;: always build the target regardless of last execution state and results
 of all dependencies (the &lt;code&gt;.PHONY&lt;/code&gt; target in &lt;code&gt;make&lt;/code&gt;);&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;artifacts&lt;/code&gt;: a list of files/directory must be present after the execution of
-the target (aka. the output of the target), in relative path to project root.&lt;/li&gt;
+the target (aka. the output of the target), in relative path to current &lt;code&gt;.hmake&lt;/code&gt;
+file, or if it&amp;rsquo;s absolute path, it&amp;rsquo;s relative to project root.&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;Other properties are specific to execution driver which executes the target.
