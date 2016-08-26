@@ -71,7 +71,7 @@ brew install hmake
 Alternatively, download from Github [releases](https://github.com/evo-cloud/hmake/releases)
 
 ```
-curl -s https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc3/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
+curl -s https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc4/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 chmod a+rx /usr/local/bin/hmake
 ```
 
