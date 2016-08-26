@@ -153,6 +153,23 @@ default value is `/src`.
 As the script is a shell script, the executable `/bin/sh` must be present in
 the container.
 
+The host side path is translated with the following rule:
+
+- It's relative path, it's relative to working directory (property `workdir`);
+- It's absolute path (including starting with `~/`, `~` expands to home), it's absolute on the host;
+- It starts with `-/`, it's relative to project root.
+
+Example:
+
+```yaml
+targets:
+  volumes:
+    - 'abc:/var/lib/abc'  # host path is $HMAKE_PROJECT_DIR/$HMAKE_TARGET_DIR/abc
+    - '~/.ssh:/root/.ssh' # host path is $HOME/.ssh
+    - '/var/lib:/var/lib' # host path is /var/lib
+    - '-/src:/src'        # host path is $HMAKE_PROJECT_DIR/src
+```
+
 _NOTE_
 
 On Mac OS, only paths under `/Users` can be mapped into the container.

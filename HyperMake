@@ -165,6 +165,7 @@ settings:
     default-targets:
         - all
     exec-target: vendor
+    exec-shell: /bin/bash
     docker:
         image: hmake-builder:latest
         src-volume: /go/src/github.com/evo-cloud/hmake

@@ -108,7 +108,8 @@ func cliDef(cmd *makeCmd) *flag.CliDef {
 					Type: "bool",
 				},
 				&flag.Option{
-					Name: "exec-with",
+					Name:  "exec-with",
+					Alias: []string{"X"},
 					Desc: "Explicitly specify the target for --exec instead of fetching " +
 						"from settings.exec-target.\n" +
 						"As it implies --exec, it should come as the last option.",

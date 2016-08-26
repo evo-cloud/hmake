@@ -85,6 +85,13 @@ type Project struct {
 	Targets TargetNameMap
 }
 
+// CommonSettings are well known settings
+type CommonSettings struct {
+	DefaultTargets []string `json:"default-targets"`
+	ExecTarget     string   `json:"exec-target"`
+	ExecShell      string   `json:"exec-shell"`
+}
+
 func loadYaml(filename string) (map[string]interface{}, error) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {

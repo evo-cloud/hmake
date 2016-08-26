@@ -64,6 +64,7 @@ func (t *Target) Initialize(name string, project *Project) {
 // IsTransit indicates the targets doesn't have actual work to do
 func (t *Target) IsTransit() bool {
 	return t.ExecDriver == "" &&
+		!t.Exec &&
 		len(t.Ext) == 0 &&
 		len(t.Watches) == 0 &&
 		len(t.Artifacts) == 0
@@ -106,9 +107,29 @@ func (t *Target) GetSettingsWithExt(name string, v interface{}) (err error) {
 	return
 }
 
+// CommonSettings retrieve common settings from target local and project
+func (t *Target) CommonSettings() (settings CommonSettings, err error) {
+	if err = t.Project.GetSettings(&settings); err == nil {
+		err = t.File.Local.Get(&settings)
+	}
+	return
+}
+
 // ProjectPath translate a source relative path to project relative path
 func (t *Target) ProjectPath(path string) string {
+	// must use "/" as this path is a relative path inside project
+	// not platform specific path
+	// the "absolute" path is relative to project root
+	if strings.HasPrefix(path, "/") {
+		return strings.Trim(path, "/")
+	}
 	return RelPath(t.File.Source, path)
+}
+
+// BaseDir returns the project relative path relative to file defining the target
+func (t *Target) BaseDir(dirs ...string) string {
+	dirs = append([]string{filepath.Dir(t.File.Source)}, dirs...)
+	return filepath.Join(dirs...)
 }
 
 // WorkingDir returns the project relative working dir for executing the target
