@@ -345,7 +345,14 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 			dockerCmd.Add(execArgs[0])
 			execArgs = execArgs[1:]
 		} else {
-			dockerCmd.Add("/bin/sh")
+			settings, e := r.Task.Target.CommonSettings()
+			if e != nil {
+				return e
+			}
+			if settings.ExecShell == "" {
+				settings.ExecShell = "/bin/sh"
+			}
+			dockerCmd.Add(settings.ExecShell)
 		}
 	} else {
 		dockerCmd.Add(filepath.ToSlash(filepath.Join(r.SrcVolume, hm.WorkFolder,
@@ -433,6 +440,8 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 		hostVol := vol
 		if strings.HasPrefix(hostVol, "~/") {
 			hostVol = filepath.Join(os.Getenv("HOME"), hostVol[2:])
+		} else if strings.HasPrefix(hostVol, "-/") {
+			hostVol = filepath.Join(r.projectDir, hostVol[2:])
 		} else if !filepath.IsAbs(hostVol) {
 			hostVol = filepath.Join(r.projectDir, r.Task.Target.WorkingDir(vol))
 		}

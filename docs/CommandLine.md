@@ -63,7 +63,7 @@ Common Unix command line option parsing rule is adopted:
   hmake -x /bin/sh -c 'go version || echo "go version failed"'
   ```
 
-- `--exec-with=TARGET`: Explicitly specify the target for `--exec` instead of
+- `--exec-with=TARGET, -X TARGET`: Explicitly specify the target for `--exec` instead of
   fetching from `settings.exec-target`.
   As it implies `--exec`, it should come as the last option.
 

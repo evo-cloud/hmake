@@ -1,0 +1,8 @@
+---
+format: hypermake.v0
+
+targets:
+  rel1:
+    workdir: rel1
+  proj:
+    workdir: /a

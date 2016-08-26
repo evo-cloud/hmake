@@ -201,7 +201,9 @@ Usually, it defines
 - `before`: a list of names of targets which can only execute after this target;
 - `after`: a list of names of targets on which this targets depends;
 - `workdir`: the current working directory for commands in the target,
-  relative to project root;
+  relative to `.hmake` file defining the target;
+  if it's absolute (starting with `/`), it's relative to project root;
+  by default, it's the current directory containing the `.hmake` file.
 - `watches`: a list of path/filenames (wildcard supported) whose mtime will be
   checked to determine if the target is out-of-date, without specifying this
   property, the target is automatically skipped if the last execution was successful
@@ -209,7 +211,8 @@ Usually, it defines
 - `always`: always build the target regardless of last execution state and results
   of all dependencies (the `.PHONY` target in `make`);
 - `artifacts`: a list of files/directory must be present after the execution of
-  the target (aka. the output of the target), in relative path to project root.
+  the target (aka. the output of the target), in relative path to current `.hmake`
+  file, or if it's absolute path, it's relative to project root.
 
 Other properties are specific to execution driver which executes the target.
 The currently supported execution driver is `docker`, please read

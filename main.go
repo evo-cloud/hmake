@@ -63,11 +63,6 @@ type taskState struct {
 	prefix string
 }
 
-type projectSettings struct {
-	DefaultTargets []string `json:"default-targets"`
-	ExecTarget     string   `json:"exec-target"`
-}
-
 type makeCmd struct {
 	// command line options
 	Chdir          string
@@ -95,7 +90,7 @@ type makeCmd struct {
 	DryRun         bool
 	Version        bool
 
-	settings  projectSettings
+	settings  hm.CommonSettings
 	tasks     map[string]*taskState
 	noNewLine string // name of task printed the last output
 	lock      sync.Mutex
@@ -140,7 +135,7 @@ func (c *makeCmd) Execute(args []string) (err error) {
 		}
 	}
 
-	if c.Banner {
+	if c.Banner && (!c.Exec && c.ExecWith == "") {
 		c.showBanner()
 	}
 
@@ -206,11 +201,6 @@ func (c *makeCmd) Execute(args []string) (err error) {
 		faces = facesEmoji
 	}
 
-	// setup verbosity
-	if !c.Quiet {
-		c.Verbose = true
-	}
-
 	p.GetSettings(&c.settings)
 
 	if c.ExecWith != "" {
@@ -220,6 +210,11 @@ func (c *makeCmd) Execute(args []string) (err error) {
 		if c.ExecWith == "" {
 			return fmt.Errorf("exec requires settings.exec-target or use --exec-with")
 		}
+	}
+
+	// setup verbosity
+	if !c.Quiet && !c.Exec {
+		c.Verbose = true
 	}
 
 	if !c.Exec && len(args) == 0 {
@@ -266,7 +261,7 @@ func (c *makeCmd) Execute(args []string) (err error) {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt)
 	err = plan.Execute(ch)
-	if c.Summary {
+	if (!c.Exec || c.Verbose) && c.Summary {
 		c.showSummary(p, plan)
 	}
 
@@ -274,7 +269,9 @@ func (c *makeCmd) Execute(args []string) (err error) {
 		return
 	}
 
-	term.NewPrinter(term.Std).Styles(term.StyleOK).Println(faces[faceGood])
+	if c.Verbose || !c.Exec {
+		term.NewPrinter(term.Std).Styles(term.StyleOK).Println(faces[faceGood])
+	}
 	return
 }
 
@@ -299,7 +296,7 @@ func (c *makeCmd) showTargets(p *hm.Project, names []string, padLen int) {
 		encoded, _ := json.Marshal(data)
 		fmt.Println(string(encoded))
 	} else {
-		settings := &projectSettings{}
+		settings := &hm.CommonSettings{}
 		p.GetSettings(settings)
 
 		out := term.NewPrinter(term.Std)
@@ -340,7 +337,7 @@ func (c *makeCmd) onEvent(event interface{}) {
 			c.printTaskState(e.Task, faceNA, term.StyleLo, "")
 		case hm.Failure, hm.Aborted:
 			c.printTaskState(e.Task, faceErr, term.StyleErr, extra)
-			if !c.Verbose {
+			if !c.Verbose && (!c.Exec || e.Task.Name() != c.ExecWith) {
 				c.printFailedTaskOutput(e.Task)
 			}
 		}
@@ -364,6 +361,13 @@ func (c *makeCmd) onEvent(event interface{}) {
 }
 
 func (c *makeCmd) printTaskState(task *hm.Task, face int, style, extra string) {
+	if !c.Verbose && c.Exec &&
+		(task.Name() == c.ExecWith ||
+			(task.Result != hm.Failure && task.Result != hm.Aborted)) {
+		// suppress state if in exec mode
+		return
+	}
+
 	c.lock.Lock()
 	defer c.lock.Unlock()
 

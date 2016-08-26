@@ -780,7 +780,7 @@ func (t *Task) ValidateArtifacts() bool {
 	}
 	t.Plan.Logf("%s Validating Artifacts", t.Name())
 	for _, artifact := range t.Target.Artifacts {
-		fullPath := filepath.Join(t.Plan.Project.BaseDir, artifact)
+		fullPath := filepath.Join(t.Plan.Project.BaseDir, t.Target.ProjectPath(artifact))
 		if _, err := os.Stat(fullPath); err != nil {
 			t.Plan.Logf("%s invalid artifact %s: %v", t.Name(), artifact, err)
 			return false
@@ -885,7 +885,7 @@ func (t *Task) WorkingDir(dirs ...string) string {
 func (t *Task) EnvVars() []string {
 	return []string{
 		"HMAKE_TARGET=" + t.Name(),
-		"HMAKE_TARGET_DIR=" + t.Target.WorkingDir(),
+		"HMAKE_TARGET_DIR=" + t.Target.BaseDir(),
 	}
 }
 

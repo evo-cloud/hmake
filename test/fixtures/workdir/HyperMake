@@ -1,0 +1,14 @@
+---
+format: hypermake.v0
+
+name: workdir
+
+targets:
+  rel0:
+    workdir: rel0
+
+  'null':
+    after: [rel0]
+
+includes:
+  - subdir/sub.hmake

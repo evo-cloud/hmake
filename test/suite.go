@@ -327,6 +327,14 @@ var _ = Describe("HyperMake", func() {
 			Expect(set.Local1).To(BeEmpty())
 		})
 
+		It("translates workdir", func() {
+			proj := LoadFixtureProject("workdir")
+			Expect(proj.Targets["rel0"].WorkingDir("w")).To(Equal("rel0/w"))
+			Expect(proj.Targets["rel1"].WorkingDir("w")).To(Equal("subdir/rel1/w"))
+			Expect(proj.Targets["proj"].WorkingDir("w")).To(Equal("a/w"))
+			Expect(proj.Targets["null"].WorkingDir("w")).To(Equal("w"))
+		})
+
 		Describe("WatchList", func() {
 			It("builds watch list", func() {
 				proj := LoadFixtureProject("project0", "subproject")
