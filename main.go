@@ -337,7 +337,7 @@ func (c *makeCmd) onEvent(event interface{}) {
 			c.printTaskState(e.Task, faceNA, term.StyleLo, "")
 		case hm.Failure, hm.Aborted:
 			c.printTaskState(e.Task, faceErr, term.StyleErr, extra)
-			if !c.Verbose && (!c.Exec || e.Task.Name() != c.ExecWith) {
+			if !c.Verbose && (!c.Exec || term.Std.IsTTY() || e.Task.Name() != c.ExecWith) {
 				c.printFailedTaskOutput(e.Task)
 			}
 		}
@@ -361,7 +361,7 @@ func (c *makeCmd) onEvent(event interface{}) {
 }
 
 func (c *makeCmd) printTaskState(task *hm.Task, face int, style, extra string) {
-	if !c.Verbose && c.Exec &&
+	if !c.Verbose && !term.Std.IsTTY() && c.Exec &&
 		(task.Name() == c.ExecWith ||
 			(task.Result != hm.Failure && task.Result != hm.Aborted)) {
 		// suppress state if in exec mode
