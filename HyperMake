@@ -7,10 +7,9 @@ description: HyperMake builds your project without pre-requisites
 targets:
     builder:
         description: build the docker image including toolchain
-        build: builder
-        image: hmake-builder:latest
+        build: hack/builder
         watches:
-            - builder
+            - hack/builder
 
     vendor:
         description: pull all vendor packages
@@ -90,6 +89,38 @@ targets:
             - bin/windows/amd64/hmake.exe
             - bin/hmake-windows-amd64.zip
             - bin/hmake-windows-amd64.zip.sha256sum
+
+    image-prep:
+        description: prepare for building hmake docker image
+        after:
+            - hmake-linux-amd64
+        watches:
+            - hack/image
+        cmds:
+            - cp -fr hack/image/Dockerfile bin/linux/Dockerfile
+        artifacts:
+            - bin/linux/Dockerfile
+
+    image:
+        description: hmake docker image
+        after:
+            - image-prep
+        build: bin/linux
+        image: 'evocloud/hmake:latest'
+        tags:
+            - 'evocloud/hmake:1.1.0'
+            - 'evocloud/hmake:1.1'
+            - 'evocloud/hmake:1'
+
+    push:
+        description: push hmake docker image
+        after:
+            - image
+        push:
+            - 'evocloud/hmake:latest'
+            - 'evocloud/hmake:1.1.0'
+            - 'evocloud/hmake:1.1'
+            - 'evocloud/hmake:1'
 
     site:
         description: generate document site

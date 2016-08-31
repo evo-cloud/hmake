@@ -749,8 +749,9 @@ func (t *Task) CalcSuccessMark() bool {
 		return false
 	}
 	prevDigest := strings.TrimSpace(string(content))
-	t.Plan.Logf("%s ExistDigest %s", t.Name(), prevDigest)
-	return t.currentDigest == prevDigest
+	match := t.currentDigest == prevDigest
+	t.Plan.Logf("%s ExistDigest %s, match: %v", t.Name(), prevDigest, match)
+	return match
 }
 
 // ClearSuccessMark removes the success mark

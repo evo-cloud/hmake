@@ -39,6 +39,7 @@ type Runner struct {
 	BuildFrom         string   `json:"build-from"`
 	BuildArgs         []string `json:"build-args"`
 	Commits           []string `json:"commit"`
+	Push              []string `json:"push"`
 	Tags              []string `json:"tags"`
 	Labels            []string `json:"labels"`
 	LabelFiles        []string `json:"label-files"`
@@ -251,6 +252,9 @@ func (r *Runner) Run(sigCh <-chan os.Signal) (result hm.TaskResult, err error) {
 		if err == nil && len(r.Commits) > 0 {
 			err = r.commit(sigCh)
 		}
+		if err == nil && len(r.Push) > 0 {
+			err = r.push(sigCh)
+		}
 	}
 	if err != nil {
 		result = hm.Failure
@@ -313,16 +317,23 @@ func (r *Runner) commit(sigCh <-chan os.Signal) error {
 	if err != nil {
 		return err
 	}
-	var tagCmd *shell.Args
 	for i := 1; i < len(r.Commits); i++ {
-		tagCmd = shell.NewArgs("tag", imageName, r.Commits[i])
-		err = r.exec(tagCmd.Args...).Run(sigCh)
-		if err != nil {
+		tagCmd := shell.NewArgs("tag", imageName, r.Commits[i])
+		if err = r.exec(tagCmd.Args...).Run(sigCh); err != nil {
 			return err
 		}
-		tagCmd = nil
 	}
-	return err
+	return nil
+}
+
+func (r *Runner) push(sigCh <-chan os.Signal) error {
+	for _, img := range r.Push {
+		cmd := shell.NewArgs("push", img)
+		if err := r.exec(cmd.Args...).Run(sigCh); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (r *Runner) run(sigCh <-chan os.Signal) error {
@@ -550,7 +561,7 @@ func (r *Runner) Signature() string {
 	for k, v := range dict {
 		keys = append(keys, k)
 		switch k {
-		case "commit", "tags", "labels", "label-files",
+		case "commit", "push", "tags", "labels", "label-files",
 			"cap-add", "cap-drop", "devices":
 			dict[k] = sortStrs(v.([]string))
 		case "env":
@@ -597,20 +608,20 @@ func (r *Runner) ValidateArtifacts() bool {
 	var images []string
 	if r.Build != "" || r.BuildFrom != "" {
 		images = append(images, r.Image)
-		if len(r.Commits) > 0 {
-			images = append(images, r.Commits...)
-		}
 		if len(r.Tags) > 0 {
 			images = append(images, r.Tags...)
 		}
+	}
+	if len(r.Commits) > 0 {
+		images = append(images, r.Commits...)
+	}
 
-		for _, image := range images {
-			if err := r.docker("inspect", "-f", "{{.Id}}", image); err != nil {
-				r.logf("docker artifact invalid: %s: %v", image, err)
-				return false
-			}
-			r.logf("docker artifact ok: %s", image)
+	for _, image := range images {
+		if err := r.docker("inspect", "-f", "{{.Id}}", image); err != nil {
+			r.logf("docker artifact invalid: %s: %v", image, err)
+			return false
 		}
+		r.logf("docker artifact ok: %s", image)
 	}
 	return true
 }
