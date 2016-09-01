@@ -42,6 +42,8 @@ pre-requisites in your local environment.
 It uses containers to build projects, all pre-requisites are installed cleanly
 and consistently inside the container.&lt;/p&gt;
 
+&lt;p&gt;Please read &lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/docs/UseCases/&#34;&gt;Use Cases&lt;/a&gt; to find out how HyperMake helps.&lt;/p&gt;
+
 &lt;p&gt;&lt;em&gt;Features&lt;/em&gt;&lt;/p&gt;
 
 &lt;ul&gt;
@@ -96,8 +98,7 @@ brew install hmake
 
 &lt;p&gt;Alternatively, download from Github &lt;a href=&#34;https://github.com/evo-cloud/hmake/releases&#34;&gt;releases&lt;/a&gt;&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;curl -s https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc4/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
-chmod a+rx /usr/local/bin/hmake
+&lt;pre&gt;&lt;code&gt;curl -s https://github.com/evo-cloud/hmake/releases/download/v1.1.0/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;If you are on Mac OS, change &lt;code&gt;linux&lt;/code&gt; above to &lt;code&gt;darwin&lt;/code&gt;.
@@ -145,6 +146,8 @@ Summary file is stored as &lt;code&gt;hmake.summary.json&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;Please read the following documents if more detailed information is needed&lt;/p&gt;
 
 &lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/docs/QuickStart/&#34;&gt;Quick Start&lt;/a&gt; is a step-by-step guide to write your first
+HyperMake file for your project;&lt;/li&gt;
 &lt;li&gt;References are list of specifications including
 
 &lt;ul&gt;
@@ -745,7 +748,72 @@ the cross complication.&lt;/p&gt;&lt;/li&gt;
 &lt;strong&gt;A&lt;/strong&gt;: Depending. If it&amp;rsquo;s a project in Go, yes. If it depends on native Mac OS
 libraries, it&amp;rsquo;s possible when cross compiling toolchain and libraries are
 installed on Linux.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;Q&lt;/strong&gt;: Why target is skipped but output file is not present?&lt;br&gt;
+&lt;strong&gt;A&lt;/strong&gt;: Property &lt;code&gt;artifacts&lt;/code&gt; is not specified in the target. &lt;em&gt;HyperMake&lt;/em&gt; checks
+both input and output files to determine if a target is up-to-date. Property
+&lt;code&gt;watches&lt;/code&gt; lists the input files whose last modification time is checked, and
+property &lt;code&gt;artifacts&lt;/code&gt; lists the output files whose presence is checked.
+If &lt;code&gt;artifacts&lt;/code&gt; is not specified, &lt;em&gt;HyperMake&lt;/em&gt; assumes the target doesn&amp;rsquo;t generate
+output files.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;Q&lt;/strong&gt;: What&amp;rsquo;s the &lt;code&gt;artifacts&lt;/code&gt; if the target doesn&amp;rsquo;t output files?&lt;br&gt;
+&lt;strong&gt;A&lt;/strong&gt;: No need to specify &lt;code&gt;artifacts&lt;/code&gt; if there&amp;rsquo;s no output file. Some targets
+like docker build doesn&amp;rsquo;t output files, it will automatically check if the
+image exists. To explicitly rebuild the target, use &lt;code&gt;-r TARGET&lt;/code&gt;, &lt;code&gt;-b&lt;/code&gt; or &lt;code&gt;-R&lt;/code&gt;
+options.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;Q&lt;/strong&gt;: I want to run some commands, which are specific to my local environment,
+before certain targets. But I don&amp;rsquo;t want to put them in &lt;code&gt;HyperMake&lt;/code&gt; file.&lt;br&gt;
+&lt;strong&gt;A&lt;/strong&gt;: You can create a &lt;code&gt;.hmakerc&lt;/code&gt; in project root, and exclude that file using
+&lt;code&gt;.gitignore&lt;/code&gt;. The &lt;code&gt;settings&lt;/code&gt; in &lt;code&gt;.hmakerc&lt;/code&gt; will override those in &lt;code&gt;HyperMake&lt;/code&gt;
+and use &lt;code&gt;before&lt;/code&gt; to inject your local targets into &lt;code&gt;HyperMake&lt;/code&gt;, e.g.&lt;/p&gt;&lt;/li&gt;
 &lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;  ---
+  format: hypermake.v0
+  targets:
+    pre-build:
+      description: my local task before build
+      before:
+        - build
+      cmds:
+        - do something
+  settings:
+    property: my-value
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Q&lt;/strong&gt;: How to map a volume from a folder relative to project root?&lt;br&gt;
+&lt;strong&gt;A&lt;/strong&gt;: In top-level &lt;code&gt;HyperMake&lt;/code&gt;, use relative path for source of the volume,
+in &lt;code&gt;*.hmake&lt;/code&gt; files under sub-directories, prefix &lt;code&gt;-/&lt;/code&gt; to a relative path. E.g.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;  targets:
+    example:
+      volumes:
+        - &#39;-/run:/var/run&#39;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Anyway, in &lt;code&gt;volumes&lt;/code&gt;, prefix &lt;code&gt;-/&lt;/code&gt; can always be used to indicate a path
+  relative to project root. Please read &lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/docs/DockerDriver/&#34;&gt;Docker Driver&lt;/a&gt; for
+  details.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;Q&lt;/strong&gt;: Where can I find the output of my target after running &lt;code&gt;hmake&lt;/code&gt;?&lt;br&gt;
+&lt;strong&gt;A&lt;/strong&gt;: &lt;code&gt;hmake&lt;/code&gt; creates a hidden folder &lt;code&gt;.hmake&lt;/code&gt; under project root. The output
+of a target is saved in &lt;code&gt;.hmake/TARGET.log&lt;/code&gt;.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;Q&lt;/strong&gt;: Does &lt;code&gt;hmake&lt;/code&gt; print logs?&lt;br&gt;
+&lt;strong&gt;A&lt;/strong&gt;: Yes. &lt;code&gt;hmake&lt;/code&gt; writes its own debug logs in &lt;code&gt;.hmake/hmake.debug.log&lt;/code&gt;.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;Q&lt;/strong&gt;: What&amp;rsquo;re the recommended entries in &lt;code&gt;.gitignore&lt;/code&gt;?&lt;br&gt;
+&lt;strong&gt;A&lt;/strong&gt;: Put the following entries in &lt;code&gt;.gitignore&lt;/code&gt;:&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code&gt;  .hmake
+  .hmakerc
+&lt;/code&gt;&lt;/pre&gt;
 </description>
     </item>
     
@@ -1065,6 +1133,319 @@ The &lt;code&gt;.hmakerc&lt;/code&gt; has the same format as &lt;code&gt;HyperMa
 used to override settings and inject targets to satisfy the special needs of
 local development environment.
 &lt;code&gt;.hmakerc&lt;/code&gt; should be included in &lt;code&gt;.gitignore&lt;/code&gt; file.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>http://evo-cloud.github.com/hmake/docs/QuickStart/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/docs/QuickStart/</guid>
+      <description>
+
+&lt;h1 id=&#34;quick-start-guide&#34;&gt;Quick Start Guide&lt;/h1&gt;
+
+&lt;p&gt;This is a guide to write a HyperMake file for your project for the first time.&lt;/p&gt;
+
+&lt;h2 id=&#34;before-start&#34;&gt;Before Start&lt;/h2&gt;
+
+&lt;p&gt;You need a project, of course. Let&amp;rsquo;s make a simple &lt;em&gt;Hello World&lt;/em&gt; C++ project,
+and see how HyperMake can help.&lt;/p&gt;
+
+&lt;p&gt;Here&amp;rsquo;s the project directory layout:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;ProjectRoot
+  |
+  +--inc/
+  +--src/
+      +--hello.cpp
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;In &lt;code&gt;hello.cpp&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-cpp&#34;&gt;#include &amp;lt;iostream&amp;gt;
+
+int main(int argc, char *argv[]) {
+    std::cout &amp;lt;&amp;lt; &amp;quot;Hello World!&amp;quot; &amp;lt;&amp;lt; std::endl;
+    return 0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;To build it, use &lt;code&gt;g++ -o hello src/hello.cpp&lt;/code&gt;. You will need toolchain installed.
+Now, let&amp;rsquo;s create a &lt;code&gt;HyperMake&lt;/code&gt; to simplify the build.&lt;/p&gt;
+
+&lt;h2 id=&#34;create-hypermake&#34;&gt;Create &lt;code&gt;HyperMake&lt;/code&gt;&lt;/h2&gt;
+
+&lt;p&gt;Create a file called &lt;code&gt;HyperMake&lt;/code&gt; under &lt;code&gt;ProjectRoot&lt;/code&gt;.
+It&amp;rsquo;s a &lt;em&gt;YAML&lt;/em&gt; file, so let&amp;rsquo;s start with:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;---
+format: hypermake.v0
+name: hello
+description: The Hello World Project
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The first line &lt;code&gt;---&lt;/code&gt; is optional but recommended, as YAML parser will treat it
+as the beginning of a new document.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;format&lt;/code&gt; is required and must be assigned with &lt;code&gt;hypermake.v0&lt;/code&gt;.
+&lt;em&gt;hmake&lt;/em&gt; only parses YAML files with &lt;code&gt;format: hypermake.v0&lt;/code&gt;.
+&lt;code&gt;name&lt;/code&gt; specifies the project name, which is required.
+&lt;code&gt;description&lt;/code&gt; gives more information about the project. It&amp;rsquo;s optional.&lt;/p&gt;
+
+&lt;h2 id=&#34;adding-targets&#34;&gt;Adding targets&lt;/h2&gt;
+
+&lt;p&gt;The most important part is the section defining targets:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;---
+format: hypermake.v0
+name: hello
+description: The Hello World Project
+
+targets:
+  build:
+    description: build hello binary
+    image: &#39;gcc:4.9&#39;
+    cmds:
+      - g++ -o hello src/hello.cpp
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We defined one target above: &lt;code&gt;build&lt;/code&gt;. It has three properties:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;description&lt;/code&gt;: a brief intro about what the target does;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;image&lt;/code&gt;: the docker image used to create the container and run commands;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;cmds&lt;/code&gt;: a list of commands to execute inside the container.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Now, we can use &lt;code&gt;hmake build&lt;/code&gt; to build the project, and type&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;./hello
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;to show &lt;code&gt;Hello World&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Under the hood, &lt;code&gt;hmake&lt;/code&gt; creates a container temporarily, and maps current project
+root to &lt;code&gt;/src&lt;/code&gt; inside container and run the commands inside the container.&lt;/p&gt;
+
+&lt;p&gt;Are you feeling boring type &lt;code&gt;hmake build&lt;/code&gt; every time? Why not just &lt;code&gt;hmake&lt;/code&gt;?
+Let&amp;rsquo;s move on with default targets.&lt;/p&gt;
+
+&lt;h2 id=&#34;settings&#34;&gt;Settings&lt;/h2&gt;
+
+&lt;p&gt;The default targets can be specified inside &lt;code&gt;settings&lt;/code&gt; section:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;---
+format: hypermake.v0
+name: hello
+description: The Hello World Project
+
+targets:
+  build:
+    description: build hello binary
+    image: &#39;gcc:4.9&#39;
+    cmds:
+      - g++ -o hello src/hello.cpp
+
+settings:
+  default-targets:
+    - build
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;With &lt;code&gt;default-targets&lt;/code&gt; specified in &lt;code&gt;settings&lt;/code&gt;, we can type &lt;code&gt;hmake&lt;/code&gt; without
+arguments and it will run targets defined in &lt;code&gt;default-targets&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;The &lt;code&gt;settings&lt;/code&gt; section defines properties which are common to all targets.
+For example, we can define common properties for &lt;code&gt;docker&lt;/code&gt;. Let&amp;rsquo;s move &lt;code&gt;image&lt;/code&gt;
+property to settings:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;---
+format: hypermake.v0
+name: hello
+description: The Hello World Project
+
+targets:
+  build:
+    description: build hello binary
+    cmds:
+      - g++ -o hello src/hello.cpp
+
+settings:
+  default-targets:
+    - build
+  docker:
+    image: &#39;gcc:4.9&#39;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;As we moved &lt;code&gt;image&lt;/code&gt; to &lt;code&gt;settings/docker&lt;/code&gt;, we can remove &lt;code&gt;images&lt;/code&gt; from target
+&lt;code&gt;build&lt;/code&gt;. And all targets will have &lt;code&gt;image: &#39;gcc:4.9&#39;&lt;/code&gt; by default.&lt;/p&gt;
+
+&lt;h2 id=&#34;watches-and-artifacts&#34;&gt;Watches and Artifacts&lt;/h2&gt;
+
+&lt;p&gt;Let&amp;rsquo;s do some tricks here: &lt;code&gt;touch src/hello.cpp&lt;/code&gt; or modify the file, and then
+type &lt;code&gt;hmake&lt;/code&gt;. You will see the &lt;code&gt;build&lt;/code&gt; target is skipped:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;HyperMake v1.1.0 https://github.com/evo-cloud/hmake
+
+=&amp;gt; build 21:56:42.277
+:] build
+╔══════╤═══════╤════════╤════════════╤════════════╤═════╗
+║Target│Result │Duration│Start       │Finish      │Error║
+╠══════╪═══════╪════════╪════════════╪════════════╪═════╣
+║build │Skipped│        │21:56:42.277│21:56:42.277│     ║
+╚══════╧═══════╧════════╧════════════╧════════════╧═════╝
+OK
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This is definitely not what we want. The problem is &lt;em&gt;hmake&lt;/em&gt; doesn&amp;rsquo;t know which
+files are input and which are output. Let&amp;rsquo;s tell &lt;em&gt;hmake&lt;/em&gt; by adding &lt;code&gt;watches&lt;/code&gt; and
+&lt;code&gt;artifacts&lt;/code&gt; to target &lt;code&gt;build&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;targets:
+  build:
+    description: build hello binary
+    watches:
+      - inc
+      - src
+    cmds:
+      - g++ -o hello src/hello.cpp
+    artifacts:
+      - hello
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The items in &lt;code&gt;watches&lt;/code&gt; can be a path to a directory or a file, or with wildcards
+matching a list of files/directories. If the item is a directory, all sub-directories
+and files are watched recursively.
+&lt;code&gt;artifacts&lt;/code&gt; lists the output files. &lt;em&gt;hmake&lt;/em&gt; rebuilds the target if any of the
+artifacts is missing. Wildcard is not allowed here, and directory is not matched
+recursively.&lt;/p&gt;
+
+&lt;p&gt;Some targets doesn&amp;rsquo;t require input files or generate output files. In this case
+command line options can be used to explicitly rebuild the target: &lt;code&gt;-R&lt;/code&gt;, &lt;code&gt;-r&lt;/code&gt;, or
+&lt;code&gt;-b&lt;/code&gt;. See &lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/docs/CommandLine/&#34;&gt;Command Line&lt;/a&gt; for details.&lt;/p&gt;
+
+&lt;h2 id=&#34;dependencies&#34;&gt;Dependencies&lt;/h2&gt;
+
+&lt;p&gt;As the project is so simple that we can use an existing docker image &lt;code&gt;gcc:4.9&lt;/code&gt; which
+contains toolchain we need.
+However in most cases, the existing docker images are not always good enough, and
+we want to install extra bits to build the project.
+Then we need to build our own toolchain image.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s use &lt;code&gt;cmake&lt;/code&gt; to build our project, by adding &lt;code&gt;CMakeList.txt&lt;/code&gt; under project root:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;cmake_minimum_required(VERSION 2.8.0)
+project(hello CXX)
+include_directories(&amp;quot;inc&amp;quot;)
+add_executable(hello src/hello.cpp)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Then we will need &lt;code&gt;cmake&lt;/code&gt; in toolchain image, let&amp;rsquo;s build one based on &lt;code&gt;gcc:4.9&lt;/code&gt;.
+Create a folder &lt;code&gt;toolchain&lt;/code&gt; under project root and put a &lt;code&gt;Dockerfile&lt;/code&gt; inside it:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;FROM gcc:4.9
+RUN apt-get update &amp;amp;&amp;amp; apt-get install -y cmake &amp;amp;&amp;amp; apt-get clean
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And update &lt;code&gt;HyperMake&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;---
+format: hypermake.v0
+name: hello
+description: The Hello World Project
+
+targets:
+  toolchain:
+    description: build our own toolchain image
+    watches:
+      - toolchain
+    build: toolchain
+
+  build:
+    description: build hello binary
+    after:
+      - toolchain
+    watches:
+      - inc
+      - src
+    cmds:
+      - rm -fr rel &amp;amp;&amp;amp; mkdir -p rel
+      - cd rel &amp;amp;&amp;amp; cmake .. &amp;amp;&amp;amp; make
+    artifacts:
+      - rel/hello
+
+settings:
+  default-targets:
+    - build
+  docker:
+    image: &#39;cmake-gcc:4.9&#39;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Target &lt;code&gt;toolchain&lt;/code&gt; is added, with property &lt;code&gt;build&lt;/code&gt;, &lt;em&gt;hmake&lt;/em&gt; knows to build a
+docker image, using &lt;code&gt;toolchain/Dockerfile&lt;/code&gt;. And as &lt;code&gt;image: cmake-gcc:4.9&lt;/code&gt; is specified
+in &lt;code&gt;settings&lt;/code&gt;, the built image will be &lt;code&gt;cmake-gcc:4.9&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;In target &lt;code&gt;build&lt;/code&gt;, &lt;code&gt;after&lt;/code&gt; specifies &lt;code&gt;toolchain&lt;/code&gt; must succeed before &lt;code&gt;build&lt;/code&gt; is able
+to run. Because &lt;code&gt;build&lt;/code&gt; will use the image &lt;code&gt;cmake-gcc:4.9&lt;/code&gt; generated by &lt;code&gt;toolchain&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Now, type &lt;code&gt;hmake&lt;/code&gt; and it will first run &lt;code&gt;toolchain&lt;/code&gt; to build &lt;code&gt;cmake-gcc:4.9&lt;/code&gt; and
+the run &lt;code&gt;build&lt;/code&gt; to call &lt;code&gt;cmake&lt;/code&gt; to build the binary.&lt;/p&gt;
+
+&lt;h2 id=&#34;more&#34;&gt;More&lt;/h2&gt;
+
+&lt;p&gt;The above covers the basic features of &lt;em&gt;HyperMake&lt;/em&gt;.
+There are a lot more useful features.
+Please read documents listed in &lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/README/&#34;&gt;README&lt;/a&gt; for more details, and take
+a look at &lt;code&gt;examples&lt;/code&gt; for real samples.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>http://evo-cloud.github.com/hmake/docs/UseCases/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/docs/UseCases/</guid>
+      <description>
+
+&lt;h1 id=&#34;how-hypermake-helps-make-life-easier&#34;&gt;How HyperMake Helps Make Life Easier&lt;/h1&gt;
+
+&lt;h2 id=&#34;on-board-new-team-member&#34;&gt;On-board New Team Member&lt;/h2&gt;
+
+&lt;p&gt;Most software projects have complicated requirements to setup a development
+environment. There are always a list of software to install, including a
+specific version of toolchain, specific versions of libraries, etc.&lt;/p&gt;
+
+&lt;p&gt;The new member on-board experience often suffers, and usually takes days up to
+weeks.&lt;/p&gt;
+
+&lt;p&gt;With &lt;em&gt;HyperMake&lt;/em&gt;, the on-board experience is simplest. The new member only need
+to install &lt;a href=&#34;https://www.docker.com&#34;&gt;docker&lt;/a&gt; and &lt;code&gt;hmake&lt;/code&gt; executable.
+Then the project will be built smoothly.&lt;/p&gt;
+
+&lt;h2 id=&#34;deliver-an-open-source-project&#34;&gt;Deliver an Open Source Project&lt;/h2&gt;
+
+&lt;p&gt;&lt;em&gt;Compiling from source&lt;/em&gt; is challenging work for most of people.
+However, it&amp;rsquo;s unavoidable if new features are required and a pre-built package is
+not available.
+If the project is built using &lt;em&gt;HyperMake&lt;/em&gt;, it makes &lt;em&gt;compiling from source&lt;/em&gt; the
+simplest thing on the world.&lt;/p&gt;
+
+&lt;h2 id=&#34;build-test-product-consistently&#34;&gt;Build/Test Product Consistently&lt;/h2&gt;
+
+&lt;p&gt;People often complain &lt;em&gt;environment issue&lt;/em&gt; when building/testing a software product.
+Because the &lt;em&gt;environments&lt;/em&gt; (toolchain, libraries) can&amp;rsquo;t always be identical from
+developer to developer. Things work fine in one environment will likely be
+broken in another environment.
+With help of &lt;em&gt;HyperMake&lt;/em&gt;, the product is always built/tested in a clean and consistent
+way because the same docker image is used across all different environments.&lt;/p&gt;
+
+&lt;h2 id=&#34;platform-independent-development&#34;&gt;Platform-independent Development&lt;/h2&gt;
+
+&lt;p&gt;With &lt;em&gt;HyperMake&lt;/em&gt;, it no longer requires developers work on specific platform.
+As long as the project can be built on Linux, the developer is free to choose working
+on Linux/Mac OS/Windows.&lt;/p&gt;
 </description>
     </item>
     

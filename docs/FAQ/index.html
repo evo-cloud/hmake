@@ -118,7 +118,72 @@ the cross complication.</p></li>
 <strong>A</strong>: Depending. If it&rsquo;s a project in Go, yes. If it depends on native Mac OS
 libraries, it&rsquo;s possible when cross compiling toolchain and libraries are
 installed on Linux.</p></li>
+
+<li><p><strong>Q</strong>: Why target is skipped but output file is not present?<br>
+<strong>A</strong>: Property <code>artifacts</code> is not specified in the target. <em>HyperMake</em> checks
+both input and output files to determine if a target is up-to-date. Property
+<code>watches</code> lists the input files whose last modification time is checked, and
+property <code>artifacts</code> lists the output files whose presence is checked.
+If <code>artifacts</code> is not specified, <em>HyperMake</em> assumes the target doesn&rsquo;t generate
+output files.</p></li>
+
+<li><p><strong>Q</strong>: What&rsquo;s the <code>artifacts</code> if the target doesn&rsquo;t output files?<br>
+<strong>A</strong>: No need to specify <code>artifacts</code> if there&rsquo;s no output file. Some targets
+like docker build doesn&rsquo;t output files, it will automatically check if the
+image exists. To explicitly rebuild the target, use <code>-r TARGET</code>, <code>-b</code> or <code>-R</code>
+options.</p></li>
+
+<li><p><strong>Q</strong>: I want to run some commands, which are specific to my local environment,
+before certain targets. But I don&rsquo;t want to put them in <code>HyperMake</code> file.<br>
+<strong>A</strong>: You can create a <code>.hmakerc</code> in project root, and exclude that file using
+<code>.gitignore</code>. The <code>settings</code> in <code>.hmakerc</code> will override those in <code>HyperMake</code>
+and use <code>before</code> to inject your local targets into <code>HyperMake</code>, e.g.</p></li>
 </ul>
+
+<pre><code class="language-yaml">  ---
+  format: hypermake.v0
+  targets:
+    pre-build:
+      description: my local task before build
+      before:
+        - build
+      cmds:
+        - do something
+  settings:
+    property: my-value
+</code></pre>
+
+<ul>
+<li><strong>Q</strong>: How to map a volume from a folder relative to project root?<br>
+<strong>A</strong>: In top-level <code>HyperMake</code>, use relative path for source of the volume,
+in <code>*.hmake</code> files under sub-directories, prefix <code>-/</code> to a relative path. E.g.</li>
+</ul>
+
+<pre><code class="language-yaml">  targets:
+    example:
+      volumes:
+        - '-/run:/var/run'
+</code></pre>
+
+<p>Anyway, in <code>volumes</code>, prefix <code>-/</code> can always be used to indicate a path
+  relative to project root. Please read <a href="/hmake/docs/DockerDriver/">Docker Driver</a> for
+  details.</p>
+
+<ul>
+<li><p><strong>Q</strong>: Where can I find the output of my target after running <code>hmake</code>?<br>
+<strong>A</strong>: <code>hmake</code> creates a hidden folder <code>.hmake</code> under project root. The output
+of a target is saved in <code>.hmake/TARGET.log</code>.</p></li>
+
+<li><p><strong>Q</strong>: Does <code>hmake</code> print logs?<br>
+<strong>A</strong>: Yes. <code>hmake</code> writes its own debug logs in <code>.hmake/hmake.debug.log</code>.</p></li>
+
+<li><p><strong>Q</strong>: What&rsquo;re the recommended entries in <code>.gitignore</code>?<br>
+<strong>A</strong>: Put the following entries in <code>.gitignore</code>:</p></li>
+</ul>
+
+<pre><code>  .hmake
+  .hmakerc
+</code></pre>
 
     </div>
     
@@ -148,7 +213,7 @@ installed on Linux.</p></li>
             <h1 class="brand-title"><a href="https://github.com/evo-cloud/hmake/releases">Releases</a></h1>
             
             <h2 class="brand-tagline">
-                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.1.0rc4">1.1.0rc4</a>
+                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.1.0">1.1.0</a>
             </h2>
             
         </hgroup>
@@ -157,21 +222,21 @@ installed on Linux.</p></li>
             <ul class="nav-list">
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc4/hmake-linux-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0/hmake-linux-amd64.tar.gz">
                         <i class="os fa fa-linux"></i>
                         <span>linux</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc4/hmake-darwin-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0/hmake-darwin-amd64.tar.gz">
                         <i class="os fa fa-apple"></i>
                         <span>Mac OS X</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc4/hmake-windows-amd64.zip">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.0/hmake-windows-amd64.zip">
                         <i class="os fa fa-windows"></i>
                         <span>windows</span>
                     </a>

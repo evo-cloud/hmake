@@ -63,7 +63,7 @@
 <section class="post">
     <header class="post-header">
 
-        <a href="http://evo-cloud.github.com/hmake/examples/drone/README/" class="post-title"></a>
+        <a href="http://evo-cloud.github.com/hmake/docs/UseCases/" class="post-title"></a>
 
         <p class="post-meta">
             
@@ -74,42 +74,43 @@
     <div class="post-description">
         
 
-<h1 id="example-cross-build-drone">Example - Cross build Drone</h1>
+<h1 id="how-hypermake-helps-make-life-easier">How HyperMake Helps Make Life Easier</h1>
 
-<p>This example demonstrates how to use HyperMake to cross build
-<a href="https://github.com/drone/drone">drone</a> for different platforms.</p>
+<h2 id="on-board-new-team-member">On-board New Team Member</h2>
 
-<h2 id="get-started">Get Started</h2>
+<p>Most software projects have complicated requirements to setup a development
+environment. There are always a list of software to install, including a
+specific version of toolchain, specific versions of libraries, etc.</p>
 
-<pre><code class="language-sh">hmake -sv
-</code></pre>
+<p>The new member on-board experience often suffers, and usually takes days up to
+weeks.</p>
 
-<h2 id="how-it-works">How it works</h2>
+<p>With <em>HyperMake</em>, the on-board experience is simplest. The new member only need
+to install <a href="https://www.docker.com">docker</a> and <code>hmake</code> executable.
+Then the project will be built smoothly.</p>
 
-<p>Simply a few steps:</p>
+<h2 id="deliver-an-open-source-project">Deliver an Open Source Project</h2>
 
-<ul>
-<li>Build a docker image containing all tools</li>
-<li>Install dependencies (Go get)</li>
-<li>Git clone latest source code</li>
-<li>Go generate</li>
-<li>Go build for (in parallel)
+<p><em>Compiling from source</em> is challenging work for most of people.
+However, it&rsquo;s unavoidable if new features are required and a pre-built package is
+not available.
+If the project is built using <em>HyperMake</em>, it makes <em>compiling from source</em> the
+simplest thing on the world.</p>
 
-<ul>
-<li>linux-amd64</li>
-<li>linux-arm64</li>
-<li>linux-arm</li>
-<li>windows-amd64</li>
-<li>darwin-amd64</li>
-</ul></li>
-</ul>
+<h2 id="build-test-product-consistently">Build/Test Product Consistently</h2>
 
-<p>The output is under <code>release/OS/ARCH/drone</code>.</p>
+<p>People often complain <em>environment issue</em> when building/testing a software product.
+Because the <em>environments</em> (toolchain, libraries) can&rsquo;t always be identical from
+developer to developer. Things work fine in one environment will likely be
+broken in another environment.
+With help of <em>HyperMake</em>, the product is always built/tested in a clean and consistent
+way because the same docker image is used across all different environments.</p>
 
-<h2 id="notes">Notes</h2>
+<h2 id="platform-independent-development">Platform-independent Development</h2>
 
-<p>The <code>go generate</code> step requires <code>sassc</code> which is built from source in the first
-step building docker image. See <code>builder.Dockerfile</code> for details.</p>
+<p>With <em>HyperMake</em>, it no longer requires developers work on specific platform.
+As long as the project can be built on Linux, the developer is free to choose working
+on Linux/Mac OS/Windows.</p>
 
     </div>
     
