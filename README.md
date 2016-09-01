@@ -22,6 +22,8 @@ pre-requisites in your local environment.
 It uses containers to build projects, all pre-requisites are installed cleanly
 and consistently inside the container.
 
+Please read [Use Cases](docs/UseCases.md) to find out what HyperMake helps.
+
 _Features_
 
 - Brings back the experience of _make_
@@ -71,8 +73,7 @@ brew install hmake
 Alternatively, download from Github [releases](https://github.com/evo-cloud/hmake/releases)
 
 ```
-curl -s https://github.com/evo-cloud/hmake/releases/download/v1.1.0rc4/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
-chmod a+rx /usr/local/bin/hmake
+curl -s https://github.com/evo-cloud/hmake/releases/download/v1.1.0/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 ```
 
 If you are on Mac OS, change `linux` above to `darwin`.
@@ -120,6 +121,8 @@ Summary file is stored as `hmake.summary.json`.
 
 Please read the following documents if more detailed information is needed
 
+- [Quick Start](docs/QuickStart.md) is a step-by-step guide to write your first
+  HyperMake file for your project;
 - References are list of specifications including
   - [File Format](docs/FileFormat.md) defines the format of _hmake_ files;
   - [Command line](docs/CommandLine.md) specification;
@@ -151,6 +154,11 @@ See [Docker Driver](docs/DockerDriver.md) for details.
 If you meet any issues or have specific problems, please check
 [FAQ and Best Practices](docs/FAQ.md) if there's already a solution.
 Feel free to email the MAINTAINERS for any questions.
+
+## References
+
+See [References](docs/References.md) for some real projects using _HyperMake_.
+They are good samples of using _HyperMake_.
 
 ## License
 
