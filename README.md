@@ -22,7 +22,7 @@ pre-requisites in your local environment.
 It uses containers to build projects, all pre-requisites are installed cleanly
 and consistently inside the container.
 
-Please read [Use Cases](docs/UseCases.md) to find out what HyperMake helps.
+Please read [Use Cases](docs/UseCases.md) to find out how HyperMake helps.
 
 _Features_
 
@@ -154,11 +154,6 @@ See [Docker Driver](docs/DockerDriver.md) for details.
 If you meet any issues or have specific problems, please check
 [FAQ and Best Practices](docs/FAQ.md) if there's already a solution.
 Feel free to email the MAINTAINERS for any questions.
-
-## References
-
-See [References](docs/References.md) for some real projects using _HyperMake_.
-They are good samples of using _HyperMake_.
 
 ## License
 
