@@ -1,12 +1,16 @@
 package project
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"unicode"
 
 	"github.com/easeway/langx.go/errors"
@@ -26,6 +30,12 @@ const (
 	SummaryFileName = "hmake.summary.json"
 	// LogFileName is the filename of hmake debug log
 	LogFileName = "hmake.debug.log"
+	// WrapperMagic is the magic string at the beginning of the file
+	WrapperMagic = "#hmake-wrapper"
+	// WrapperName is project name for wrapped project
+	WrapperName = "wrapper"
+	// WrapperDesc is project description for wrapped project
+	WrapperDesc = "wrapped HyperMake project"
 	// MaxNameLen restricts the maximum length of project/target name
 	MaxNameLen = 1024
 )
@@ -44,6 +54,8 @@ var (
 	ErrNameFirstChar = fmt.Errorf("name must start from a letter or an underscore")
 	// ErrProjectNameMissing indicates project name is absent
 	ErrProjectNameMissing = fmt.Errorf("project name is required")
+	// ErrWrapperImageMissing indicates image name is missing
+	ErrWrapperImageMissing = fmt.Errorf("image name missing after " + WrapperMagic)
 )
 
 // File defines the content of HyperMake or .hmake file
@@ -65,6 +77,8 @@ type File struct {
 
 	// Source is the relative path to the project
 	Source string `json:"-"`
+	// WrapperTarget specifies the default target in wrapper mode
+	WrapperTarget string `json:"-"`
 }
 
 // Project is the world view of hmake
@@ -142,9 +156,104 @@ func normalizeMap(val interface{}) interface{} {
 	return val
 }
 
+func loadAsWrapper(fn string) (*File, error) {
+	f, err := os.Open(fn)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	rd := bufio.NewReader(f)
+	lineBytes, err := rd.ReadBytes('\n')
+	if err != nil && err != io.EOF {
+		return nil, err
+	}
+	if !bytes.HasPrefix(lineBytes, []byte(WrapperMagic+" ")) {
+		return nil, err
+	}
+	line := string(bytes.TrimSpace(lineBytes[len(WrapperMagic)+1:]))
+	tokens := strings.Split(line, " ")
+	if len(tokens) == 0 || tokens[0] == "" {
+		return nil, ErrWrapperImageMissing
+	}
+
+	image := tokens[0]
+
+	projFile := &File{
+		Format:   Format,
+		Name:     WrapperName,
+		Desc:     WrapperDesc,
+		Targets:  make(map[string]*Target),
+		Settings: make(Settings),
+	}
+
+	buildFrom := ""
+	var buildArgs []string
+	for n, token := range tokens[1:] {
+		if token != "" {
+			buildFrom = token
+			buildArgs = tokens[n+1:]
+			break
+		}
+	}
+
+	if buildFrom != "" {
+		t := &Target{
+			Name:    "toolchain",
+			Desc:    "build toolchain image",
+			Watches: []string{buildFrom},
+			Ext: map[string]interface{}{
+				"image": image,
+				"build": buildFrom,
+			},
+		}
+		if len(buildArgs) > 0 {
+			t.Ext["build-args"] = buildArgs
+		}
+		projFile.Targets[t.Name] = t
+	}
+	t := &Target{
+		Name: "build",
+		Desc: "wrapped build target",
+		Ext: map[string]interface{}{
+			"image": image,
+		},
+	}
+	content, err := ioutil.ReadAll(rd)
+	if err != nil {
+		return nil, err
+	}
+	content = bytes.TrimSpace(content)
+	if len(content) > 0 {
+		if bytes.HasPrefix(content, []byte("#!")) {
+			t.Ext["script"] = string(content)
+		} else {
+			t.Ext["script"] = "#!/bin/sh\n" + string(content)
+		}
+	} else {
+		t.Ext["cmds"] = []string{
+			`make "$@"`,
+		}
+	}
+	if buildFrom != "" {
+		t.After = append(t.After, "toolchain")
+	}
+	projFile.Targets[t.Name] = t
+	projFile.WrapperTarget = t.Name
+	projFile.Settings["default-targets"] = []string{t.Name}
+	projFile.Settings["exec-target"] = t.Name
+	return projFile, nil
+}
+
 // LoadFile loads from specified path
-func LoadFile(baseDir, path string) (*File, error) {
-	val, err := loadYaml(filepath.Join(baseDir, path))
+func LoadFile(baseDir, path string, allowWrapper bool) (*File, error) {
+	fn := filepath.Join(baseDir, path)
+	if allowWrapper {
+		if f, err := loadAsWrapper(fn); err != nil || f != nil {
+			return f, err
+		}
+	}
+
+	val, err := loadYaml(fn)
 	if err != nil {
 		return nil, err
 	}
@@ -300,7 +409,7 @@ func (p *Project) Load(path string) (*File, error) {
 			return f, nil
 		}
 	}
-	f, err := LoadFile(p.BaseDir, path)
+	f, err := LoadFile(p.BaseDir, path, len(p.Files) == 0)
 	if err != nil {
 		return nil, err
 	}
@@ -317,6 +426,7 @@ func (p *Project) Load(path string) (*File, error) {
 	}
 	if len(p.Files) == 1 {
 		p.MasterFile.Source = f.Source
+		p.MasterFile.WrapperTarget = f.WrapperTarget
 		p.Name = f.Name
 		err = ValidateProjectName(p.Name)
 	}
@@ -470,4 +580,13 @@ func (p *Project) Summary() (ExecSummary, error) {
 	defer f.Close()
 	var summary ExecSummary
 	return summary, json.NewDecoder(f).Decode(&summary)
+}
+
+// WrapperTarget returns the wrapper target if in wrapper mode
+func (p *Project) WrapperTarget() *Target {
+	name := p.MasterFile.WrapperTarget
+	if name != "" {
+		return p.Targets[name]
+	}
+	return nil
 }

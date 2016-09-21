@@ -6,16 +6,18 @@ versuffix() {
     if [ -f ".release" ]; then
         . .release
     fi
-    if [ -n "$HMAKE_RELEASE" ]; then
-        echo -n ""
-    elif [ -n "$HMAKE_RC" ]; then
-        echo -n "$HMAKE_RC"
+    if [ -n "$RELEASE" ]; then
+        case "$RELEASE" in
+            y|yes|final) return ;;
+            *) echo -n "-$RELEASE" ;;
+        esac
     else
-        local suffix=$(git log -1 --format=%h || true)
+        local suffix=$(git log -1 --format=%h 2>/dev/null || true)
         if [ -n "$suffix" ]; then
-            echo -n -g$suffix
+            test -z "$(git status --porcelain 2>/dev/null || true)" || suffix="${suffix}+"
+            echo -n "-g${suffix}"
         else
-            echo -n dev
+            echo -n -dev
         fi
     fi
 }

@@ -117,17 +117,17 @@ var _ = BeforeSuite(func() {
 var _ = Describe("HyperMake", func() {
 	Describe("Project", func() {
 		It("fails to load file", func() {
-			_, err := hm.LoadFile(Samples(), "invalid-yaml.hmake")
+			_, err := hm.LoadFile(Samples(), "invalid-yaml.hmake", false)
 			Expect(err).ShouldNot(Succeed())
-			_, err = hm.LoadFile(Samples(), "non-exist.hmake")
+			_, err = hm.LoadFile(Samples(), "non-exist.hmake", false)
 			Expect(err).ShouldNot(Succeed())
 		})
 
 		It("checks the format", func() {
-			_, err := hm.LoadFile(Samples(), "missing-format.hmake")
+			_, err := hm.LoadFile(Samples(), "missing-format.hmake", false)
 			Expect(err).
 				Should(MatchError(ContainSubstring("unsupported format")))
-			_, err = hm.LoadFile(Samples(), "bad-format.hmake")
+			_, err = hm.LoadFile(Samples(), "bad-format.hmake", false)
 			Expect(err).
 				Should(MatchError(ContainSubstring("unsupported format")))
 		})

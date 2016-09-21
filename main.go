@@ -24,7 +24,7 @@ import (
 
 const (
 	// Release is the major release version
-	Release = "1.1.0"
+	Release = "1.1.1"
 	// Website is the URL to project website
 	Website = "https://github.com/evo-cloud/hmake"
 
@@ -217,7 +217,7 @@ func (c *makeCmd) Execute(args []string) (err error) {
 		c.Verbose = true
 	}
 
-	if !c.Exec && len(args) == 0 {
+	if !c.Exec && p.WrapperTarget() == nil && len(args) == 0 {
 		args = c.settings.DefaultTargets
 		if len(args) == 0 {
 			c.showTargets(p, names, padLen)
@@ -240,6 +240,9 @@ func (c *makeCmd) Execute(args []string) (err error) {
 			t.Exec = true
 			plan.Rebuild(requires[0])
 		}
+	} else if t := p.WrapperTarget(); t != nil {
+		t.Args = args
+		requires = append(requires, t.Name)
 	} else {
 		requires = p.Targets.CompleteNames(args, errs)
 	}
