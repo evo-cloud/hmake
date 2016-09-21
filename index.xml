@@ -20,6 +20,8 @@
 
 &lt;p&gt;It&amp;rsquo;s a build tool which builds projects &lt;strong&gt;without pre-requisites&lt;/strong&gt;.&lt;/p&gt;
 
+&lt;p&gt;&lt;img src=&#34;http://i.imgur.com/J628KJx.gif&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+
 &lt;p&gt;&lt;em&gt;Pains&lt;/em&gt;&lt;/p&gt;
 
 &lt;ul&gt;
@@ -98,7 +100,7 @@ brew install hmake
 
 &lt;p&gt;Alternatively, download from Github &lt;a href=&#34;https://github.com/evo-cloud/hmake/releases&#34;&gt;releases&lt;/a&gt;&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;curl -s https://github.com/evo-cloud/hmake/releases/download/v1.1.0/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
+&lt;pre&gt;&lt;code&gt;curl -s https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;If you are on Mac OS, change &lt;code&gt;linux&lt;/code&gt; above to &lt;code&gt;darwin&lt;/code&gt;.
@@ -159,6 +161,7 @@ contribute to this project.&lt;/li&gt;
 &lt;li&gt;Examples are always helpful
 
 &lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/examples/arm-hello/README/&#34;&gt;Wrap Hello World for ARM&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/examples/linux/README/&#34;&gt;Cross Compile Linux kernel&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/examples/drone/README/&#34;&gt;Cross Compile drone&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;&lt;/li&gt;
@@ -1177,6 +1180,16 @@ Now, let&amp;rsquo;s create a &lt;code&gt;HyperMake&lt;/code&gt; to simplify the
 
 &lt;h2 id=&#34;create-hypermake&#34;&gt;Create &lt;code&gt;HyperMake&lt;/code&gt;&lt;/h2&gt;
 
+&lt;p&gt;&lt;code&gt;HyperMake&lt;/code&gt; can be composed in two ways:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Wrapper mode: which wraps existing build tools, like GNU make&lt;/li&gt;
+&lt;li&gt;Full mode: the native HyperMake format with all features.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;For &lt;em&gt;Wrapper mode&lt;/em&gt;, read details in &lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/docs/WrapperMode/&#34;&gt;Wrapper Mode&lt;/a&gt;.
+In this guide, we will use &lt;em&gt;Full mode&lt;/em&gt;.&lt;/p&gt;
+
 &lt;p&gt;Create a file called &lt;code&gt;HyperMake&lt;/code&gt; under &lt;code&gt;ProjectRoot&lt;/code&gt;.
 It&amp;rsquo;s a &lt;em&gt;YAML&lt;/em&gt; file, so let&amp;rsquo;s start with:&lt;/p&gt;
 
@@ -1446,6 +1459,123 @@ way because the same docker image is used across all different environments.&lt;
 &lt;p&gt;With &lt;em&gt;HyperMake&lt;/em&gt;, it no longer requires developers work on specific platform.
 As long as the project can be built on Linux, the developer is free to choose working
 on Linux/Mac OS/Windows.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>http://evo-cloud.github.com/hmake/docs/WrapperMode/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/docs/WrapperMode/</guid>
+      <description>
+
+&lt;h1 id=&#34;hypermake-wrapper-mode&#34;&gt;HyperMake Wrapper Mode&lt;/h1&gt;
+
+&lt;p&gt;The &lt;em&gt;Wrapper Mode&lt;/em&gt; is the most quick and simplest way to adopt &lt;em&gt;HyperMake&lt;/em&gt;
+with existing projects which already has full build system, like GNU make.&lt;/p&gt;
+
+&lt;h2 id=&#34;one-line-just-works&#34;&gt;One line, just works!&lt;/h2&gt;
+
+&lt;pre&gt;&lt;code&gt;echo &#39;#hmake-wrapper dockcross/linux-armv7&#39; &amp;gt;HyperMake
+hmake
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The magic word &lt;code&gt;#hmake-wrapper&lt;/code&gt; in the beginning of &lt;code&gt;HyperMake&lt;/code&gt; file indicates
+the &lt;em&gt;Wrapper Mode&lt;/em&gt; of &lt;em&gt;HyperMake&lt;/em&gt;.
+It runs &lt;code&gt;make&lt;/code&gt; inside container created from image &lt;code&gt;dockcross/linux-armv7&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&#34;wrapper-mode-file-format&#34;&gt;Wrapper Mode File Format&lt;/h2&gt;
+
+&lt;h3 id=&#34;first-line&#34;&gt;First Line&lt;/h3&gt;
+
+&lt;pre&gt;&lt;code&gt;#hmake-wrapper IMAGE Dockerfile-FOR-BUILD BUILD-ARGS
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;IMAGE&lt;/code&gt;: required, the docker image used to create the container;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Dockerfile-FOR-BUILD&lt;/code&gt;: optional, relative path to a folder containing
+&lt;code&gt;Dockerfile&lt;/code&gt;,  or full path to file if it&amp;rsquo;s not named &lt;code&gt;Dockerfile&lt;/code&gt;.
+When this is present, &lt;code&gt;IMAGE&lt;/code&gt; is built locally from the &lt;code&gt;Dockerfile&lt;/code&gt; before
+run the wrapped build tool;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;BUILD-ARGS&lt;/code&gt;: optional, space separated &lt;code&gt;KEY=VALUE&lt;/code&gt; directly passed to
+&lt;code&gt;--build-args&lt;/code&gt; option of &lt;code&gt;docker build&lt;/code&gt; command.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;E.g.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#hmake-wrapper mytoolchain-armhf toolchain/Dockerfile.armhf ARCH=armhf
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&#34;second-line&#34;&gt;Second Line&lt;/h3&gt;
+
+&lt;p&gt;If &lt;code&gt;HyperMake&lt;/code&gt; only contains the first line, the wrapped build tool is assumed
+to be &lt;code&gt;make&lt;/code&gt;. The following command &lt;code&gt;hmake&lt;/code&gt; will run &lt;code&gt;make&lt;/code&gt; inside the container
+passing all command line arguments to &lt;code&gt;make&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;If there are additional lines in the file, the rest of the lines are written to
+a script file, and &lt;code&gt;hmake&lt;/code&gt; run this script file inside the container, passing
+all command line arguments to this script file.&lt;/p&gt;
+
+&lt;p&gt;By default, the script file is generated with &lt;code&gt;#!/bin/sh&lt;/code&gt; as first line, and then
+filled with the rest lines in &lt;code&gt;HyperMake&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;E.g.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#hmake-wrapper mytoolchain-armhf toolchain/Dockerfile.armhf ARCH=armhf
+set -ex
+exec ./build.sh &amp;quot;$@&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;With this, &lt;code&gt;hmake&lt;/code&gt; will invoke a script inside container like:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#!/bin/sh
+set -ex
+exec ./build.sh &amp;quot;$@&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;However, we may not always use shell scripts.
+It&amp;rsquo;s possible to write in any scripting language when the second line is explicitly
+specified:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#hmake-wrapper mytoolchain-armhf toolchain/Dockerfile.armhf ARCH=armhf
+#!/usr/bin/env python
+import sys
+print(sys.argv)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;easy-huh&#34;&gt;Easy! Huh?&lt;/h2&gt;
+
+&lt;p&gt;To utilize full features of &lt;em&gt;HyperMake&lt;/em&gt;, the native &lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/docs/FileFormat/&#34;&gt;File Format&lt;/a&gt;
+is recommended.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>http://evo-cloud.github.com/hmake/examples/arm-hello/README/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/examples/arm-hello/README/</guid>
+      <description>
+
+&lt;h1 id=&#34;hello-world-built-for-arm&#34;&gt;Hello World built for ARM&lt;/h1&gt;
+
+&lt;p&gt;This example demonstrates the use of &lt;em&gt;HyperMake Wrapper Mode&lt;/em&gt; to quickly build
+a project which requires a special toolchain. It just works!&lt;/p&gt;
+
+&lt;h2 id=&#34;hello-world&#34;&gt;Hello World&lt;/h2&gt;
+
+&lt;p&gt;The project is a very simple &lt;em&gt;Hello World&lt;/em&gt; C program, however, we want to build
+it for ARM processors.
+The cross compiler &lt;code&gt;arm-linux-gnueabihf-gcc&lt;/code&gt; is required, but not installed on
+the host.&lt;/p&gt;
+
+&lt;p&gt;Installing a cross compiler is not easy, though we can use &lt;code&gt;apt-get ...&lt;/code&gt;, it won&amp;rsquo;t
+make host system clean.&lt;/p&gt;
+
+&lt;p&gt;By using docker image &lt;code&gt;dockcross/linux-armv7&lt;/code&gt; which always contains the toolchain,
+the wrapper &lt;code&gt;HyperMake&lt;/code&gt; file simply makes it built!&lt;/p&gt;
 </description>
     </item>
     

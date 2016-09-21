@@ -63,7 +63,7 @@
 <section class="post">
     <header class="post-header">
 
-        <a href="http://evo-cloud.github.com/hmake/docs/Contribute/" class="post-title"></a>
+        <a href="http://evo-cloud.github.com/hmake/docs/WrapperMode/" class="post-title"></a>
 
         <p class="post-meta">
             
@@ -74,158 +74,84 @@
     <div class="post-description">
         
 
-<h1 id="guidelines-for-contributing-to-hypermake">Guidelines for Contributing to HyperMake</h1>
+<h1 id="hypermake-wrapper-mode">HyperMake Wrapper Mode</h1>
 
-<p>Thanks for using <em>HyperMake</em> and welcome to contribute any features/patches back
-to this project!</p>
+<p>The <em>Wrapper Mode</em> is the most quick and simplest way to adopt <em>HyperMake</em>
+with existing projects which already has full build system, like GNU make.</p>
 
-<h2 id="before-you-start">Before You Start</h2>
+<h2 id="one-line-just-works">One line, just works!</h2>
+
+<pre><code>echo '#hmake-wrapper dockcross/linux-armv7' &gt;HyperMake
+hmake
+</code></pre>
+
+<p>The magic word <code>#hmake-wrapper</code> in the beginning of <code>HyperMake</code> file indicates
+the <em>Wrapper Mode</em> of <em>HyperMake</em>.
+It runs <code>make</code> inside container created from image <code>dockcross/linux-armv7</code>.</p>
+
+<h2 id="wrapper-mode-file-format">Wrapper Mode File Format</h2>
+
+<h3 id="first-line">First Line</h3>
+
+<pre><code>#hmake-wrapper IMAGE Dockerfile-FOR-BUILD BUILD-ARGS
+</code></pre>
 
 <ul>
-<li>Make sure you understand the features of <em>HyperMake</em></li>
-<li>Look at <a href="https://github.com/evo-cloud/hmake/issues">Github Issues</a> to see if
-your feature request/issue has already been submitted</li>
-<li>Be familiar with <a href="http://golang.org">Go development</a> and <a href="http://www.docker.com">Docker</a></li>
+<li><code>IMAGE</code>: required, the docker image used to create the container;</li>
+<li><code>Dockerfile-FOR-BUILD</code>: optional, relative path to a folder containing
+<code>Dockerfile</code>,  or full path to file if it&rsquo;s not named <code>Dockerfile</code>.
+When this is present, <code>IMAGE</code> is built locally from the <code>Dockerfile</code> before
+run the wrapped build tool;</li>
+<li><code>BUILD-ARGS</code>: optional, space separated <code>KEY=VALUE</code> directly passed to
+<code>--build-args</code> option of <code>docker build</code> command.</li>
 </ul>
 
-<h2 id="submit-an-issue">Submit an Issue</h2>
+<p>E.g.</p>
 
-<p>An issue can be a feature request or a bug. If possible please put on the
-corresponding labels <code>feature</code>, <code>bug</code>, <code>enhancement</code> etc. And the maintainers
-may alter the labels and put priority labels.</p>
-
-<p><em>Features</em></p>
-
-<p>Please clearly define the feature with as more details as possible to help others
-easily understand the feature. For example, describing the detailed operation
-steps, listing the example usage (command line) will be great help.</p>
-
-<p><em>Bugs</em></p>
-
-<p>In the title, please briefly describe the problem.
-In the comment, please follow the structures below:</p>
-
-<pre><code># Problem Description
-
-Detailed problem description
-
-# Environment
-
-Platform: OS, version
-Arch: CPU architecture
-Version: hmake version
-
-Other information...
-
-# Reproduce Steps
-
-Steps for reproducing the problem
-
-# Attached Content
-
-E.g. Content of your HyperMake file, project directory structure,
-scripts when possible.
+<pre><code>#hmake-wrapper mytoolchain-armhf toolchain/Dockerfile.armhf ARCH=armhf
 </code></pre>
 
-<h2 id="submit-a-pull-request">Submit a Pull Request</h2>
+<h3 id="second-line">Second Line</h3>
 
-<ul>
-<li>Make sure there&rsquo;s a corresponding issue submitted in
-<a href="https://github.com/evo-cloud/hmake/issues">Github Issues</a>, arbitrary pull
-requests are unlikely to be accepted;</li>
-<li>Make sure your code has been well formatted, vetted/linted and documented;</li>
-<li>Include issue number in your short commit message (first line), like <code>#15</code>;</li>
-<li>Tests must be included, depending on the change, End-to-End tests may be required;</li>
-<li>Make sure there&rsquo;s a single commit.</li>
-</ul>
+<p>If <code>HyperMake</code> only contains the first line, the wrapped build tool is assumed
+to be <code>make</code>. The following command <code>hmake</code> will run <code>make</code> inside the container
+passing all command line arguments to <code>make</code>.</p>
 
-<p><em>TIPS</em></p>
+<p>If there are additional lines in the file, the rest of the lines are written to
+a script file, and <code>hmake</code> run this script file inside the container, passing
+all command line arguments to this script file.</p>
 
-<blockquote>
-<p>To run format check, vet and lint, you can simply use</p>
+<p>By default, the script file is generated with <code>#!/bin/sh</code> as first line, and then
+filled with the rest lines in <code>HyperMake</code>.</p>
 
-<pre><code>hmake check -v
+<p>E.g.</p>
+
+<pre><code>#hmake-wrapper mytoolchain-armhf toolchain/Dockerfile.armhf ARCH=armhf
+set -ex
+exec ./build.sh &quot;$@&quot;
 </code></pre>
 
-<p>To fix format, simply use</p>
+<p>With this, <code>hmake</code> will invoke a script inside container like:</p>
 
-<pre><code>go fmt -w DIR
-</code></pre>
-</blockquote>
-
-<h2 id="dependencies-needed">Dependencies Needed</h2>
-
-<ul>
-<li>Git</li>
-<li>A Github account</li>
-<li>Go 1.6 or above: install from <a href="http://golang.org">golang.org</a></li>
-<li>A list of Go dependencies:
-
-<ul>
-<li>gvt: <code>go get github.com/FiloSottile/gvt</code></li>
-<li>ginkgo: <code>go get github.com/onsi/ginkgo/ginkgo</code></li>
-<li>gomega: <code>go get github.com/onsi/gomega</code></li>
-<li>hugo: <code>go get github.com/spf13/hugo</code>, if you want to generate sites</li>
-</ul></li>
-<li>For format, vet and lint
-
-<ul>
-<li>go tools: <code>go get golang.org/x/tools/cmd/...</code></li>
-<li>metalinter: <code>go get -v github.com/alecthomas/gometalinter &amp;&amp; gometalinter --install</code></li>
-</ul></li>
-</ul>
-
-<h2 id="steps-to-get-started">Steps to Get Started</h2>
-
-<ol>
-<li>Fork <code>github.com/evo-cloud/hmake</code> to your own account (assume <code>dev</code>)</li>
-<li>Create a Go development environment, the following steps are recommended for
-most people, especially for those new to Go:</li>
-</ol>
-
-<pre><code class="language-sh">   mkdir -p ~/workspace/go
-   cd ~/workspace/go
-   export GOPATH=`pwd`
-   export PATH=&quot;$GOPATH/bin:$PATH&quot;
-   go get github.com/FiloSottile/gvt
-   go get github.com/onsi/ginkgo/ginkgo
-   go get github.com/onsi/gomega
-   mkdir -p src/github.com/evo-cloud
-   git clone git@github.com:dev/hmake src/github.com/evo-cloud/hmake
-   cd src/github.com/evo-cloud/hmake
-   gvt restore
+<pre><code>#!/bin/sh
+set -ex
+exec ./build.sh &quot;$@&quot;
 </code></pre>
 
-<ol>
-<li>Start developing</li>
-</ol>
+<p>However, we may not always use shell scripts.
+It&rsquo;s possible to write in any scripting language when the second line is explicitly
+specified:</p>
 
-<pre><code class="language-sh">   cd ~/workspace/go/src/github.com/evo-cloud/hmake
-   # and make sure environment variable GOPATH and PATH are properly set as above
-
-   go build ./   # this will build ./hmake executable
-   go install ./ # or if you want to install to $GOPATH/bin
-
-   # make sure docker is running
-   # if docker-machine is used (not for Linux)
-   eval $(docker-machine env MACHINE-NAME)
-   docker version # make sure both client and server versions are displayed
-
-   ./hmake -sv # build all by default
-   ./hmake check # check format, run lint
-   ./hmake test # run tests
-   ./hmake e2e # run end-to-end tests
-   ./hmake cover # generate coverage
-
-   # alternatively, use go directly
-   go test ./test
-   # or
-   ginkgo ./test
-   go test ./test/e2e
-   # or
-   ginkgo ./test/e2e
-   go test -coverprofile=cover.out -coverpkg=./project ./test
+<pre><code>#hmake-wrapper mytoolchain-armhf toolchain/Dockerfile.armhf ARCH=armhf
+#!/usr/bin/env python
+import sys
+print(sys.argv)
 </code></pre>
+
+<h2 id="easy-huh">Easy! Huh?</h2>
+
+<p>To utilize full features of <em>HyperMake</em>, the native <a href="/hmake/docs/FileFormat/">File Format</a>
+is recommended.</p>
 
     </div>
     

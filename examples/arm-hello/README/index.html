@@ -63,7 +63,7 @@
 <section class="post">
     <header class="post-header">
 
-        <a href="http://evo-cloud.github.com/hmake/docs/Contribute/" class="post-title"></a>
+        <a href="http://evo-cloud.github.com/hmake/examples/arm-hello/README/" class="post-title"></a>
 
         <p class="post-meta">
             
@@ -74,158 +74,23 @@
     <div class="post-description">
         
 
-<h1 id="guidelines-for-contributing-to-hypermake">Guidelines for Contributing to HyperMake</h1>
+<h1 id="hello-world-built-for-arm">Hello World built for ARM</h1>
 
-<p>Thanks for using <em>HyperMake</em> and welcome to contribute any features/patches back
-to this project!</p>
+<p>This example demonstrates the use of <em>HyperMake Wrapper Mode</em> to quickly build
+a project which requires a special toolchain. It just works!</p>
 
-<h2 id="before-you-start">Before You Start</h2>
+<h2 id="hello-world">Hello World</h2>
 
-<ul>
-<li>Make sure you understand the features of <em>HyperMake</em></li>
-<li>Look at <a href="https://github.com/evo-cloud/hmake/issues">Github Issues</a> to see if
-your feature request/issue has already been submitted</li>
-<li>Be familiar with <a href="http://golang.org">Go development</a> and <a href="http://www.docker.com">Docker</a></li>
-</ul>
+<p>The project is a very simple <em>Hello World</em> C program, however, we want to build
+it for ARM processors.
+The cross compiler <code>arm-linux-gnueabihf-gcc</code> is required, but not installed on
+the host.</p>
 
-<h2 id="submit-an-issue">Submit an Issue</h2>
+<p>Installing a cross compiler is not easy, though we can use <code>apt-get ...</code>, it won&rsquo;t
+make host system clean.</p>
 
-<p>An issue can be a feature request or a bug. If possible please put on the
-corresponding labels <code>feature</code>, <code>bug</code>, <code>enhancement</code> etc. And the maintainers
-may alter the labels and put priority labels.</p>
-
-<p><em>Features</em></p>
-
-<p>Please clearly define the feature with as more details as possible to help others
-easily understand the feature. For example, describing the detailed operation
-steps, listing the example usage (command line) will be great help.</p>
-
-<p><em>Bugs</em></p>
-
-<p>In the title, please briefly describe the problem.
-In the comment, please follow the structures below:</p>
-
-<pre><code># Problem Description
-
-Detailed problem description
-
-# Environment
-
-Platform: OS, version
-Arch: CPU architecture
-Version: hmake version
-
-Other information...
-
-# Reproduce Steps
-
-Steps for reproducing the problem
-
-# Attached Content
-
-E.g. Content of your HyperMake file, project directory structure,
-scripts when possible.
-</code></pre>
-
-<h2 id="submit-a-pull-request">Submit a Pull Request</h2>
-
-<ul>
-<li>Make sure there&rsquo;s a corresponding issue submitted in
-<a href="https://github.com/evo-cloud/hmake/issues">Github Issues</a>, arbitrary pull
-requests are unlikely to be accepted;</li>
-<li>Make sure your code has been well formatted, vetted/linted and documented;</li>
-<li>Include issue number in your short commit message (first line), like <code>#15</code>;</li>
-<li>Tests must be included, depending on the change, End-to-End tests may be required;</li>
-<li>Make sure there&rsquo;s a single commit.</li>
-</ul>
-
-<p><em>TIPS</em></p>
-
-<blockquote>
-<p>To run format check, vet and lint, you can simply use</p>
-
-<pre><code>hmake check -v
-</code></pre>
-
-<p>To fix format, simply use</p>
-
-<pre><code>go fmt -w DIR
-</code></pre>
-</blockquote>
-
-<h2 id="dependencies-needed">Dependencies Needed</h2>
-
-<ul>
-<li>Git</li>
-<li>A Github account</li>
-<li>Go 1.6 or above: install from <a href="http://golang.org">golang.org</a></li>
-<li>A list of Go dependencies:
-
-<ul>
-<li>gvt: <code>go get github.com/FiloSottile/gvt</code></li>
-<li>ginkgo: <code>go get github.com/onsi/ginkgo/ginkgo</code></li>
-<li>gomega: <code>go get github.com/onsi/gomega</code></li>
-<li>hugo: <code>go get github.com/spf13/hugo</code>, if you want to generate sites</li>
-</ul></li>
-<li>For format, vet and lint
-
-<ul>
-<li>go tools: <code>go get golang.org/x/tools/cmd/...</code></li>
-<li>metalinter: <code>go get -v github.com/alecthomas/gometalinter &amp;&amp; gometalinter --install</code></li>
-</ul></li>
-</ul>
-
-<h2 id="steps-to-get-started">Steps to Get Started</h2>
-
-<ol>
-<li>Fork <code>github.com/evo-cloud/hmake</code> to your own account (assume <code>dev</code>)</li>
-<li>Create a Go development environment, the following steps are recommended for
-most people, especially for those new to Go:</li>
-</ol>
-
-<pre><code class="language-sh">   mkdir -p ~/workspace/go
-   cd ~/workspace/go
-   export GOPATH=`pwd`
-   export PATH=&quot;$GOPATH/bin:$PATH&quot;
-   go get github.com/FiloSottile/gvt
-   go get github.com/onsi/ginkgo/ginkgo
-   go get github.com/onsi/gomega
-   mkdir -p src/github.com/evo-cloud
-   git clone git@github.com:dev/hmake src/github.com/evo-cloud/hmake
-   cd src/github.com/evo-cloud/hmake
-   gvt restore
-</code></pre>
-
-<ol>
-<li>Start developing</li>
-</ol>
-
-<pre><code class="language-sh">   cd ~/workspace/go/src/github.com/evo-cloud/hmake
-   # and make sure environment variable GOPATH and PATH are properly set as above
-
-   go build ./   # this will build ./hmake executable
-   go install ./ # or if you want to install to $GOPATH/bin
-
-   # make sure docker is running
-   # if docker-machine is used (not for Linux)
-   eval $(docker-machine env MACHINE-NAME)
-   docker version # make sure both client and server versions are displayed
-
-   ./hmake -sv # build all by default
-   ./hmake check # check format, run lint
-   ./hmake test # run tests
-   ./hmake e2e # run end-to-end tests
-   ./hmake cover # generate coverage
-
-   # alternatively, use go directly
-   go test ./test
-   # or
-   ginkgo ./test
-   go test ./test/e2e
-   # or
-   ginkgo ./test/e2e
-   go test -coverprofile=cover.out -coverpkg=./project ./test
-</code></pre>
+<p>By using docker image <code>dockcross/linux-armv7</code> which always contains the toolchain,
+the wrapper <code>HyperMake</code> file simply makes it built!</p>
 
     </div>
     

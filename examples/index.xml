@@ -10,6 +10,34 @@
     
     <item>
       <title></title>
+      <link>http://evo-cloud.github.com/hmake/examples/arm-hello/README/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/examples/arm-hello/README/</guid>
+      <description>
+
+&lt;h1 id=&#34;hello-world-built-for-arm&#34;&gt;Hello World built for ARM&lt;/h1&gt;
+
+&lt;p&gt;This example demonstrates the use of &lt;em&gt;HyperMake Wrapper Mode&lt;/em&gt; to quickly build
+a project which requires a special toolchain. It just works!&lt;/p&gt;
+
+&lt;h2 id=&#34;hello-world&#34;&gt;Hello World&lt;/h2&gt;
+
+&lt;p&gt;The project is a very simple &lt;em&gt;Hello World&lt;/em&gt; C program, however, we want to build
+it for ARM processors.
+The cross compiler &lt;code&gt;arm-linux-gnueabihf-gcc&lt;/code&gt; is required, but not installed on
+the host.&lt;/p&gt;
+
+&lt;p&gt;Installing a cross compiler is not easy, though we can use &lt;code&gt;apt-get ...&lt;/code&gt;, it won&amp;rsquo;t
+make host system clean.&lt;/p&gt;
+
+&lt;p&gt;By using docker image &lt;code&gt;dockcross/linux-armv7&lt;/code&gt; which always contains the toolchain,
+the wrapper &lt;code&gt;HyperMake&lt;/code&gt; file simply makes it built!&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title></title>
       <link>http://evo-cloud.github.com/hmake/examples/drone/README/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
