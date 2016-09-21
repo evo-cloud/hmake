@@ -33,6 +33,14 @@ Now, let's create a `HyperMake` to simplify the build.
 
 ## Create `HyperMake`
 
+`HyperMake` can be composed in two ways:
+
+- Wrapper mode: which wraps existing build tools, like GNU make
+- Full mode: the native HyperMake format with all features.
+
+For _Wrapper mode_, read details in [Wrapper Mode](WrapperMode.md).
+In this guide, we will use _Full mode_.
+
 Create a file called `HyperMake` under `ProjectRoot`.
 It's a _YAML_ file, so let's start with:
 
