@@ -4,7 +4,7 @@
 		{
 			"importpath": "github.com/codingbrain/clix.go",
 			"repository": "https://github.com/codingbrain/clix.go",
-			"revision": "ba5866f2a68ac1985c2f62291b4c09302918cb79",
+			"revision": "61f1fdb545586f63b3f11592bc791c91379cc734",
 			"branch": "master"
 		},
 		{
