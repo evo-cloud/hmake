@@ -1,0 +1,23 @@
+---
+format: hypermake.v0
+
+name: expand0
+
+targets:
+  t-[os:linux,darwin]-[arch:amd64,arm]:
+    os: $[os]
+    arch: $[arch]
+    k-$[os]-$[arch]: $[os]-$[arch]
+  a-[arch:amd64,arm]:
+    after:
+      - t-*-$[arch]
+    key: $[non-exist]
+    dollar: a$$[$]b
+    list:
+      - arch: $[arch]
+        deep:
+          - dict:
+              os: $[os]
+              num: 1
+  b:
+    key: $[non-exist]

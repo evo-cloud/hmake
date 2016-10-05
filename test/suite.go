@@ -155,6 +155,59 @@ var _ = Describe("HyperMake", func() {
 			Expect(err).Should(MatchError(os.ErrNotExist))
 		})
 
+		It("expand targets", func() {
+			proj := LoadFixtureProject("target-expand", "expand0")
+			Expect(proj.Targets).Should(HaveKey("t-linux-amd64"))
+			Expect(proj.Targets).Should(HaveKey("t-linux-arm"))
+			Expect(proj.Targets).Should(HaveKey("t-darwin-amd64"))
+			Expect(proj.Targets).Should(HaveKey("t-linux-arm"))
+			Expect(proj.Targets).Should(HaveKey("a-amd64"))
+			Expect(proj.Targets).Should(HaveKey("a-arm"))
+			Expect(proj.Targets["t-linux-amd64"].Ext).Should(HaveKeyWithValue("os", "linux"))
+			Expect(proj.Targets["t-linux-amd64"].Ext).Should(HaveKeyWithValue("arch", "amd64"))
+			Expect(proj.Targets["t-linux-amd64"].Ext).Should(HaveKeyWithValue("k-linux-amd64", "linux-amd64"))
+			Expect(proj.Resolve()).Should(Succeed())
+			Expect(proj.Finalize()).Should(Succeed())
+			Expect(proj.Targets["a-amd64"].Depends).Should(HaveKey("t-linux-amd64"))
+			Expect(proj.Targets["a-amd64"].Depends).Should(HaveKey("t-darwin-amd64"))
+			Expect(proj.Targets["a-amd64"].Depends).ShouldNot(HaveKey("t-linux-arm"))
+			Expect(proj.Targets["a-amd64"].Depends).ShouldNot(HaveKey("t-darwin-arm"))
+			Expect(proj.Targets["a-amd64"].Ext).Should(HaveKeyWithValue("key", "$[non-exist]"))
+			Expect(proj.Targets["a-amd64"].Ext).Should(HaveKeyWithValue("dollar", "a$$b"))
+			Expect(proj.Targets["a-arm"].Ext["list"]).To(HaveLen(1))
+			item := proj.Targets["a-arm"].Ext["list"].([]interface{})[0]
+			Expect(item).To(HaveKey("deep"))
+			dict := item.(map[string]interface{})
+			Expect(dict["deep"]).To(HaveLen(1))
+			item = dict["deep"].([]interface{})[0]
+			Expect(item).To(HaveKey("dict"))
+			dict = item.(map[string]interface{})
+			Expect(dict["dict"]).To(HaveKeyWithValue("os", "$[os]"))
+			Expect(dict["dict"]).To(HaveKeyWithValue("num", 1))
+			Expect(proj.Targets["b"].Ext).Should(HaveKeyWithValue("key", "$[non-exist]"))
+		})
+
+		It("expand targets with duplicated name", func() {
+			proj := &hm.Project{BaseDir: Fixtures("target-expand", "dup-target")}
+			_, err := proj.Load("HyperMake")
+			Expect(err).ShouldNot(Succeed())
+			Expect(err.Error()).Should(ContainSubstring("target already exists"))
+		})
+
+		It("expand targets with missing bracket", func() {
+			proj := &hm.Project{BaseDir: Fixtures("target-expand", "missing-bracket")}
+			_, err := proj.Load("HyperMake")
+			Expect(err).ShouldNot(Succeed())
+			Expect(err.Error()).Should(ContainSubstring("missing ]"))
+		})
+
+		It("expand targets with bad name", func() {
+			proj := &hm.Project{BaseDir: Fixtures("target-expand", "bad-name")}
+			_, err := proj.Load("HyperMake")
+			Expect(err).ShouldNot(Succeed())
+			Expect(err.Error()).Should(ContainSubstring("bad format"))
+		})
+
 		It("detects the cyclic deps", func() {
 			proj := &hm.Project{BaseDir: Samples()}
 			Expect(proj.Load("cyclic-deps.hmake")).ShouldNot(BeNil())
@@ -284,6 +337,53 @@ var _ = Describe("HyperMake", func() {
 			Expect(proj.LoadRcFiles()).Should(Succeed())
 			Expect(proj.GetSettings(set)).Should(Succeed())
 			Expect(set.TopLevel).To(Equal("value2"))
+		})
+
+		It("wrapper-mode no content", func() {
+			proj := LoadFixtureProject("wrapper", "no-content")
+			Expect(proj.Targets).To(HaveKey("build"))
+			var settings map[string]interface{}
+			Expect(proj.GetSettings(&settings)).Should(Succeed())
+			Expect(settings).To(HaveKeyWithValue("default-targets", []string{"build"}))
+			Expect(settings).To(HaveKeyWithValue("exec-target", "build"))
+			t := proj.Targets["build"]
+			Expect(t).To(Equal(proj.WrapperTarget()))
+			Expect(t.Ext).To(HaveKeyWithValue("image", "image"))
+			Expect(t.Ext).To(HaveKeyWithValue("cmds", []string{`make "$@"`}))
+		})
+
+		It("wrapper-mode with build", func() {
+			proj := LoadFixtureProject("wrapper", "with-build")
+			Expect(proj.Targets).To(HaveKey("build"))
+			Expect(proj.Targets).To(HaveKey("toolchain"))
+			var settings map[string]interface{}
+			Expect(proj.GetSettings(&settings)).Should(Succeed())
+			Expect(settings).To(HaveKeyWithValue("default-targets", []string{"build"}))
+			Expect(settings).To(HaveKeyWithValue("exec-target", "build"))
+			t := proj.Targets["build"]
+			Expect(t).To(Equal(proj.WrapperTarget()))
+			Expect(t.Ext).To(HaveKeyWithValue("image", "image"))
+			Expect(t.Ext).To(HaveKeyWithValue("cmds", []string{`make "$@"`}))
+			Expect(t.After).To(ContainElement("toolchain"))
+			t = proj.Targets["toolchain"]
+			Expect(t.Watches).To(ContainElement("Dockerfile"))
+			Expect(t.Ext).To(HaveKeyWithValue("image", "image"))
+			Expect(t.Ext).To(HaveKeyWithValue("build", "Dockerfile"))
+			Expect(t.Ext).To(HaveKeyWithValue("build-args", []string{"a=b", "c=d"}))
+		})
+
+		It("wrapper-mode with implicit script interpreter", func() {
+			proj := LoadFixtureProject("wrapper", "implicit-interpreter")
+			Expect(proj.Targets).To(HaveKey("build"))
+			t := proj.Targets["build"]
+			Expect(t.Ext).To(HaveKeyWithValue("script", "#!/bin/sh\necho Hello"))
+		})
+
+		It("wrapper-mode with explicit script interpreter", func() {
+			proj := LoadFixtureProject("wrapper", "explicit-interpreter")
+			Expect(proj.Targets).To(HaveKey("build"))
+			t := proj.Targets["build"]
+			Expect(t.Ext).To(HaveKeyWithValue("script", "#!/usr/bin/python\nprint(\"hello\")"))
 		})
 	})
 

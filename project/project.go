@@ -9,12 +9,15 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 	"unicode"
 
 	"github.com/easeway/langx.go/errors"
 	"github.com/easeway/langx.go/mapper"
+	"github.com/flosch/pongo2"
 	zglob "github.com/mattn/go-zglob"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -106,8 +109,23 @@ type CommonSettings struct {
 	ExecShell      string   `json:"exec-shell"`
 }
 
+func loadAndRender(fn string) ([]byte, error) {
+	data, err := ioutil.ReadFile(fn)
+	if err != nil {
+		return nil, err
+	}
+	tpl, err := pongo2.FromBytes(data)
+	if err != nil {
+		return nil, err
+	}
+	return tpl.ExecuteBytes(pongo2.Context{
+		"os":   runtime.GOOS,
+		"arch": runtime.GOARCH,
+	})
+}
+
 func loadYaml(filename string) (map[string]interface{}, error) {
-	data, err := ioutil.ReadFile(filename)
+	data, err := loadAndRender(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -130,18 +148,6 @@ func normalizeMap(val interface{}) interface{} {
 		for n, item := range v {
 			v[n] = normalizeMap(item)
 		}
-	case []map[interface{}]interface{}:
-		a := make([]interface{}, len(v))
-		for n, item := range v {
-			a[n] = normalizeMap(item)
-		}
-		val = a
-	case []map[string]interface{}:
-		a := make([]interface{}, len(v))
-		for n, item := range v {
-			a[n] = normalizeMap(item)
-		}
-		val = a
 	case map[interface{}]interface{}:
 		m := make(map[string]interface{})
 		for key, value := range v {
@@ -157,12 +163,12 @@ func normalizeMap(val interface{}) interface{} {
 }
 
 func loadAsWrapper(fn string) (*File, error) {
-	f, err := os.Open(fn)
+	data, err := loadAndRender(fn)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
-	rd := bufio.NewReader(f)
+
+	rd := bufio.NewReader(bytes.NewBuffer(data))
 	lineBytes, err := rd.ReadBytes('\n')
 	if err != nil && err != io.EOF {
 		return nil, err
@@ -177,6 +183,7 @@ func loadAsWrapper(fn string) (*File, error) {
 	}
 
 	image := tokens[0]
+	tokens = tokens[1:]
 
 	projFile := &File{
 		Format:   Format,
@@ -188,7 +195,7 @@ func loadAsWrapper(fn string) (*File, error) {
 
 	buildFrom := ""
 	var buildArgs []string
-	for n, token := range tokens[1:] {
+	for n, token := range tokens {
 		if token != "" {
 			buildFrom = token
 			buildArgs = tokens[n+1:]
@@ -244,6 +251,174 @@ func loadAsWrapper(fn string) (*File, error) {
 	return projFile, nil
 }
 
+var expandableTargetPattern = regexp.MustCompile(`^(\w+):(([\w-\.]+,)*)([\w-\.]+)$`)
+
+type expToken struct {
+	name   string
+	values []string
+	text   string
+}
+
+func parseTarget(name string) (tokens []expToken, err error) {
+	str := name
+	for len(str) > 0 {
+		pos := strings.Index(str, "[")
+		if pos >= 0 {
+			if pos > 0 {
+				tokens = append(tokens, expToken{text: str[:pos]})
+			}
+			pos1 := strings.Index(str[pos:], "]")
+			if pos1 <= 0 {
+				return nil, fmt.Errorf("invalid expandable target name: %s: missing ]", name)
+			}
+			token := expToken{text: str[pos+1 : pos+pos1]}
+			if !expandableTargetPattern.MatchString(token.text) {
+				return nil, fmt.Errorf("invalid expandable target name: %s: bad format: %s", name, token.text)
+			}
+			str = str[pos+pos1+1:]
+
+			pos = strings.Index(token.text, ":")
+			token.name = token.text[:pos]
+			token.values = strings.Split(token.text[pos+1:], ",")
+			tokens = append(tokens, token)
+		} else {
+			tokens = append(tokens, expToken{text: str})
+			break
+		}
+	}
+	return
+}
+
+// substitute string containing "$[var]" to the value in vars
+// there's no escape, except "$[$]" is substituted to "$"
+// undefined vars are not substituted
+func substString(vars map[string]string, val string) (res string) {
+	forVar := false
+	for len(val) > 0 {
+		if forVar {
+			if pos := strings.Index(val, "]"); pos > 0 {
+				name := val[2:pos]
+				if name == "$" {
+					res += name
+				} else if v, ok := vars[name]; ok {
+					res += v
+				} else {
+					res += val[:pos+1]
+				}
+				val = val[pos+1:]
+				forVar = false
+				continue
+			}
+		} else if pos := strings.Index(val, "$["); pos >= 0 {
+			res += val[:pos]
+			val = val[pos:]
+			forVar = true
+			continue
+		}
+		res += val
+		break
+	}
+	return
+}
+
+func substStrings(vars map[string]string, strs []string) []string {
+	result := make([]string, len(strs))
+	for n, str := range strs {
+		result[n] = substString(vars, str)
+	}
+	return result
+}
+
+func substMap(vars map[string]string, m map[string]interface{}) map[string]interface{} {
+	if m == nil {
+		return m
+	}
+	d := make(map[string]interface{})
+	for k, v := range m {
+		d[substString(vars, k)] = substInterface(vars, v)
+	}
+	return d
+}
+
+func substSlice(vars map[string]string, v []interface{}) []interface{} {
+	result := make([]interface{}, len(v))
+	for n, val := range v {
+		result[n] = substInterface(vars, val)
+	}
+	return result
+}
+
+func substInterface(vars map[string]string, v interface{}) interface{} {
+	switch val := v.(type) {
+	case string:
+		return substString(vars, val)
+	case []interface{}:
+		return substSlice(vars, val)
+	case map[string]interface{}:
+		return substMap(vars, val)
+	default:
+		return v
+	}
+}
+
+func buildTarget(origin *Target, name string, vars map[string]string, result map[string]*Target) error {
+	if result[name] != nil {
+		return fmt.Errorf("target already exists: %s", name)
+	}
+	t := &Target{
+		Name:       name,
+		Desc:       substString(vars, origin.Desc),
+		Before:     substStrings(vars, origin.Before),
+		After:      substStrings(vars, origin.After),
+		ExecDriver: substString(vars, origin.ExecDriver),
+		WorkDir:    substString(vars, origin.WorkDir),
+		Watches:    substStrings(vars, origin.Watches),
+		Artifacts:  substStrings(vars, origin.Artifacts),
+		Ext:        substMap(vars, origin.Ext),
+		Always:     origin.Always,
+	}
+	result[name] = t
+	return nil
+}
+
+func constructTargets(tokens []expToken, prefix string, n int,
+	t *Target, vars map[string]string, result map[string]*Target) error {
+	if n >= len(tokens) {
+		return buildTarget(t, prefix, vars, result)
+	}
+	if name := tokens[n].name; name != "" {
+		for _, val := range tokens[n].values {
+			vars[name] = val
+			if err := constructTargets(tokens, prefix+val, n+1, t, vars, result); err != nil {
+				return err
+			}
+		}
+	} else {
+		return constructTargets(tokens, prefix+tokens[n].text, n+1, t, vars, result)
+	}
+	return nil
+}
+
+func expandTargets(origin map[string]*Target) (map[string]*Target, error) {
+	keys := make([]string, 0, len(origin))
+	for key := range origin {
+		keys = append(keys, key)
+	}
+
+	result := make(map[string]*Target)
+	for _, key := range keys {
+		tokens, err := parseTarget(key)
+		if err != nil {
+			return nil, err
+		}
+		err = constructTargets(tokens, "", 0, origin[key], make(map[string]string), result)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
 // LoadFile loads from specified path
 func LoadFile(baseDir, path string, allowWrapper bool) (*File, error) {
 	fn := filepath.Join(baseDir, path)
@@ -264,6 +439,10 @@ func LoadFile(baseDir, path string, allowWrapper bool) (*File, error) {
 
 	f := &File{}
 	err = mapper.Map(f, val)
+	if err != nil {
+		return nil, err
+	}
+	f.Targets, err = expandTargets(f.Targets)
 	if err == nil {
 		f.Source = path
 	}

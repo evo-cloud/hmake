@@ -1,0 +1,10 @@
+---
+format: hypermake.v0
+
+name: dup-target
+
+targets:
+  t-linux:
+    key: val
+  t-[os:linux,bsd]:
+    key: val

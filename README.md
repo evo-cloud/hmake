@@ -32,6 +32,13 @@ _Features_
 - Selectively build targets on demand
 - Build in parallel
 
+_HyperMake Server_
+
+[HyperMake Server](https://github.com/evo-cloud/hmaked) is a CI/CD solution for
+projects built with HyperMake.
+It provides consistent environments for development, testing, integration and
+deployment.
+
 ## Getting Started
 
 Knowledge required as a user:

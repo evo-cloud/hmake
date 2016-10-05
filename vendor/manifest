@@ -20,6 +20,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/flosch/pongo2",
+			"repository": "https://github.com/flosch/pongo2",
+			"revision": "22499f94d3d56c7238591344a6902715d0b8fbbf",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/mattn/go-zglob",
 			"repository": "https://github.com/mattn/go-zglob",
 			"revision": "249e8bceca8cd265110a08bbb63303fb9db47445",

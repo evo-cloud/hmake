@@ -68,6 +68,11 @@ build() {
             OUT=$OUT.exe
         fi
     fi
+
+    if [ "$GOARCH" == "arm" ]; then
+        export GOARM=7
+    fi
+
     mkdir -p $(dirname $OUT)
     CGO_ENABLED=0 go build -o $OUT \
         -a -tags "static_build netgo" -installsuffix netgo \

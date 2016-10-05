@@ -44,19 +44,20 @@ targets:
         cmds:
             - gvt restore
 
-    hmake-linux-amd64:
-        description: static linked hmake binary for Linux AMD64
+    # target hmake-linux- will be expanded to three target architectures
+    hmake-linux-[arch:amd64,arm,arm64]:
+        description: static linked hmake binary for linux-$[arch]
         after:
             - vendor
         watches:
             - '**/**/*.go'
             - build.sh
         cmds:
-            - ./build.sh linux amd64
+            - ./build.sh linux $[arch]
         artifacts:
-            - bin/linux/amd64/hmake
-            - bin/hmake-linux-amd64.tar.gz
-            - bin/hmake-linux-amd64.tar.gz.sha256sum
+            - bin/linux/$[arch]/hmake
+            - bin/hmake-linux-$[arch].tar.gz
+            - bin/hmake-linux-$[arch].tar.gz.sha256sum
 
     hmake-darwin-amd64:
         description: static linked hmake binary for Mac OS
@@ -251,6 +252,59 @@ target names accept wildcards:
 - `HMAKE_VERSION`: version of _hmake_
 - `HMAKE_OS`: operating system
 - `HMAKE_ARCH`: CPU architecture
+
+#### Target Expansions
+
+_Target Expansion_ is useful when defining multiple targets with similar properties.
+For example cross compiling for multiple targets, most of the properties are identical
+only OS and CPU arch is different. In stead of duplicate the same blocks for each
+target, writing one target with expansion syntax in target name, and _hmake_ will help
+generate multiple targets using expansion information.
+
+In above example:
+
+```yaml
+targets:
+    hmake-linux-[arch:amd64,arm,arm64]:
+        description: static linked hmake binary for linux-$[arch]
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+            - build.sh
+        cmds:
+            - ./build.sh linux $[arch]
+        artifacts:
+            - bin/linux/$[arch]/hmake
+            - bin/hmake-linux-$[arch].tar.gz
+            - bin/hmake-linux-$[arch].tar.gz.sha256sum
+```
+
+The target `hmake-linux-[arch:amd64,arm,arm64]` will be expanded into three targets:
+
+- hmake-linux-amd64
+- hmake-linux-arm
+- hmake-linux-arm64
+
+With `$[arch]` substituted accordingly in each expanded targets.
+
+The syntax is simple: `[var-name:val1,val2,...]` to define an expansion variable
+with possible values, and in the properties, `$[var-name]` will be substituted.
+If `var-name` is not defined in target name, `$[var-name]` will NOT be substituted.
+Specially, `$[$]` substitutes to `$`.
+
+Multiple variables can be defined, example:
+
+```
+target-[os:linux,darwin]-[arch:386,amd64]
+```
+
+will expand to
+
+- `target-linux-386`
+- `target-linux-amd64`
+- `target-darwin-386`
+- `target-darwin-amd64`
 
 ## Include Files
 
