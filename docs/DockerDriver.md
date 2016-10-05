@@ -187,6 +187,17 @@ however, all files created inside container will be owned by `root` outside,
 and you may eventually see some error messages like `permission denied` when you
 do something outside.
 
+## Known Issues
+
+- Docker machine backed by VirtualBox: Docker for Mac is recommended instead of VirtualBox
+    - Unstable NAT service: the NAT service from VirtualBox will eventually disconnect;
+    - Hard link not supported: hard links can't be created on mapped volumes;
+- Time drifting inside the VM: with Docker for Mac, the time may drift because there's
+  no time synchronization at current stage;
+- Memory exhaust: observed with Docker for Mac, restart Docker service solve the problem;
+- Docker `--label` bug: Docker _1.12_ has a bug parsing command line `--label` which works
+  with Docker _1.11_, putting labels inside `Dockerfile` works fine.
+
 ## Limits
 
 On Linux, _docker-machine_ is not supported, docker daemon must run on the same

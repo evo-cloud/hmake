@@ -1,4 +1,4 @@
-FROM golang:1.7-alpine
+FROM golang:1.7.1-alpine
 RUN apk update && apk add bash curl git tar zip && rm -fr /var/cache/apk/* && \
     curl -sSL https://get.docker.com/builds/Linux/x86_64/docker-1.10.0.tgz | tar -C / -xz && \
     curl -sSL https://github.com/spf13/hugo/releases/download/v0.16/hugo_0.16_linux-64bit.tgz | tar -C /usr/local/bin -xz && \

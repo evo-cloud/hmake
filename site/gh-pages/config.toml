@@ -2,6 +2,7 @@ baseurl = "http://evo-cloud.github.com/hmake/"
 languageCode = "en-us"
 title = "HyperMake"
 theme = "purehugo"
+paginate = 0
 
 [blackfriday]
 sourceRelativeLinksEval = true

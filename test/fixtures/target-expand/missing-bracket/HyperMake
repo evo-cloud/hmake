@@ -1,0 +1,8 @@
+---
+format: hypermake.v0
+
+name: missing-bracket
+
+targets:
+  t-[a:b,c:
+    key: value

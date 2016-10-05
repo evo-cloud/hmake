@@ -5,11 +5,10 @@
         <div>
             <!-- A wrapper for all the blog posts -->
             <div class="posts">
-                {{ range .Paginator.Pages }}
+                {{ range where .Data.Pages "Section" "" }}
                 {{ partial "post.html" . }}
                 {{ end }}
             </div>
-            {{ partial "pagination.html" . }}
             {{ partial "footer.html" . }}
         </div>
     </div>

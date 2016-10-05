@@ -1,0 +1,8 @@
+---
+format: hypermake.v0
+
+name: bad-name
+
+targets:
+  t-[a:]:
+    key: value
