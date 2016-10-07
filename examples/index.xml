@@ -38,53 +38,6 @@ the wrapper &lt;code&gt;HyperMake&lt;/code&gt; file simply makes it built!&lt;/p
     
     <item>
       <title></title>
-      <link>http://evo-cloud.github.com/hmake/examples/drone/README/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://evo-cloud.github.com/hmake/examples/drone/README/</guid>
-      <description>
-
-&lt;h1 id=&#34;example-cross-build-drone&#34;&gt;Example - Cross build Drone&lt;/h1&gt;
-
-&lt;p&gt;This example demonstrates how to use HyperMake to cross build
-&lt;a href=&#34;https://github.com/drone/drone&#34;&gt;drone&lt;/a&gt; for different platforms.&lt;/p&gt;
-
-&lt;h2 id=&#34;get-started&#34;&gt;Get Started&lt;/h2&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;hmake -sv
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&#34;how-it-works&#34;&gt;How it works&lt;/h2&gt;
-
-&lt;p&gt;Simply a few steps:&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Build a docker image containing all tools&lt;/li&gt;
-&lt;li&gt;Install dependencies (Go get)&lt;/li&gt;
-&lt;li&gt;Git clone latest source code&lt;/li&gt;
-&lt;li&gt;Go generate&lt;/li&gt;
-&lt;li&gt;Go build for (in parallel)
-
-&lt;ul&gt;
-&lt;li&gt;linux-amd64&lt;/li&gt;
-&lt;li&gt;linux-arm64&lt;/li&gt;
-&lt;li&gt;linux-arm&lt;/li&gt;
-&lt;li&gt;windows-amd64&lt;/li&gt;
-&lt;li&gt;darwin-amd64&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;The output is under &lt;code&gt;release/OS/ARCH/drone&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&#34;notes&#34;&gt;Notes&lt;/h2&gt;
-
-&lt;p&gt;The &lt;code&gt;go generate&lt;/code&gt; step requires &lt;code&gt;sassc&lt;/code&gt; which is built from source in the first
-step building docker image. See &lt;code&gt;builder.Dockerfile&lt;/code&gt; for details.&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title></title>
       <link>http://evo-cloud.github.com/hmake/examples/linux/README/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       

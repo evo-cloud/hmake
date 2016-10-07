@@ -63,7 +63,7 @@
 <section class="post">
     <header class="post-header">
 
-        <a href="http://evo-cloud.github.com/hmake/examples/drone/README/" class="post-title"></a>
+        <a href="http://evo-cloud.github.com/hmake/CHANGES/" class="post-title"></a>
 
         <p class="post-meta">
             
@@ -74,42 +74,48 @@
     <div class="post-description">
         
 
-<h1 id="example-cross-build-drone">Example - Cross build Drone</h1>
+<h1 id="change-log">Change Log</h1>
 
-<p>This example demonstrates how to use HyperMake to cross build
-<a href="https://github.com/drone/drone">drone</a> for different platforms.</p>
+<h2 id="v1-2-0">v1.2.0</h2>
 
-<h2 id="get-started">Get Started</h2>
-
-<pre><code class="language-sh">hmake -sv
-</code></pre>
-
-<h2 id="how-it-works">How it works</h2>
-
-<p>Simply a few steps:</p>
+<p><em>Release Date</em>: 2016-10-06</p>
 
 <ul>
-<li>Build a docker image containing all tools</li>
-<li>Install dependencies (Go get)</li>
-<li>Git clone latest source code</li>
-<li>Go generate</li>
-<li>Go build for (in parallel)
-
-<ul>
-<li>linux-amd64</li>
-<li>linux-arm64</li>
-<li>linux-arm</li>
-<li>windows-amd64</li>
-<li>darwin-amd64</li>
-</ul></li>
+<li>Target expansion</li>
+<li>Retire example <em>drone</em></li>
 </ul>
 
-<p>The output is under <code>release/OS/ARCH/drone</code>.</p>
+<h2 id="v1-1-1">v1.1.1</h2>
 
-<h2 id="notes">Notes</h2>
+<p><em>Release Date</em>: 2016-09-20</p>
 
-<p>The <code>go generate</code> step requires <code>sassc</code> which is built from source in the first
-step building docker image. See <code>builder.Dockerfile</code> for details.</p>
+<ul>
+<li>Wrapper mode</li>
+<li>Upgrade dependency <a href="https://github.com/codingbrain/clix.go">clix.go</a></li>
+</ul>
+
+<h2 id="v1-1-0">v1.1.0</h2>
+
+<p><em>Release Date</em>: 2016-08-31</p>
+
+<ul>
+<li>Patching <code>/etc/passwd</code> with valid username for certain apps (like <code>git</code>) to work;</li>
+<li>Extract <code>~</code> as <code>$HOME</code> in host path of volume mapping;</li>
+<li>Direct <code>docker commit</code> support in target, via <code>commit</code> property;</li>
+<li>Unify implementation logic with/without <code>docker-machine</code>;</li>
+<li>Properties and values in target are also calculated in target digest;</li>
+<li><code>cmd</code> and <code>script</code> are calculated in target digest;</li>
+<li>Target name validation;</li>
+<li>Options <code>-s</code> and <code>-v</code> are default;</li>
+<li>In-container execution support (<code>-x</code> and <code>-X</code> options);</li>
+<li>Direct <code>docker push</code> support in target, via <code>push</code> property;</li>
+</ul>
+
+<h2 id="v1-0-0">v1.0.0</h2>
+
+<p><em>Release Date</em>: 2016-06-26</p>
+
+<p>Initial stable release</p>
 
     </div>
     
@@ -139,7 +145,7 @@ step building docker image. See <code>builder.Dockerfile</code> for details.</p>
             <h1 class="brand-title"><a href="https://github.com/evo-cloud/hmake/releases">Releases</a></h1>
             
             <h2 class="brand-tagline">
-                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.1.1">1.1.1</a>
+                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.2.0">1.2.0</a>
             </h2>
             
         </hgroup>
@@ -148,21 +154,21 @@ step building docker image. See <code>builder.Dockerfile</code> for details.</p>
             <ul class="nav-list">
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-linux-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-linux-amd64.tar.gz">
                         <i class="os fa fa-linux"></i>
                         <span>linux</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-darwin-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-darwin-amd64.tar.gz">
                         <i class="os fa fa-apple"></i>
                         <span>Mac OS X</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-windows-amd64.zip">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-windows-amd64.zip">
                         <i class="os fa fa-windows"></i>
                         <span>windows</span>
                     </a>

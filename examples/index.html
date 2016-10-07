@@ -60,189 +60,7 @@
             
             <div class="posts">
                 
-                
-<section class="post">
-    <header class="post-header">
-
-        <a href="http://evo-cloud.github.com/hmake/examples/arm-hello/README/" class="post-title"></a>
-
-        <p class="post-meta">
-            
-            
-        </p>
-    </header>
-    
-    <div class="post-description">
-        
-
-<h1 id="hello-world-built-for-arm">Hello World built for ARM</h1>
-
-<p>This example demonstrates the use of <em>HyperMake Wrapper Mode</em> to quickly build
-a project which requires a special toolchain. It just works!</p>
-
-<h2 id="hello-world">Hello World</h2>
-
-<p>The project is a very simple <em>Hello World</em> C program, however, we want to build
-it for ARM processors.
-The cross compiler <code>arm-linux-gnueabihf-gcc</code> is required, but not installed on
-the host.</p>
-
-<p>Installing a cross compiler is not easy, though we can use <code>apt-get ...</code>, it won&rsquo;t
-make host system clean.</p>
-
-<p>By using docker image <code>dockcross/linux-armv7</code> which always contains the toolchain,
-the wrapper <code>HyperMake</code> file simply makes it built!</p>
-
-    </div>
-    
-</section>
-
-                
-                
-<section class="post">
-    <header class="post-header">
-
-        <a href="http://evo-cloud.github.com/hmake/examples/drone/README/" class="post-title"></a>
-
-        <p class="post-meta">
-            
-            
-        </p>
-    </header>
-    
-    <div class="post-description">
-        
-
-<h1 id="example-cross-build-drone">Example - Cross build Drone</h1>
-
-<p>This example demonstrates how to use HyperMake to cross build
-<a href="https://github.com/drone/drone">drone</a> for different platforms.</p>
-
-<h2 id="get-started">Get Started</h2>
-
-<pre><code class="language-sh">hmake -sv
-</code></pre>
-
-<h2 id="how-it-works">How it works</h2>
-
-<p>Simply a few steps:</p>
-
-<ul>
-<li>Build a docker image containing all tools</li>
-<li>Install dependencies (Go get)</li>
-<li>Git clone latest source code</li>
-<li>Go generate</li>
-<li>Go build for (in parallel)
-
-<ul>
-<li>linux-amd64</li>
-<li>linux-arm64</li>
-<li>linux-arm</li>
-<li>windows-amd64</li>
-<li>darwin-amd64</li>
-</ul></li>
-</ul>
-
-<p>The output is under <code>release/OS/ARCH/drone</code>.</p>
-
-<h2 id="notes">Notes</h2>
-
-<p>The <code>go generate</code> step requires <code>sassc</code> which is built from source in the first
-step building docker image. See <code>builder.Dockerfile</code> for details.</p>
-
-    </div>
-    
-</section>
-
-                
-                
-<section class="post">
-    <header class="post-header">
-
-        <a href="http://evo-cloud.github.com/hmake/examples/linux/README/" class="post-title"></a>
-
-        <p class="post-meta">
-            
-            
-        </p>
-    </header>
-    
-    <div class="post-description">
-        
-
-<h1 id="example-build-linux-kernel">Example - Build Linux Kernel</h1>
-
-<p>This example builds linux kernel for multiple platforms using HyperMake.</p>
-
-<h2 id="get-started">Get Started</h2>
-
-<pre><code class="language-sh">hmake -C examples/linux -sv
-</code></pre>
-
-<p>And collect outputs from <code>build/out/PLATFORM/arch/ARCH/boot</code></p>
-
-<h2 id="structure">Structure</h2>
-
-<p>On top directory, <code>HyperMake</code> defines the project and top-level targets.
-And some scripts implements the build related logic which can be easily called
-in other hmake targets.</p>
-
-<p>The <code>builders</code> directory contains <code>*.hmake</code> files which define targets building
-docker images with required toolchain.</p>
-
-<p>The <code>targets</code> directory contains sub-directories for different platforms.
-Each sub-directory contains a <code>config</code> file which is used as kernel config file,
-and a <code>.hmake</code> file defining targets to build/clean the kernel.</p>
-
-<p>When build starts, an intermediate directory <code>build</code> is created.
-<code>build/src</code> contains the Linux kernel source, and <code>build/out/PLATFORM</code> is created
-for output of specific platform.
-By building the kernel in separated platform directories, it&rsquo;s possible to build
-kernel for multiple platform in parallel.</p>
-
-<h2 id="add-a-new-platform">Add a new platform</h2>
-
-<p>It&rsquo;s very easy to add a new platform:</p>
-
-<ul>
-<li>Create folder <code>targets/PLATFORM</code></li>
-<li>Generate/Copy <code>config</code> (kernel config) to <code>targets/PLATFORM</code></li>
-<li>Create <code>targets/PLATFORM/target.hmake</code> containing hmake targets of:
-
-<ul>
-<li><code>target-PLATFORM</code>: it builds the kernel</li>
-<li><code>clean-PLATFORM</code>: it removes <code>build/out/PLATFORM</code></li>
-</ul></li>
-</ul>
-
-<p>The recommended naming convention for <code>PLATFORM</code> is <code>ARCH-BOARD</code>,
-e.g. <code>arm-vexpress</code> is to build kernel for VExpress board with ARM CPU.</p>
-
-<h2 id="other-targets">Other targets</h2>
-
-<p>In <code>HyperMake</code>, additional targets are defined to help build the kernel:</p>
-
-<ul>
-<li><code>nconfig</code>/<code>menuconfig</code>: these maps to <code>make nconfig/menuconfig</code>. It helps you
-to edit the kernel config file. The config file is saved in <code>build/out/config/.config</code>.
-After finishing the config, you can copy this file to your platform folder.
-These targets also demonstrate the use of <code>console</code> property in hmake to allow
-interactive targets.</li>
-</ul>
-
-<h2 id="build-with-a-different-kernel-version">Build with a different kernel version</h2>
-
-<p>The kernel version is hard-coded in <code>fetch.sh</code>.
-To use a different kernel version, simply update <code>fetch.sh</code>.</p>
-
-    </div>
-    
-</section>
-
-                
             </div>
-            
-
             <div class="footer">
     <div class="pure-menu pure-menu-horizontal pure-menu-open">
         <ul>
@@ -266,7 +84,7 @@ To use a different kernel version, simply update <code>fetch.sh</code>.</p>
             <h1 class="brand-title"><a href="https://github.com/evo-cloud/hmake/releases">Releases</a></h1>
             
             <h2 class="brand-tagline">
-                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.1.1">1.1.1</a>
+                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.2.0">1.2.0</a>
             </h2>
             
         </hgroup>
@@ -275,21 +93,21 @@ To use a different kernel version, simply update <code>fetch.sh</code>.</p>
             <ul class="nav-list">
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-linux-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-linux-amd64.tar.gz">
                         <i class="os fa fa-linux"></i>
                         <span>linux</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-darwin-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-darwin-amd64.tar.gz">
                         <i class="os fa fa-apple"></i>
                         <span>Mac OS X</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-windows-amd64.zip">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-windows-amd64.zip">
                         <i class="os fa fa-windows"></i>
                         <span>windows</span>
                     </a>

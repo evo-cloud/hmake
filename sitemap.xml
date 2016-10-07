@@ -6,6 +6,10 @@
   </url>
   
   <url>
+    <loc>http://evo-cloud.github.com/hmake/CHANGES/</loc>
+  </url>
+  
+  <url>
     <loc>http://evo-cloud.github.com/hmake/README/</loc>
   </url>
   
@@ -43,10 +47,6 @@
   
   <url>
     <loc>http://evo-cloud.github.com/hmake/examples/arm-hello/README/</loc>
-  </url>
-  
-  <url>
-    <loc>http://evo-cloud.github.com/hmake/examples/drone/README/</loc>
   </url>
   
   <url>

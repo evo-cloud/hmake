@@ -121,19 +121,20 @@ targets:
         cmds:
             - gvt restore
 
-    hmake-linux-amd64:
-        description: static linked hmake binary for Linux AMD64
+    # target hmake-linux- will be expanded to three target architectures
+    hmake-linux-[arch:amd64,arm,arm64]:
+        description: static linked hmake binary for linux-$[arch]
         after:
             - vendor
         watches:
             - '**/**/*.go'
             - build.sh
         cmds:
-            - ./build.sh linux amd64
+            - ./build.sh linux $[arch]
         artifacts:
-            - bin/linux/amd64/hmake
-            - bin/hmake-linux-amd64.tar.gz
-            - bin/hmake-linux-amd64.tar.gz.sha256sum
+            - bin/linux/$[arch]/hmake
+            - bin/hmake-linux-$[arch].tar.gz
+            - bin/hmake-linux-$[arch].tar.gz.sha256sum
 
     hmake-darwin-amd64:
         description: static linked hmake binary for Mac OS
@@ -339,6 +340,61 @@ target names accept wildcards:</p>
 <li><code>HMAKE_ARCH</code>: CPU architecture</li>
 </ul>
 
+<h4 id="target-expansions">Target Expansions</h4>
+
+<p><em>Target Expansion</em> is useful when defining multiple targets with similar properties.
+For example cross compiling for multiple targets, most of the properties are identical
+only OS and CPU arch is different. In stead of duplicate the same blocks for each
+target, writing one target with expansion syntax in target name, and <em>hmake</em> will help
+generate multiple targets using expansion information.</p>
+
+<p>In above example:</p>
+
+<pre><code class="language-yaml">targets:
+    hmake-linux-[arch:amd64,arm,arm64]:
+        description: static linked hmake binary for linux-$[arch]
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+            - build.sh
+        cmds:
+            - ./build.sh linux $[arch]
+        artifacts:
+            - bin/linux/$[arch]/hmake
+            - bin/hmake-linux-$[arch].tar.gz
+            - bin/hmake-linux-$[arch].tar.gz.sha256sum
+</code></pre>
+
+<p>The target <code>hmake-linux-[arch:amd64,arm,arm64]</code> will be expanded into three targets:</p>
+
+<ul>
+<li>hmake-linux-amd64</li>
+<li>hmake-linux-arm</li>
+<li>hmake-linux-arm64</li>
+</ul>
+
+<p>With <code>$[arch]</code> substituted accordingly in each expanded targets.</p>
+
+<p>The syntax is simple: <code>[var-name:val1,val2,...]</code> to define an expansion variable
+with possible values, and in the properties, <code>$[var-name]</code> will be substituted.
+If <code>var-name</code> is not defined in target name, <code>$[var-name]</code> will NOT be substituted.
+Specially, <code>$[$]</code> substitutes to <code>$</code>.</p>
+
+<p>Multiple variables can be defined, example:</p>
+
+<pre><code>target-[os:linux,darwin]-[arch:386,amd64]
+</code></pre>
+
+<p>will expand to</p>
+
+<ul>
+<li><code>target-linux-386</code></li>
+<li><code>target-linux-amd64</code></li>
+<li><code>target-darwin-386</code></li>
+<li><code>target-darwin-amd64</code></li>
+</ul>
+
 <h2 id="include-files">Include Files</h2>
 
 <p>In <code>includes</code> section, specify files to be included.
@@ -411,7 +467,7 @@ local development environment.
             <h1 class="brand-title"><a href="https://github.com/evo-cloud/hmake/releases">Releases</a></h1>
             
             <h2 class="brand-tagline">
-                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.1.1">1.1.1</a>
+                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.2.0">1.2.0</a>
             </h2>
             
         </hgroup>
@@ -420,21 +476,21 @@ local development environment.
             <ul class="nav-list">
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-linux-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-linux-amd64.tar.gz">
                         <i class="os fa fa-linux"></i>
                         <span>linux</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-darwin-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-darwin-amd64.tar.gz">
                         <i class="os fa fa-apple"></i>
                         <span>Mac OS X</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-windows-amd64.zip">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-windows-amd64.zip">
                         <i class="os fa fa-windows"></i>
                         <span>windows</span>
                     </a>

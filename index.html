@@ -64,6 +64,69 @@
 <section class="post">
     <header class="post-header">
 
+        <a href="http://evo-cloud.github.com/hmake/CHANGES/" class="post-title"></a>
+
+        <p class="post-meta">
+            
+            
+        </p>
+    </header>
+    
+    <div class="post-description">
+        
+
+<h1 id="change-log">Change Log</h1>
+
+<h2 id="v1-2-0">v1.2.0</h2>
+
+<p><em>Release Date</em>: 2016-10-06</p>
+
+<ul>
+<li>Target expansion</li>
+<li>Retire example <em>drone</em></li>
+</ul>
+
+<h2 id="v1-1-1">v1.1.1</h2>
+
+<p><em>Release Date</em>: 2016-09-20</p>
+
+<ul>
+<li>Wrapper mode</li>
+<li>Upgrade dependency <a href="https://github.com/codingbrain/clix.go">clix.go</a></li>
+</ul>
+
+<h2 id="v1-1-0">v1.1.0</h2>
+
+<p><em>Release Date</em>: 2016-08-31</p>
+
+<ul>
+<li>Patching <code>/etc/passwd</code> with valid username for certain apps (like <code>git</code>) to work;</li>
+<li>Extract <code>~</code> as <code>$HOME</code> in host path of volume mapping;</li>
+<li>Direct <code>docker commit</code> support in target, via <code>commit</code> property;</li>
+<li>Unify implementation logic with/without <code>docker-machine</code>;</li>
+<li>Properties and values in target are also calculated in target digest;</li>
+<li><code>cmd</code> and <code>script</code> are calculated in target digest;</li>
+<li>Target name validation;</li>
+<li>Options <code>-s</code> and <code>-v</code> are default;</li>
+<li>In-container execution support (<code>-x</code> and <code>-X</code> options);</li>
+<li>Direct <code>docker push</code> support in target, via <code>push</code> property;</li>
+</ul>
+
+<h2 id="v1-0-0">v1.0.0</h2>
+
+<p><em>Release Date</em>: 2016-06-26</p>
+
+<p>Initial stable release</p>
+
+    </div>
+    
+</section>
+
+                
+                
+<section class="post">
+    <header class="post-header">
+
         <a href="http://evo-cloud.github.com/hmake/README/" class="post-title"></a>
 
         <p class="post-meta">
@@ -79,7 +142,7 @@
 
 <p>It&rsquo;s a build tool which builds projects <strong>without pre-requisites</strong>.</p>
 
-<p><img src="http://i.imgur.com/J628KJx.gif" alt="" /></p>
+<p><img src="https://raw.githubusercontent.com/evo-cloud/hmake/master/site/gh-pages/static/images/arm-hello.gif" alt="" /></p>
 
 <p><em>Pains</em></p>
 
@@ -112,6 +175,13 @@ and consistently inside the container.</p>
 <li>Selectively build targets on demand</li>
 <li>Build in parallel</li>
 </ul>
+
+<p><em>HyperMake Server</em></p>
+
+<p><a href="https://github.com/evo-cloud/hmaked">HyperMake Server</a> is a CI/CD solution for
+projects built with HyperMake.
+It provides consistent environments for development, testing, integration and
+deployment.</p>
 
 <h2 id="getting-started">Getting Started</h2>
 
@@ -159,7 +229,7 @@ brew install hmake
 
 <p>Alternatively, download from Github <a href="https://github.com/evo-cloud/hmake/releases">releases</a></p>
 
-<pre><code>curl -s https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
+<pre><code>curl -s https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 </code></pre>
 
 <p>If you are on Mac OS, change <code>linux</code> above to <code>darwin</code>.
@@ -222,9 +292,9 @@ contribute to this project.</li>
 <ul>
 <li><a href="/hmake/examples/arm-hello/README/">Wrap Hello World for ARM</a></li>
 <li><a href="/hmake/examples/linux/README/">Cross Compile Linux kernel</a></li>
-<li><a href="/hmake/examples/drone/README/">Cross Compile drone</a></li>
 </ul></li>
 <li><a href="/hmake/docs/FAQ/">FAQ and Best Practices</a></li>
+<li><a href="/hmake/CHANGES/">Change Log</a></li>
 </ul>
 
 <h2 id="supported-platform-and-software">Supported Platform and Software</h2>
@@ -263,20 +333,6 @@ Feel free to email the MAINTAINERS for any questions.</p>
 
                 
             </div>
-            
-<div class="pagination">
-  <nav role="pagination" class="post-list-pagination">
-      
-    <span class="post-list-pagination-item post-list-pagination-item-current">Page 1 of 2</span>
-    
-      <a href="/page/2/" class="post-list-pagination-item pure-button post-list-pagination-item-next">
-        Older&nbsp;<i class="fa fa-angle-double-right"></i>
-      </a>
-    
-  </nav>
-</div>
-
-
             <div class="footer">
     <div class="pure-menu pure-menu-horizontal pure-menu-open">
         <ul>
@@ -300,7 +356,7 @@ Feel free to email the MAINTAINERS for any questions.</p>
             <h1 class="brand-title"><a href="https://github.com/evo-cloud/hmake/releases">Releases</a></h1>
             
             <h2 class="brand-tagline">
-                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.1.1">1.1.1</a>
+                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.2.0">1.2.0</a>
             </h2>
             
         </hgroup>
@@ -309,21 +365,21 @@ Feel free to email the MAINTAINERS for any questions.</p>
             <ul class="nav-list">
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-linux-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-linux-amd64.tar.gz">
                         <i class="os fa fa-linux"></i>
                         <span>linux</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-darwin-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-darwin-amd64.tar.gz">
                         <i class="os fa fa-apple"></i>
                         <span>Mac OS X</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-windows-amd64.zip">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-windows-amd64.zip">
                         <i class="os fa fa-windows"></i>
                         <span>windows</span>
                     </a>

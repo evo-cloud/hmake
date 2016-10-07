@@ -10,6 +10,59 @@
     
     <item>
       <title></title>
+      <link>http://evo-cloud.github.com/hmake/CHANGES/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/CHANGES/</guid>
+      <description>
+
+&lt;h1 id=&#34;change-log&#34;&gt;Change Log&lt;/h1&gt;
+
+&lt;h2 id=&#34;v1-2-0&#34;&gt;v1.2.0&lt;/h2&gt;
+
+&lt;p&gt;&lt;em&gt;Release Date&lt;/em&gt;: 2016-10-06&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Target expansion&lt;/li&gt;
+&lt;li&gt;Retire example &lt;em&gt;drone&lt;/em&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;v1-1-1&#34;&gt;v1.1.1&lt;/h2&gt;
+
+&lt;p&gt;&lt;em&gt;Release Date&lt;/em&gt;: 2016-09-20&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Wrapper mode&lt;/li&gt;
+&lt;li&gt;Upgrade dependency &lt;a href=&#34;https://github.com/codingbrain/clix.go&#34;&gt;clix.go&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;v1-1-0&#34;&gt;v1.1.0&lt;/h2&gt;
+
+&lt;p&gt;&lt;em&gt;Release Date&lt;/em&gt;: 2016-08-31&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Patching &lt;code&gt;/etc/passwd&lt;/code&gt; with valid username for certain apps (like &lt;code&gt;git&lt;/code&gt;) to work;&lt;/li&gt;
+&lt;li&gt;Extract &lt;code&gt;~&lt;/code&gt; as &lt;code&gt;$HOME&lt;/code&gt; in host path of volume mapping;&lt;/li&gt;
+&lt;li&gt;Direct &lt;code&gt;docker commit&lt;/code&gt; support in target, via &lt;code&gt;commit&lt;/code&gt; property;&lt;/li&gt;
+&lt;li&gt;Unify implementation logic with/without &lt;code&gt;docker-machine&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;Properties and values in target are also calculated in target digest;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;cmd&lt;/code&gt; and &lt;code&gt;script&lt;/code&gt; are calculated in target digest;&lt;/li&gt;
+&lt;li&gt;Target name validation;&lt;/li&gt;
+&lt;li&gt;Options &lt;code&gt;-s&lt;/code&gt; and &lt;code&gt;-v&lt;/code&gt; are default;&lt;/li&gt;
+&lt;li&gt;In-container execution support (&lt;code&gt;-x&lt;/code&gt; and &lt;code&gt;-X&lt;/code&gt; options);&lt;/li&gt;
+&lt;li&gt;Direct &lt;code&gt;docker push&lt;/code&gt; support in target, via &lt;code&gt;push&lt;/code&gt; property;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;v1-0-0&#34;&gt;v1.0.0&lt;/h2&gt;
+
+&lt;p&gt;&lt;em&gt;Release Date&lt;/em&gt;: 2016-06-26&lt;/p&gt;
+
+&lt;p&gt;Initial stable release&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title></title>
       <link>http://evo-cloud.github.com/hmake/README/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
@@ -20,7 +73,7 @@
 
 &lt;p&gt;It&amp;rsquo;s a build tool which builds projects &lt;strong&gt;without pre-requisites&lt;/strong&gt;.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&#34;http://i.imgur.com/J628KJx.gif&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://raw.githubusercontent.com/evo-cloud/hmake/master/site/gh-pages/static/images/arm-hello.gif&#34; alt=&#34;&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;&lt;em&gt;Pains&lt;/em&gt;&lt;/p&gt;
 
@@ -53,6 +106,13 @@ and consistently inside the container.&lt;/p&gt;
 &lt;li&gt;Selectively build targets on demand&lt;/li&gt;
 &lt;li&gt;Build in parallel&lt;/li&gt;
 &lt;/ul&gt;
+
+&lt;p&gt;&lt;em&gt;HyperMake Server&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/evo-cloud/hmaked&#34;&gt;HyperMake Server&lt;/a&gt; is a CI/CD solution for
+projects built with HyperMake.
+It provides consistent environments for development, testing, integration and
+deployment.&lt;/p&gt;
 
 &lt;h2 id=&#34;getting-started&#34;&gt;Getting Started&lt;/h2&gt;
 
@@ -100,7 +160,7 @@ brew install hmake
 
 &lt;p&gt;Alternatively, download from Github &lt;a href=&#34;https://github.com/evo-cloud/hmake/releases&#34;&gt;releases&lt;/a&gt;&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;curl -s https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
+&lt;pre&gt;&lt;code&gt;curl -s https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;If you are on Mac OS, change &lt;code&gt;linux&lt;/code&gt; above to &lt;code&gt;darwin&lt;/code&gt;.
@@ -163,9 +223,9 @@ contribute to this project.&lt;/li&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/examples/arm-hello/README/&#34;&gt;Wrap Hello World for ARM&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/examples/linux/README/&#34;&gt;Cross Compile Linux kernel&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/examples/drone/README/&#34;&gt;Cross Compile drone&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/docs/FAQ/&#34;&gt;FAQ and Best Practices&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/CHANGES/&#34;&gt;Change Log&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;h2 id=&#34;supported-platform-and-software&#34;&gt;Supported Platform and Software&lt;/h2&gt;
@@ -692,6 +752,22 @@ however, all files created inside container will be owned by &lt;code&gt;root&lt
 and you may eventually see some error messages like &lt;code&gt;permission denied&lt;/code&gt; when you
 do something outside.&lt;/p&gt;
 
+&lt;h2 id=&#34;known-issues&#34;&gt;Known Issues&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Docker machine backed by VirtualBox: Docker for Mac is recommended instead of VirtualBox
+
+&lt;ul&gt;
+&lt;li&gt;Unstable NAT service: the NAT service from VirtualBox will eventually disconnect;&lt;/li&gt;
+&lt;li&gt;Hard link not supported: hard links can&amp;rsquo;t be created on mapped volumes;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;Time drifting inside the VM: with Docker for Mac, the time may drift because there&amp;rsquo;s
+no time synchronization at current stage;&lt;/li&gt;
+&lt;li&gt;Memory exhaust: observed with Docker for Mac, restart Docker service solve the problem;&lt;/li&gt;
+&lt;li&gt;Docker &lt;code&gt;--label&lt;/code&gt; bug: Docker &lt;em&gt;1.12&lt;/em&gt; has a bug parsing command line &lt;code&gt;--label&lt;/code&gt; which works
+with Docker &lt;em&gt;1.11&lt;/em&gt;, putting labels inside &lt;code&gt;Dockerfile&lt;/code&gt; works fine.&lt;/li&gt;
+&lt;/ul&gt;
+
 &lt;h2 id=&#34;limits&#34;&gt;Limits&lt;/h2&gt;
 
 &lt;p&gt;On Linux, &lt;em&gt;docker-machine&lt;/em&gt; is not supported, docker daemon must run on the same
@@ -875,19 +951,20 @@ targets:
         cmds:
             - gvt restore
 
-    hmake-linux-amd64:
-        description: static linked hmake binary for Linux AMD64
+    # target hmake-linux- will be expanded to three target architectures
+    hmake-linux-[arch:amd64,arm,arm64]:
+        description: static linked hmake binary for linux-$[arch]
         after:
             - vendor
         watches:
             - &#39;**/**/*.go&#39;
             - build.sh
         cmds:
-            - ./build.sh linux amd64
+            - ./build.sh linux $[arch]
         artifacts:
-            - bin/linux/amd64/hmake
-            - bin/hmake-linux-amd64.tar.gz
-            - bin/hmake-linux-amd64.tar.gz.sha256sum
+            - bin/linux/$[arch]/hmake
+            - bin/hmake-linux-$[arch].tar.gz
+            - bin/hmake-linux-$[arch].tar.gz.sha256sum
 
     hmake-darwin-amd64:
         description: static linked hmake binary for Mac OS
@@ -1091,6 +1168,61 @@ target names accept wildcards:&lt;/p&gt;
 &lt;li&gt;&lt;code&gt;HMAKE_VERSION&lt;/code&gt;: version of &lt;em&gt;hmake&lt;/em&gt;&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;HMAKE_OS&lt;/code&gt;: operating system&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;HMAKE_ARCH&lt;/code&gt;: CPU architecture&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4 id=&#34;target-expansions&#34;&gt;Target Expansions&lt;/h4&gt;
+
+&lt;p&gt;&lt;em&gt;Target Expansion&lt;/em&gt; is useful when defining multiple targets with similar properties.
+For example cross compiling for multiple targets, most of the properties are identical
+only OS and CPU arch is different. In stead of duplicate the same blocks for each
+target, writing one target with expansion syntax in target name, and &lt;em&gt;hmake&lt;/em&gt; will help
+generate multiple targets using expansion information.&lt;/p&gt;
+
+&lt;p&gt;In above example:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;targets:
+    hmake-linux-[arch:amd64,arm,arm64]:
+        description: static linked hmake binary for linux-$[arch]
+        after:
+            - vendor
+        watches:
+            - &#39;**/**/*.go&#39;
+            - build.sh
+        cmds:
+            - ./build.sh linux $[arch]
+        artifacts:
+            - bin/linux/$[arch]/hmake
+            - bin/hmake-linux-$[arch].tar.gz
+            - bin/hmake-linux-$[arch].tar.gz.sha256sum
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The target &lt;code&gt;hmake-linux-[arch:amd64,arm,arm64]&lt;/code&gt; will be expanded into three targets:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;hmake-linux-amd64&lt;/li&gt;
+&lt;li&gt;hmake-linux-arm&lt;/li&gt;
+&lt;li&gt;hmake-linux-arm64&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;With &lt;code&gt;$[arch]&lt;/code&gt; substituted accordingly in each expanded targets.&lt;/p&gt;
+
+&lt;p&gt;The syntax is simple: &lt;code&gt;[var-name:val1,val2,...]&lt;/code&gt; to define an expansion variable
+with possible values, and in the properties, &lt;code&gt;$[var-name]&lt;/code&gt; will be substituted.
+If &lt;code&gt;var-name&lt;/code&gt; is not defined in target name, &lt;code&gt;$[var-name]&lt;/code&gt; will NOT be substituted.
+Specially, &lt;code&gt;$[$]&lt;/code&gt; substitutes to &lt;code&gt;$&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Multiple variables can be defined, example:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;target-[os:linux,darwin]-[arch:386,amd64]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;will expand to&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;target-linux-386&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;target-linux-amd64&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;target-darwin-386&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;target-darwin-amd64&lt;/code&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;h2 id=&#34;include-files&#34;&gt;Include Files&lt;/h2&gt;
@@ -1576,53 +1708,6 @@ make host system clean.&lt;/p&gt;
 
 &lt;p&gt;By using docker image &lt;code&gt;dockcross/linux-armv7&lt;/code&gt; which always contains the toolchain,
 the wrapper &lt;code&gt;HyperMake&lt;/code&gt; file simply makes it built!&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title></title>
-      <link>http://evo-cloud.github.com/hmake/examples/drone/README/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://evo-cloud.github.com/hmake/examples/drone/README/</guid>
-      <description>
-
-&lt;h1 id=&#34;example-cross-build-drone&#34;&gt;Example - Cross build Drone&lt;/h1&gt;
-
-&lt;p&gt;This example demonstrates how to use HyperMake to cross build
-&lt;a href=&#34;https://github.com/drone/drone&#34;&gt;drone&lt;/a&gt; for different platforms.&lt;/p&gt;
-
-&lt;h2 id=&#34;get-started&#34;&gt;Get Started&lt;/h2&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;hmake -sv
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&#34;how-it-works&#34;&gt;How it works&lt;/h2&gt;
-
-&lt;p&gt;Simply a few steps:&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Build a docker image containing all tools&lt;/li&gt;
-&lt;li&gt;Install dependencies (Go get)&lt;/li&gt;
-&lt;li&gt;Git clone latest source code&lt;/li&gt;
-&lt;li&gt;Go generate&lt;/li&gt;
-&lt;li&gt;Go build for (in parallel)
-
-&lt;ul&gt;
-&lt;li&gt;linux-amd64&lt;/li&gt;
-&lt;li&gt;linux-arm64&lt;/li&gt;
-&lt;li&gt;linux-arm&lt;/li&gt;
-&lt;li&gt;windows-amd64&lt;/li&gt;
-&lt;li&gt;darwin-amd64&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;The output is under &lt;code&gt;release/OS/ARCH/drone&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&#34;notes&#34;&gt;Notes&lt;/h2&gt;
-
-&lt;p&gt;The &lt;code&gt;go generate&lt;/code&gt; step requires &lt;code&gt;sassc&lt;/code&gt; which is built from source in the first
-step building docker image. See &lt;code&gt;builder.Dockerfile&lt;/code&gt; for details.&lt;/p&gt;
 </description>
     </item>
     

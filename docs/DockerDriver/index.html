@@ -274,6 +274,22 @@ however, all files created inside container will be owned by <code>root</code> o
 and you may eventually see some error messages like <code>permission denied</code> when you
 do something outside.</p>
 
+<h2 id="known-issues">Known Issues</h2>
+
+<ul>
+<li>Docker machine backed by VirtualBox: Docker for Mac is recommended instead of VirtualBox
+
+<ul>
+<li>Unstable NAT service: the NAT service from VirtualBox will eventually disconnect;</li>
+<li>Hard link not supported: hard links can&rsquo;t be created on mapped volumes;</li>
+</ul></li>
+<li>Time drifting inside the VM: with Docker for Mac, the time may drift because there&rsquo;s
+no time synchronization at current stage;</li>
+<li>Memory exhaust: observed with Docker for Mac, restart Docker service solve the problem;</li>
+<li>Docker <code>--label</code> bug: Docker <em>1.12</em> has a bug parsing command line <code>--label</code> which works
+with Docker <em>1.11</em>, putting labels inside <code>Dockerfile</code> works fine.</li>
+</ul>
+
 <h2 id="limits">Limits</h2>
 
 <p>On Linux, <em>docker-machine</em> is not supported, docker daemon must run on the same
@@ -307,7 +323,7 @@ host running <em>hmake</em>.</p>
             <h1 class="brand-title"><a href="https://github.com/evo-cloud/hmake/releases">Releases</a></h1>
             
             <h2 class="brand-tagline">
-                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.1.1">1.1.1</a>
+                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.2.0">1.2.0</a>
             </h2>
             
         </hgroup>
@@ -316,21 +332,21 @@ host running <em>hmake</em>.</p>
             <ul class="nav-list">
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-linux-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-linux-amd64.tar.gz">
                         <i class="os fa fa-linux"></i>
                         <span>linux</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-darwin-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-darwin-amd64.tar.gz">
                         <i class="os fa fa-apple"></i>
                         <span>Mac OS X</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-windows-amd64.zip">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-windows-amd64.zip">
                         <i class="os fa fa-windows"></i>
                         <span>windows</span>
                     </a>

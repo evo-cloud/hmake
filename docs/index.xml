@@ -500,6 +500,22 @@ however, all files created inside container will be owned by &lt;code&gt;root&lt
 and you may eventually see some error messages like &lt;code&gt;permission denied&lt;/code&gt; when you
 do something outside.&lt;/p&gt;
 
+&lt;h2 id=&#34;known-issues&#34;&gt;Known Issues&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Docker machine backed by VirtualBox: Docker for Mac is recommended instead of VirtualBox
+
+&lt;ul&gt;
+&lt;li&gt;Unstable NAT service: the NAT service from VirtualBox will eventually disconnect;&lt;/li&gt;
+&lt;li&gt;Hard link not supported: hard links can&amp;rsquo;t be created on mapped volumes;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;Time drifting inside the VM: with Docker for Mac, the time may drift because there&amp;rsquo;s
+no time synchronization at current stage;&lt;/li&gt;
+&lt;li&gt;Memory exhaust: observed with Docker for Mac, restart Docker service solve the problem;&lt;/li&gt;
+&lt;li&gt;Docker &lt;code&gt;--label&lt;/code&gt; bug: Docker &lt;em&gt;1.12&lt;/em&gt; has a bug parsing command line &lt;code&gt;--label&lt;/code&gt; which works
+with Docker &lt;em&gt;1.11&lt;/em&gt;, putting labels inside &lt;code&gt;Dockerfile&lt;/code&gt; works fine.&lt;/li&gt;
+&lt;/ul&gt;
+
 &lt;h2 id=&#34;limits&#34;&gt;Limits&lt;/h2&gt;
 
 &lt;p&gt;On Linux, &lt;em&gt;docker-machine&lt;/em&gt; is not supported, docker daemon must run on the same
@@ -683,19 +699,20 @@ targets:
         cmds:
             - gvt restore
 
-    hmake-linux-amd64:
-        description: static linked hmake binary for Linux AMD64
+    # target hmake-linux- will be expanded to three target architectures
+    hmake-linux-[arch:amd64,arm,arm64]:
+        description: static linked hmake binary for linux-$[arch]
         after:
             - vendor
         watches:
             - &#39;**/**/*.go&#39;
             - build.sh
         cmds:
-            - ./build.sh linux amd64
+            - ./build.sh linux $[arch]
         artifacts:
-            - bin/linux/amd64/hmake
-            - bin/hmake-linux-amd64.tar.gz
-            - bin/hmake-linux-amd64.tar.gz.sha256sum
+            - bin/linux/$[arch]/hmake
+            - bin/hmake-linux-$[arch].tar.gz
+            - bin/hmake-linux-$[arch].tar.gz.sha256sum
 
     hmake-darwin-amd64:
         description: static linked hmake binary for Mac OS
@@ -899,6 +916,61 @@ target names accept wildcards:&lt;/p&gt;
 &lt;li&gt;&lt;code&gt;HMAKE_VERSION&lt;/code&gt;: version of &lt;em&gt;hmake&lt;/em&gt;&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;HMAKE_OS&lt;/code&gt;: operating system&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;HMAKE_ARCH&lt;/code&gt;: CPU architecture&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4 id=&#34;target-expansions&#34;&gt;Target Expansions&lt;/h4&gt;
+
+&lt;p&gt;&lt;em&gt;Target Expansion&lt;/em&gt; is useful when defining multiple targets with similar properties.
+For example cross compiling for multiple targets, most of the properties are identical
+only OS and CPU arch is different. In stead of duplicate the same blocks for each
+target, writing one target with expansion syntax in target name, and &lt;em&gt;hmake&lt;/em&gt; will help
+generate multiple targets using expansion information.&lt;/p&gt;
+
+&lt;p&gt;In above example:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;targets:
+    hmake-linux-[arch:amd64,arm,arm64]:
+        description: static linked hmake binary for linux-$[arch]
+        after:
+            - vendor
+        watches:
+            - &#39;**/**/*.go&#39;
+            - build.sh
+        cmds:
+            - ./build.sh linux $[arch]
+        artifacts:
+            - bin/linux/$[arch]/hmake
+            - bin/hmake-linux-$[arch].tar.gz
+            - bin/hmake-linux-$[arch].tar.gz.sha256sum
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The target &lt;code&gt;hmake-linux-[arch:amd64,arm,arm64]&lt;/code&gt; will be expanded into three targets:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;hmake-linux-amd64&lt;/li&gt;
+&lt;li&gt;hmake-linux-arm&lt;/li&gt;
+&lt;li&gt;hmake-linux-arm64&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;With &lt;code&gt;$[arch]&lt;/code&gt; substituted accordingly in each expanded targets.&lt;/p&gt;
+
+&lt;p&gt;The syntax is simple: &lt;code&gt;[var-name:val1,val2,...]&lt;/code&gt; to define an expansion variable
+with possible values, and in the properties, &lt;code&gt;$[var-name]&lt;/code&gt; will be substituted.
+If &lt;code&gt;var-name&lt;/code&gt; is not defined in target name, &lt;code&gt;$[var-name]&lt;/code&gt; will NOT be substituted.
+Specially, &lt;code&gt;$[$]&lt;/code&gt; substitutes to &lt;code&gt;$&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Multiple variables can be defined, example:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;target-[os:linux,darwin]-[arch:386,amd64]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;will expand to&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;target-linux-386&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;target-linux-amd64&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;target-darwin-386&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;target-darwin-amd64&lt;/code&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;h2 id=&#34;include-files&#34;&gt;Include Files&lt;/h2&gt;
