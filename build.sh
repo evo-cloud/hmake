@@ -30,6 +30,7 @@ gensite() {
         mkdir -p site/gh-pages/content/$(dirname $md)
         cp -f $md site/gh-pages/content/$md
     done
+    cp -f CHANGES.md site/gh-pages/content/
     grep -F -v '[![Build Status]' README.md \
         | sed -r 's/^(#\s+)HyperMake/\1Introduction/' \
         > site/gh-pages/content/README.md
