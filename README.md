@@ -4,7 +4,7 @@
 
 It's a build tool which builds projects **without pre-requisites**.
 
-![](http://i.imgur.com/J628KJx.gif)
+![](https://raw.githubusercontent.com/evo-cloud/hmake/master/site/gh-pages/static/images/arm-hello.gif)
 
 _Pains_
 
