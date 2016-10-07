@@ -82,7 +82,7 @@ brew install hmake
 Alternatively, download from Github [releases](https://github.com/evo-cloud/hmake/releases)
 
 ```
-curl -s https://github.com/evo-cloud/hmake/releases/download/v1.1.1/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
+curl -s https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 ```
 
 If you are on Mac OS, change `linux` above to `darwin`.
@@ -140,8 +140,8 @@ Please read the following documents if more detailed information is needed
 - Examples are always helpful
   - [Wrap Hello World for ARM](examples/arm-hello/README.md)
   - [Cross Compile Linux kernel](examples/linux/README.md)
-  - [Cross Compile drone](examples/drone/README.md)
 - [FAQ and Best Practices](docs/FAQ.md)
+- [Change Log](CHANGES.md)
 
 ## Supported Platform and Software
 
