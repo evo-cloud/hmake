@@ -80,6 +80,17 @@ build() {
         -ldflags "-X main.VersionSuffix=$(versuffix) -extldflags -static" \
         .
 
+    BINS=$(basename $OUT)
+
+    # build hmaked for linux
+    if [ "$GOOS" == "linux" ]; then
+        CGO_ENABLED=0 go build -o $(dirname $OUT)/hmaked \
+            -a -tags "static_build netgo" -installsuffix netgo \
+            -ldflags "-X main.VersionSuffix=$(versuffix) -extldflags -static" \
+            ./cmd/hmaked
+        BINS="$BINS hmaked"
+    fi
+
     PKG=bin/hmake
     if [ "$GOOS" == "windows" ]; then
         PKG=${PKG}${PKG_SUFFIX}.zip
@@ -90,7 +101,7 @@ build() {
         rm -f $PKG
         tar --posix --owner=0 --group=0 --no-acls --no-xattrs \
             --transform="s/$(basename $OUT)/hmake/" \
-            -C $(dirname $OUT) -czf $PKG $(basename $OUT)
+            -C $(dirname $OUT) -czf $PKG $BINS
     fi
     cat $PKG | sha256sum >$PKG.sha256sum
 }

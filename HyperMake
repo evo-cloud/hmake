@@ -20,8 +20,8 @@ targets:
         cmds:
             - gvt restore
 
-    hmake-linux-[arch:amd64,arm,arm64]:
-        description: static linked hmake binary for linux-$[arch]
+    build-linux-[arch:amd64,arm,arm64]:
+        description: static linked hmake/hmaked binary for linux
         after:
             - vendor
         watches:
@@ -31,10 +31,11 @@ targets:
             - ./build.sh linux $[arch]
         artifacts:
             - bin/linux/$[arch]/hmake
+            - bin/linux/$[arch]/hmaked
             - bin/hmake-linux-$[arch].tar.gz
             - bin/hmake-linux-$[arch].tar.gz.sha256sum
 
-    hmake-darwin-amd64:
+    build-darwin-amd64:
         description: static linked hmake binary for Mac OS
         after:
             - vendor
@@ -48,7 +49,7 @@ targets:
             - bin/hmake-darwin-amd64.tar.gz
             - bin/hmake-darwin-amd64.tar.gz.sha256sum
 
-    hmake-windows-amd64:
+    build-windows-amd64:
         description: static linked hmake binary for Windows
         after:
             - vendor
@@ -65,7 +66,7 @@ targets:
     image-prep:
         description: prepare for building hmake docker image
         after:
-            - hmake-linux-amd64
+            - build-linux-amd64
         watches:
             - hack/image
         cmds:
@@ -80,8 +81,8 @@ targets:
         build: bin/linux
         image: 'evocloud/hmake:latest'
         tags:
-            - 'evocloud/hmake:1.1.0'
-            - 'evocloud/hmake:1.1'
+            - 'evocloud/hmake:1.2.0'
+            - 'evocloud/hmake:1.2'
             - 'evocloud/hmake:1'
 
     push:
@@ -90,8 +91,8 @@ targets:
             - image
         push:
             - 'evocloud/hmake:latest'
-            - 'evocloud/hmake:1.1.0'
-            - 'evocloud/hmake:1.1'
+            - 'evocloud/hmake:1.2.0'
+            - 'evocloud/hmake:1.2'
             - 'evocloud/hmake:1'
 
     site:
@@ -162,7 +163,7 @@ targets:
     all:
         description: the default make target
         after:
-            - 'hmake-*'
+            - 'build-*'
 
 settings:
     default-targets:

@@ -2,6 +2,26 @@
 	"version": 0,
 	"dependencies": [
 		{
+			"importpath": "cloud.google.com/go/compute/metadata",
+			"repository": "https://code.googlesource.com/gocloud",
+			"revision": "86c12b7c8187ffdfe4c155cc6bfca41ad0cabbc5",
+			"branch": "master",
+			"path": "/compute/metadata"
+		},
+		{
+			"importpath": "cloud.google.com/go/internal",
+			"repository": "https://code.googlesource.com/gocloud",
+			"revision": "86c12b7c8187ffdfe4c155cc6bfca41ad0cabbc5",
+			"branch": "master",
+			"path": "/internal"
+		},
+		{
+			"importpath": "github.com/Sirupsen/logrus",
+			"repository": "https://github.com/Sirupsen/logrus",
+			"revision": "3ec0642a7fb6488f65b06f9040adc67e3990296a",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/codingbrain/clix.go",
 			"repository": "https://github.com/codingbrain/clix.go",
 			"revision": "61f1fdb545586f63b3f11592bc791c91379cc734",
@@ -26,9 +46,41 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/google/go-github/github",
+			"repository": "https://github.com/google/go-github",
+			"revision": "3e246d29992beb5a5d2fc253adebea86997c45b0",
+			"branch": "master",
+			"path": "/github"
+		},
+		{
+			"importpath": "github.com/google/go-querystring/query",
+			"repository": "https://github.com/google/go-querystring",
+			"revision": "9235644dd9e52eeae6fa48efd539fdc351a0af53",
+			"branch": "master",
+			"path": "/query"
+		},
+		{
 			"importpath": "github.com/mattn/go-zglob",
 			"repository": "https://github.com/mattn/go-zglob",
 			"revision": "249e8bceca8cd265110a08bbb63303fb9db47445",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/pborman/uuid",
+			"repository": "https://github.com/pborman/uuid",
+			"revision": "b984ec7fa9ff9e428bd0cf0abf429384dfbe3e37",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/pelletier/go-buffruneio",
+			"repository": "https://github.com/pelletier/go-buffruneio",
+			"revision": "df1e16fde7fc330a0ca68167c23bf7ed6ac31d6d",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/pelletier/go-toml",
+			"repository": "https://github.com/pelletier/go-toml",
+			"revision": "45932ad32dfdd20826f5671da37a5f3ce9f26a8d",
 			"branch": "master"
 		},
 		{
@@ -43,6 +95,25 @@
 			"revision": "7b428712abe956d0e9e1e9a01e163fb6c7171438",
 			"branch": "master",
 			"path": "/ssh/terminal"
+		},
+		{
+			"importpath": "golang.org/x/net/context",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "88c1a61b3dd4d98651f24775ca288fac5d2544ce",
+			"branch": "master",
+			"path": "/context"
+		},
+		{
+			"importpath": "golang.org/x/oauth2",
+			"repository": "https://go.googlesource.com/oauth2",
+			"revision": "3c3a985cb79f52a3190fbc056984415ca6763d01",
+			"branch": "master"
+		},
+		{
+			"importpath": "gopkg.in/gemnasium/logrus-airbrake-hook.v2",
+			"repository": "https://gopkg.in/gemnasium/logrus-airbrake-hook.v2",
+			"revision": "bfee1239d796830ca346767650cce5ba90d58c57",
+			"branch": "master"
 		},
 		{
 			"importpath": "gopkg.in/yaml.v2",
