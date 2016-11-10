@@ -77,7 +77,7 @@ build() {
     mkdir -p $(dirname $OUT)
     CGO_ENABLED=0 go build -o $OUT \
         -a -tags "static_build netgo" -installsuffix netgo \
-        -ldflags "-X main.VersionSuffix=$(versuffix) -extldflags -static" \
+        -ldflags "-s -w -X main.VersionSuffix=$(versuffix) -extldflags -static" \
         .
 
     PKG=bin/hmake
