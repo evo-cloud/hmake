@@ -567,12 +567,7 @@ func (p *ExecPlan) startTask(task *Task) {
 			return
 		}
 
-		task.ClearSuccessMark()
-		for name := range task.Target.Activates {
-			if t := p.Tasks[name]; t != nil {
-				t.ClearSuccessMark()
-			}
-		}
+		task.clearSuccessMark()
 	}
 
 	task.Run()
@@ -649,6 +644,10 @@ func (p *ExecPlan) abortTasks(abandon bool, signal os.Signal) {
 		evt.Tasks = append(evt.Tasks, t)
 	}
 	p.emit(evt)
+}
+
+func (p *ExecPlan) successMarkFile(targetName string) string {
+	return filepath.Join(p.WorkPath, targetName+".success")
 }
 
 // NewTask creates a task for a target
@@ -743,7 +742,7 @@ func (t *Task) CalcSuccessMark() bool {
 		return true
 	}
 
-	content, err := ioutil.ReadFile(t.SuccessMarkFile())
+	content, err := ioutil.ReadFile(t.successMarkFile())
 	if err != nil {
 		t.Plan.Logf("%s ExistDigest Error: %v", t.Name(), err)
 		return false
@@ -754,22 +753,13 @@ func (t *Task) CalcSuccessMark() bool {
 	return match
 }
 
-// ClearSuccessMark removes the success mark
-func (t *Task) ClearSuccessMark() error {
-	t.alwaysBuild = true
-	if t.Plan.DryRun {
-		return nil
-	}
-	return os.Remove(t.SuccessMarkFile())
-}
-
 // BuildSuccessMark checks if the task can be skipped
 func (t *Task) BuildSuccessMark() error {
 	defer func() {
 		t.currentDigest = ""
 	}()
 	if t.Result == Success && !t.Target.Always {
-		return ioutil.WriteFile(t.SuccessMarkFile(), []byte(t.currentDigest), 0644)
+		return ioutil.WriteFile(t.successMarkFile(), []byte(t.currentDigest), 0644)
 	}
 	return nil
 }
@@ -797,6 +787,17 @@ func (t *Task) ValidateArtifacts() bool {
 	}
 	t.Plan.Logf("%s Artifacts Validated", t.Name())
 	return true
+}
+
+func (t *Task) clearSuccessMark() {
+	t.alwaysBuild = true
+	if t.Plan.DryRun {
+		return
+	}
+	os.Remove(t.successMarkFile())
+	for name := range t.Target.Activates {
+		os.Remove(t.Plan.successMarkFile(name))
+	}
 }
 
 func (t *Task) createRunnerErrIgnored() Runner {
@@ -872,9 +873,9 @@ func (t *Task) Abort(abandon bool, signal os.Signal) {
 	}
 }
 
-// SuccessMarkFile returns the filename of success mark
-func (t *Task) SuccessMarkFile() string {
-	return filepath.Join(t.Plan.WorkPath, t.Name()+".success")
+// successMarkFile returns the filename of success mark
+func (t *Task) successMarkFile() string {
+	return t.Plan.successMarkFile(t.Name())
 }
 
 // WorkingDir is absolute path of working dir to execute the task

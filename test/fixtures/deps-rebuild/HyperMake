@@ -1,0 +1,23 @@
+---
+format: hypermake.v0
+
+name: deps-rebuild
+
+targets:
+  t0:
+    do: t0
+
+  t1:
+    after:
+      - t0
+    do: t1
+
+  t2:
+    after:
+      - t0
+    do: t2
+
+  t3:
+    after:
+      - t1
+    do: t3
