@@ -592,6 +592,22 @@ var _ = Describe("HyperMake", func() {
 			Expect(execOrder2).Should(HaveLen(1))
 		})
 
+		It("rebuilds task when dependencies refresh", func() {
+			os.RemoveAll(Fixtures("deps-rebuild", hm.WorkFolder))
+			_, execOrder0 := execProject("deps-rebuild", "t3", "t2")
+			Expect(execOrder0).Should(HaveLen(4))
+			_, execOrder1 := execProject("deps-rebuild", "-r:t0", "t2")
+			Expect(execOrder1).Should(HaveLen(2))
+			Expect(execOrder1).ShouldNot(ContainElement("t1"))
+			Expect(execOrder1).ShouldNot(ContainElement("t3"))
+			_, execOrder2 := execProject("deps-rebuild", "t1")
+			Expect(execOrder2).Should(HaveLen(1))
+			Expect(execOrder2).Should(ContainElement("t1"))
+			_, execOrder3 := execProject("deps-rebuild", "t3")
+			Expect(execOrder3).Should(HaveLen(1))
+			Expect(execOrder3).Should(ContainElement("t3"))
+		})
+
 		It("fail the task if artifacts are incomplete", func() {
 			os.Remove(Fixtures("artifacts", "test2.log"))
 			plan := LoadFixtureProject("artifacts").Plan()
