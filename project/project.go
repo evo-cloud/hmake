@@ -219,8 +219,9 @@ func loadAsWrapper(fn string) (*File, error) {
 		projFile.Targets[t.Name] = t
 	}
 	t := &Target{
-		Name: "build",
-		Desc: "wrapped build target",
+		Name:   "build",
+		Desc:   "wrapped build target",
+		Always: true,
 		Ext: map[string]interface{}{
 			"image": image,
 		},

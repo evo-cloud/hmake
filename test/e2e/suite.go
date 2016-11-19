@@ -140,4 +140,11 @@ var _ = Describe("docker", func() {
 			Expect(sum.Result).Should(Equal(hm.Skipped))
 		})
 	})
+
+	Describe("wrapper-mode", func() {
+		It("passthrough command line", func() {
+			Eventually(waitHmake("wrapper-mode")).Should(gexec.Exit(1))
+			Eventually(waitHmake("wrapper-mode", "t1")).Should(gexec.Exit(0))
+		})
+	})
 })

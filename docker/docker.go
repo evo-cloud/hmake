@@ -491,10 +491,9 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 	}
 
 	dockerCmd.Add(r.Image)
+	dockerCmd.Add(execArgs...)
 
-	if r.Task.Target.Exec {
-		dockerCmd.Add(execArgs...)
-	} else {
+	if !r.Task.Target.Exec {
 		script, e := shell.BuildScriptFile(r.Task)
 		if e != nil || script == "" {
 			return e

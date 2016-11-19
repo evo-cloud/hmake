@@ -348,6 +348,7 @@ var _ = Describe("HyperMake", func() {
 			Expect(settings).To(HaveKeyWithValue("exec-target", "build"))
 			t := proj.Targets["build"]
 			Expect(t).To(Equal(proj.WrapperTarget()))
+			Expect(t.Always).Should(BeTrue())
 			Expect(t.Ext).To(HaveKeyWithValue("image", "image"))
 			Expect(t.Ext).To(HaveKeyWithValue("cmds", []string{`make "$@"`}))
 		})
