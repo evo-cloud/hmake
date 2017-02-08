@@ -225,7 +225,7 @@ func (c *makeCmd) Execute(args []string) (err error) {
 		args = c.settings.DefaultTargets
 		if len(args) == 0 {
 			c.showTargets(p, names, padLen)
-			return fmt.Errorf("No targets selected, please choose at least one from above")
+			return fmt.Errorf("no targets selected, please choose at least one from above")
 		}
 	}
 
@@ -247,8 +247,18 @@ func (c *makeCmd) Execute(args []string) (err error) {
 	} else if t := p.WrapperTarget(); t != nil {
 		t.Args = args
 		requires = append(requires, t.Name)
+	} else if len(args) > 0 && p.IsCommand(args[0]) {
+		requires = []string{args[0]}
+		p.Targets[args[0]].Args = args[1:]
 	} else {
 		requires = p.Targets.CompleteNames(args, errs)
+	}
+	if len(requires) > 1 {
+		for _, name := range requires {
+			if t := p.Targets[name]; t != nil && t.Command {
+				errs.Add(fmt.Errorf("command %s should be the first target", t.Name))
+			}
+		}
 	}
 	if err = errs.Aggregate(); err != nil {
 		return

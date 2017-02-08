@@ -159,6 +159,13 @@ targets:
             - hmake-darwin-amd64
             - hmake-windows-amd64
 
+# define some special targets which can be used as commands
+commands:
+    echo:
+        description: simple echo command
+        cmds:
+            - 'echo $@'
+
 # settings shared across targets
 settings:
     default-targets:
@@ -195,6 +202,22 @@ Usually, it defines
   like docker image, workdir, and options for `docker run`;
 - The dependencies between targets, using `before` and `after` properties;
 - Watch of files to decide whether the target should be rebuilt.
+
+## Commands
+
+Commands are special type of targets, when used, it must be the first non-option
+argument in command line.
+E.g. invoking `hmake` like `hmake name arg1 arg2`, if `name` is defined
+in `commands`, the rest of arguments in the command line is passed as arguments
+to command target `name`.
+
+Commands are targets, with a few restrictions:
+
+- Commands should not be dependency of others. So `before` is not allowed, and
+  other targets/commands should not `after` a command;
+- Command can only be used as the first non-option argument in _hmake_ command line
+  which turns on _command mode_. In the case `hmake target1 cmd1`, it refuses to
+  run because `cmd1` is a command but not come first.
 
 #### Common Properties in Target
 
