@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -51,6 +52,12 @@ func waitHmake(project string, args ...string) *gexec.Session {
 	session := execHmake(project, args...)
 	session.Wait(15 * time.Minute)
 	return session
+}
+
+func targetOutput(project, target string) string {
+	content, err := ioutil.ReadFile(filepath.Join(projectDir(project), ".hmake", target+".log"))
+	Expect(err).Should(Succeed())
+	return string(content)
 }
 
 func loadSummary(project string) hm.ExecSummary {
@@ -120,6 +127,17 @@ var _ = Describe("docker", func() {
 
 	It("docker-compose", func() {
 		Eventually(waitHmake("docker-compose", "-vR")).Should(gexec.Exit(0))
+	})
+
+	Describe("command mode", func() {
+		It("run as command", func() {
+			Eventually(waitHmake("command-mode", "test", "dataABC123")).Should(gexec.Exit(0))
+			Expect(strings.TrimSpace(targetOutput("command-mode", "test"))).Should(Equal("dataABC123"))
+		})
+
+		It("reject a command after normal target", func() {
+			Eventually(waitHmake("command-mode", "normal", "test")).Should(gexec.Exit(1))
+		})
 	})
 
 	Describe("exec", func() {

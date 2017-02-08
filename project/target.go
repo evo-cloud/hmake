@@ -30,6 +30,7 @@ type Target struct {
 
 	Project   *Project      `json:"-"`
 	File      *File         `json:"-"`
+	Command   bool          `json:"-"`
 	Exec      bool          `json:"-"`
 	Args      []string      `json:"-"`
 	Depends   TargetNameMap `json:"-"`
@@ -246,6 +247,10 @@ func (m TargetNameMap) BuildDeps() error {
 	errs := &errors.AggregatedError{}
 	for _, t := range m {
 		names := m.CompleteNames(t.Before, errs)
+		if t.Command && len(names) > 0 {
+			errs.Add(t.Errorf("before not allowed in commands"))
+			continue
+		}
 		// convert before to after in target
 		for _, name := range names {
 			dest, ok := m[name]
@@ -261,6 +266,8 @@ func (m TargetNameMap) BuildDeps() error {
 			dest, ok := m[name]
 			if !ok {
 				errs.Add(t.Errorf("after %s which is not defined", name))
+			} else if dest.Command {
+				errs.Add(t.Errorf("dependency on command %s not allowed", name))
 			} else {
 				t.AddDep(dest)
 			}

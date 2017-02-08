@@ -69,6 +69,8 @@ type File struct {
 	Desc string `json:"description"`
 	// Targets are targets defined in current file
 	Targets map[string]*Target `json:"targets"`
+	// Commands are targets used as commands
+	Commands map[string]*Target `json:"commands"`
 	// Settings are properties
 	Settings Settings `json:"settings"`
 	// Local are properties only applied to file
@@ -438,10 +440,23 @@ func LoadFile(baseDir, path string, allowWrapper bool) (*File, error) {
 		return nil, err
 	}
 	f.Targets, err = expandTargets(f.Targets)
-	if err == nil {
-		f.Source = path
+	if err != nil {
+		return nil, err
 	}
-	return f, err
+	f.Source = path
+	// merge commands into targets
+	var errs errors.AggregatedError
+	if f.Commands != nil {
+		for name, t := range f.Commands {
+			t.Command = true
+			if _, exists := f.Targets[name]; exists {
+				errs.Add(fmt.Errorf("duplicate command/target name %s", name))
+			} else {
+				f.Targets[name] = t
+			}
+		}
+	}
+	return f, errs.Aggregate()
 }
 
 // LocateProjectFrom creates a project by locating the root file from startDir
@@ -689,6 +704,14 @@ func (p *Project) Finalize() error {
 // Plan creates an ExecPlan for this project
 func (p *Project) Plan() *ExecPlan {
 	return NewExecPlan(p)
+}
+
+// IsCommand determine a target if it's a command
+func (p *Project) IsCommand(name string) bool {
+	if t, exists := p.Targets[name]; exists {
+		return t.Command
+	}
+	return false
 }
 
 // TargetNames returns sorted target names

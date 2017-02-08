@@ -1,0 +1,18 @@
+---
+format: hypermake.v0
+
+name: command-mode
+
+targets:
+  normal:
+    description: a normal target
+
+commands:
+  test:
+    description: test command
+    cmds:
+      - 'echo $@'
+
+settings:
+  docker:
+    image: 'busybox:musl'

@@ -582,7 +582,7 @@ func (p *ExecPlan) startTask(task *Task) {
 	task.StartTime = time.Now()
 	p.emit(&EvtTaskStart{Task: task})
 
-	if !task.Target.Exec {
+	if !task.Target.Exec && !task.Target.Command {
 		skipped := task.CalcSuccessMark()
 		if p.SkippedTargets[task.Name()] {
 			skipped = true
@@ -632,7 +632,9 @@ func (p *ExecPlan) finishTask(task *Task) {
 	}
 	delete(p.RunningTasks, task.Name())
 	p.FinishedTasks = append(p.FinishedTasks, task)
-	if !p.DryRun && !task.Target.Exec && task.State == Finished {
+	if !p.DryRun &&
+		!task.Target.Exec && !task.Target.Command &&
+		task.State == Finished {
 		err := task.BuildSuccessMark()
 		if err != nil {
 			p.Logf("IGNORED: %s BuildSuccessMark Error: %v",
