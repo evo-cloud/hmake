@@ -1,5 +1,15 @@
 # Change Log
 
+## v1.3.0
+
+_Release Date_: 2017-02-08
+
+- Introduce _background task_ to support `docker-compose`
+- Introduce _command mode_
+- Pass arguments in wrapper mode
+- Fix dependency handling due to unclear success mark
+- Strip symbols and debug info
+
 ## v1.2.0
 
 _Release Date_: 2016-10-06
