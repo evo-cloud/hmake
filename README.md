@@ -141,7 +141,6 @@ Please read the following documents if more detailed information is needed
   - [Wrap Hello World for ARM](examples/arm-hello/README.md)
   - [Cross Compile Linux kernel](examples/linux/README.md)
 - [FAQ and Best Practices](docs/FAQ.md)
-- [Change Log](CHANGES.md)
 
 ## Supported Platform and Software
 

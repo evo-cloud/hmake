@@ -1,0 +1,4 @@
+version: '2'
+services:
+  httpd:
+    image: httpd:alpine

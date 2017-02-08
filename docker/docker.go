@@ -31,62 +31,79 @@ const (
 	Dockerfile = "Dockerfile"
 )
 
+// ComposeConfig defines docker-compose parameters
+type ComposeConfig struct {
+	File          string   `json:"file"`
+	ProjectName   string   `json:"project-name"`
+	Services      []string `json:"services"`
+	Deps          *bool    `json:"deps"`
+	Recreate      *bool    `json:"recreate"`
+	ForceRecreate string   `json:"recreate"`
+	Build         *bool    `json:"build"`
+	RemoveOrphans bool     `json:"remove-orphans"`
+}
+
 // Runner is a docker runner
 type Runner struct {
 	Task *hm.Task `json:"-"`
 
-	Build             string   `json:"build"`
-	BuildFrom         string   `json:"build-from"`
-	BuildArgs         []string `json:"build-args"`
-	Commits           []string `json:"commit"`
-	Push              []string `json:"push"`
-	Tags              []string `json:"tags"`
-	Labels            []string `json:"labels"`
-	LabelFiles        []string `json:"label-files"`
-	ForceRm           bool     `json:"force-rm"`
-	Pull              bool     `json:"pull"`
-	Cache             *bool    `json:"cache"`
-	ContentTrust      *bool    `json:"content-trust"`
-	Image             string   `json:"image"`
-	SrcVolume         string   `json:"src-volume"`
-	ExposeDocker      bool     `json:"expose-docker"`
-	Env               []string `json:"env"`
-	EnvFiles          []string `json:"env-files"`
-	CapAdd            []string `json:"cap-add"`
-	CapDrop           []string `json:"cap-drop"`
-	Devices           []string `json:"devices"`
-	Privileged        bool     `json:"privileged"`
-	Network           string   `json:"net"`
-	Hosts             []string `json:"hosts"`
-	DNSServers        []string `json:"dns"`
-	DNSSearch         string   `json:"dns-search"`
-	DNSOpts           []string `json:"dns-opts"`
-	User              string   `json:"user"`
-	Groups            []string `json:"groups"`
-	Volumes           []string `json:"volumes"`
-	BlkIoWeight       *int     `json:"blkio-weight"`
-	BlkIoWeightDevs   []string `json:"blkio-weight-devices"`
-	DevReadBps        []string `json:"device-read-bps"`
-	DevWriteBps       []string `json:"device-write-bps"`
-	DevReadIops       []string `json:"device-read-iops"`
-	DevWriteIops      []string `json:"device-write-iops"`
-	CPUShares         *int     `json:"cpu-shares"`
-	CPUPeriod         *int     `json:"cpu-period"`
-	CPUQuota          *int     `json:"cpu-quota"`
-	CPUSetCPUs        string   `json:"cpuset-cpus"`
-	CPUSetMems        string   `json:"cpuset-mems"`
-	KernelMemory      string   `json:"kernel-memory"`
-	Memory            string   `json:"memory"`
-	MemorySwap        string   `json:"memory-swap"`
-	MemoryReservation string   `json:"memory-reservation"`
-	MemorySwappiness  *int     `json:"memory-swappiness"`
-	ShmSize           string   `json:"shm-size"`
-	ULimit            []string `json:"ulimit"`
+	Build             string         `json:"build"`
+	BuildFrom         string         `json:"build-from"`
+	BuildArgs         []string       `json:"build-args"`
+	Commits           []string       `json:"commit"`
+	Push              []string       `json:"push"`
+	Tags              []string       `json:"tags"`
+	Labels            []string       `json:"labels"`
+	LabelFiles        []string       `json:"label-files"`
+	ForceRm           bool           `json:"force-rm"`
+	Pull              bool           `json:"pull"`
+	Cache             *bool          `json:"cache"`
+	ContentTrust      *bool          `json:"content-trust"`
+	Image             string         `json:"image"`
+	SrcVolume         string         `json:"src-volume"`
+	ExposeDocker      bool           `json:"expose-docker"`
+	Env               []string       `json:"env"`
+	EnvFiles          []string       `json:"env-files"`
+	CapAdd            []string       `json:"cap-add"`
+	CapDrop           []string       `json:"cap-drop"`
+	Devices           []string       `json:"devices"`
+	Privileged        bool           `json:"privileged"`
+	Network           string         `json:"net"`
+	Hosts             []string       `json:"hosts"`
+	DNSServers        []string       `json:"dns"`
+	DNSSearch         string         `json:"dns-search"`
+	DNSOpts           []string       `json:"dns-opts"`
+	Link              []string       `json:"link"`
+	User              string         `json:"user"`
+	Groups            []string       `json:"groups"`
+	Volumes           []string       `json:"volumes"`
+	BlkIoWeight       *int           `json:"blkio-weight"`
+	BlkIoWeightDevs   []string       `json:"blkio-weight-devices"`
+	DevReadBps        []string       `json:"device-read-bps"`
+	DevWriteBps       []string       `json:"device-write-bps"`
+	DevReadIops       []string       `json:"device-read-iops"`
+	DevWriteIops      []string       `json:"device-write-iops"`
+	CPUShares         *int           `json:"cpu-shares"`
+	CPUPeriod         *int           `json:"cpu-period"`
+	CPUQuota          *int           `json:"cpu-quota"`
+	CPUSetCPUs        string         `json:"cpuset-cpus"`
+	CPUSetMems        string         `json:"cpuset-mems"`
+	KernelMemory      string         `json:"kernel-memory"`
+	Memory            string         `json:"memory"`
+	MemorySwap        string         `json:"memory-swap"`
+	MemoryReservation string         `json:"memory-reservation"`
+	MemorySwappiness  *int           `json:"memory-swappiness"`
+	ShmSize           string         `json:"shm-size"`
+	ULimit            []string       `json:"ulimit"`
+	Compose           *ComposeConfig `json:"compose"`
+	ComposeFile       string         `json:"compose"`
 
 	// reserved properties
 	NoPasswdPatch bool `json:"no-passwd-patch"`
 
-	projectDir string
+	projectDir  string
+	composeDir  string
+	composeArgs []string
 }
 
 func (r *Runner) logf(format string, args ...interface{}) {
@@ -239,27 +256,35 @@ func (r *Runner) commonOpts(args *shell.Args) {
 func (r *Runner) Run(sigCh <-chan os.Signal) (result hm.TaskResult, err error) {
 	result = hm.Success
 
-	os.Remove(r.cidFile())
-	if r.Task.Target.Exec {
-		err = r.run(sigCh)
-	} else {
-		if r.Build != "" {
-			err = r.build(sigCh)
-		}
-		if err == nil {
-			err = r.run(sigCh)
-		}
-		if err == nil && len(r.Commits) > 0 {
-			err = r.commit(sigCh)
-		}
-		if err == nil && len(r.Push) > 0 {
-			err = r.push(sigCh)
-		}
+	if r.Compose != nil {
+		result = hm.Started
+		err = r.composeUp(sigCh)
 	}
+
+	if r.Image != "" {
+		os.Remove(r.cidFile())
+		if r.Task.Target.Exec {
+			err = r.run(sigCh)
+		} else {
+			if r.Build != "" {
+				err = r.build(sigCh)
+			}
+			if err == nil {
+				err = r.run(sigCh)
+			}
+			if err == nil && len(r.Commits) > 0 {
+				err = r.commit(sigCh)
+			}
+			if err == nil && len(r.Push) > 0 {
+				err = r.push(sigCh)
+			}
+		}
+		r.removeContainer()
+	}
+
 	if err != nil {
 		result = hm.Failure
 	}
-	r.removeContainer()
 	return
 }
 
@@ -415,8 +440,12 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 		dockerCmd.Add("-e", env)
 	}
 
+	if r.Network != "" {
+		dockerCmd.Add("--net", r.Network)
+	}
+
 	if r.Network == "host" {
-		dockerCmd.Add("--net=host", "--uts=host")
+		dockerCmd.Add("--uts", "host")
 	} else {
 		for _, host := range r.Hosts {
 			dockerCmd.Add("--add-host", host)
@@ -432,6 +461,9 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 		}
 	}
 
+	for _, link := range r.Link {
+		dockerCmd.Add("--link", link)
+	}
 	for _, cap := range r.CapAdd {
 		dockerCmd.Add("--cap-add", cap)
 	}
@@ -542,6 +574,64 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 	return err
 }
 
+func (r *Runner) parseCompose() error {
+	var args []string
+	if r.Compose.File != "" {
+		fn := filepath.Join(r.Task.Project().BaseDir, r.Compose.File)
+		info, err := os.Stat(fn)
+		if err != nil {
+			return fmt.Errorf("stat %s error %v", r.Compose.File, err)
+		}
+		if info.IsDir() {
+			r.composeDir = r.Compose.File
+		} else {
+			r.composeDir, fn = filepath.Split(r.Compose.File)
+			args = append(args, "-f", fn)
+		}
+	}
+	if r.Compose.ProjectName != "" {
+		args = append(args, "-p", r.Compose.ProjectName)
+	}
+
+	// save for future
+	r.composeArgs = args
+
+	return nil
+}
+
+func (r *Runner) composeExec(args ...string) *shell.Executor {
+	x := shell.Exec(r.Task, "docker-compose", append(r.composeArgs, args...)...)
+	x.Cmd.Env = os.Environ()
+	x.Cmd.Dir = filepath.Join(r.Task.Project().BaseDir, r.composeDir)
+	return x
+}
+
+func (r *Runner) composeUp(sigCh <-chan os.Signal) error {
+	args := shell.NewArgs("up", "-d", "--no-color")
+	if r.Compose.Deps != nil && !*r.Compose.Deps {
+		args.Add("--no-deps")
+	}
+	if r.Compose.Recreate == nil && r.Compose.ForceRecreate == "force" {
+		args.Add("--force-recreate")
+	}
+	if r.Compose.Recreate != nil && !*r.Compose.Recreate {
+		args.Add("--no-recreate")
+	}
+	if b := r.Compose.Build; b != nil {
+		if *b {
+			args.Add("--build")
+		} else {
+			args.Add("--no-build")
+		}
+	}
+	if r.Compose.RemoveOrphans {
+		args.Add("--remove-orphans")
+	}
+	args.Add(r.Compose.Services...)
+
+	return r.composeExec(args.Args...).Run(sigCh)
+}
+
 func sortStrs(src []string) []string {
 	dst := make([]string, len(src))
 	copy(dst, src)
@@ -625,6 +715,17 @@ func (r *Runner) ValidateArtifacts() bool {
 	return true
 }
 
+// Stop implements BackgroundRunner
+func (r *Runner) Stop() error {
+	if r.Compose != nil {
+		return r.composeExec("down").
+			MuteTask().
+			LogTo(r.Task.Name() + "docker-compose.log").
+			Run(nil)
+	}
+	return nil
+}
+
 // Factory is runner factory
 func Factory(task *hm.Task) (hm.Runner, error) {
 	r := &Runner{Task: task}
@@ -633,7 +734,14 @@ func Factory(task *hm.Task) (hm.Runner, error) {
 		return nil, err
 	}
 
-	if r.Image == "" {
+	if r.Compose == nil && r.ComposeFile != "" {
+		r.Compose = &ComposeConfig{File: r.ComposeFile}
+		if err := r.parseCompose(); err != nil {
+			return nil, err
+		}
+	}
+
+	if r.Image == "" && r.Compose == nil {
 		return nil, fmt.Errorf("missing property image")
 	}
 

@@ -4,42 +4,42 @@
 		{
 			"importpath": "github.com/codingbrain/clix.go",
 			"repository": "https://github.com/codingbrain/clix.go",
+			"vcs": "",
 			"revision": "61f1fdb545586f63b3f11592bc791c91379cc734",
 			"branch": "master"
 		},
 		{
 			"importpath": "github.com/easeway/go-cliview",
 			"repository": "https://github.com/easeway/go-cliview",
+			"vcs": "",
 			"revision": "5471ce69a076622a779c9de0440d38e2ca755ab5",
 			"branch": "master"
 		},
 		{
 			"importpath": "github.com/easeway/langx.go",
 			"repository": "https://github.com/easeway/langx.go",
+			"vcs": "",
 			"revision": "913a8e759859e9494f70f6bc8d6389699bdb5cd2",
-			"branch": "master"
-		},
-		{
-			"importpath": "github.com/flosch/pongo2",
-			"repository": "https://github.com/flosch/pongo2",
-			"revision": "22499f94d3d56c7238591344a6902715d0b8fbbf",
 			"branch": "master"
 		},
 		{
 			"importpath": "github.com/mattn/go-zglob",
 			"repository": "https://github.com/mattn/go-zglob",
+			"vcs": "",
 			"revision": "249e8bceca8cd265110a08bbb63303fb9db47445",
 			"branch": "master"
 		},
 		{
 			"importpath": "github.com/ttacon/emoji",
 			"repository": "https://github.com/ttacon/emoji",
+			"vcs": "",
 			"revision": "e1647f8352b417e571524a292ea471f604334171",
 			"branch": "master"
 		},
 		{
 			"importpath": "golang.org/x/crypto/ssh/terminal",
 			"repository": "https://go.googlesource.com/crypto",
+			"vcs": "",
 			"revision": "7b428712abe956d0e9e1e9a01e163fb6c7171438",
 			"branch": "master",
 			"path": "/ssh/terminal"
@@ -47,6 +47,7 @@
 		{
 			"importpath": "gopkg.in/yaml.v2",
 			"repository": "https://gopkg.in/yaml.v2",
+			"vcs": "",
 			"revision": "a83829b6f1293c91addabc89d0571c246397bbf4",
 			"branch": "v2"
 		}

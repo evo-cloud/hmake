@@ -86,11 +86,13 @@ func BuildScriptFile(t *hm.Task) (string, error) {
 
 // Executor wraps over exec.Cmd with output file
 type Executor struct {
-	Task    *hm.Task
-	Cmd     *exec.Cmd
-	Console bool
-	Stdout  bool
-	Stderr  bool
+	Task        *hm.Task
+	Cmd         *exec.Cmd
+	Console     bool
+	Stdout      bool
+	Stderr      bool
+	LogToTask   bool
+	LogFileName string
 }
 
 // AddArgs appends more arguments
@@ -121,6 +123,18 @@ func (x *Executor) MuteErr() *Executor {
 	return x
 }
 
+// MuteTask stop sending output to task
+func (x *Executor) MuteTask() *Executor {
+	x.LogToTask = false
+	return x
+}
+
+// LogTo overrides log file name
+func (x *Executor) LogTo(filename string) *Executor {
+	x.LogFileName = filename
+	return x
+}
+
 // Run starts the executor
 func (x *Executor) Run(sigCh <-chan os.Signal) (err error) {
 	x.Task.Plan.Logf("%s Exec: %v\n", x.Task.Name(), x.Cmd.Args)
@@ -130,16 +144,23 @@ func (x *Executor) Run(sigCh <-chan os.Signal) (err error) {
 		x.Cmd.Stdout = os.Stdout
 		x.Cmd.Stderr = os.Stderr
 	} else if x.Stdout || x.Stderr {
+		logFn := LogFile(x.Task)
+		if x.LogFileName != "" {
+			logFn = filepath.Join(x.Task.Plan.WorkPath, x.LogFileName)
+		}
 		var out *os.File
-		out, err = os.OpenFile(LogFile(x.Task),
+		out, err = os.OpenFile(logFn,
 			syscall.O_WRONLY|syscall.O_CREAT|syscall.O_TRUNC,
 			0644)
 		if err != nil {
-			x.Task.Plan.Logf("%s Exec OpenLog Error: %v\n", x.Task.Name(), err)
+			x.Task.Plan.Logf("%s Exec OpenLog %s Error: %v\n", x.Task.Name(), logFn, err)
 			return err
 		}
 		defer out.Close()
-		w := io.MultiWriter(out, x.Task)
+		var w io.Writer = out
+		if x.LogToTask {
+			w = io.MultiWriter(out, x.Task)
+		}
 		if x.Stdout {
 			x.Cmd.Stdout = w
 		}
@@ -184,11 +205,12 @@ func Exec(t *hm.Task, command string, args ...string) *Executor {
 	cmd.Env = append(cmd.Env, t.EnvVars()...)
 	cmd.Dir = filepath.Join(t.Project().BaseDir, t.Target.WorkingDir())
 	return &Executor{
-		Task:    t,
-		Cmd:     cmd,
-		Console: target.Console || t.Target.Exec,
-		Stdout:  true,
-		Stderr:  true,
+		Task:      t,
+		Cmd:       cmd,
+		Console:   target.Console || t.Target.Exec,
+		Stdout:    true,
+		Stderr:    true,
+		LogToTask: true,
 	}
 }
 

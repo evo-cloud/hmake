@@ -110,8 +110,10 @@ docker container.
   This is very useful when docker is required for build and avoid problematic
   docker-in-docker;
 - `privileged`: run container in privileged mode, default is `false`;
-- `net`: when specified, only allowed value is `host`, when specified, run
-  container with `--net=host --uts=host`;
+- `net`: when specified, add `--net` option to docker CLI.
+  When set to `host`, also add `--uts=host`;
+- `link`: a list of strings of `container:hostname` mapping to `--link` option.
+  This is very useful when combined with `compose` (docker-compose);
 - `user`: passed to `docker run --user...`, by default, current `uid:gid` are
   passed (with _docker-machine_ the `uid:gid` is queried from the virtual machine
   running docker daemon).
@@ -121,7 +123,8 @@ docker container.
   passed using `--group-add`l;
 - `groups`: explicitly specify group IDs to pass into container, instead of
   passing all of them;
-- `volumes`: a list of volume mappings passed to `-v` option of `docker run`.
+- `volumes`: a list of volume mappings passed to `-v` option of `docker run`;
+- `compose`: run `docker-compose`, see below for details.
 
 The following properties directly maps to `docker build/run` options:
 
@@ -186,6 +189,33 @@ If root is required, it can be explicitly specified `user: root`,
 however, all files created inside container will be owned by `root` outside,
 and you may eventually see some error messages like `permission denied` when you
 do something outside.
+
+## Docker Compose
+
+The property `compose` is used to run `docker-compose` as a background task.
+The value can be a single string pointing to a directory containing
+`docker-compose.yml` (`docker-compose.yaml`) or a full path to a file with
+alternative name instead of `docker-compose.yml`,
+or an object containing detailed properties:
+
+- `file`: the path to a directory containing `docker-compose.yml`, or to a file
+  with alternative name;
+- `project-name`: override project name (`--project-name`);
+- `deps`: when `false`, add `--no-deps`;
+- `recreate`: when `false`, add `--no-recreate`, or `force`, add `--force-recreate`;
+- `build`: when `true`, add `--build`, or `false`, add `--no-build`;
+- `remove-orphans`: when `true`, add `--remove-orphans`;
+- `services`: a list of strings as service names after `docker-compose up` command line.
+
+When `compose` is present, the task is a background task.
+`docker-compose up -d` is used to launch containers in the background.
+If `cmds` or `build` are also present in the same task, they are executed after
+`docker-compose` launched the containers.
+
+Other tasks can take dependency on a background task (e.g. with `compose`), and
+in this case, use `net` and `link` to connect task to containers launched by
+`docker-compose`. This is very useful to launch a testing environment and run
+test code from tasks.
 
 ## Known Issues
 
