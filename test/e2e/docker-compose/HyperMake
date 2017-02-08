@@ -1,0 +1,26 @@
+---
+format: hypermake.v0
+
+name: docker-compose
+
+targets:
+  compose:
+    description: run docker-compose
+    compose: dir
+
+  client:
+    description: verify docker container
+    after:
+      - compose
+    image: 'docker:1.11'
+    expose-docker: true
+    net: dir_default
+    link:
+      - 'dir_httpd_1:httpd'
+    cmds:
+      - "test -n $(docker ps -f name=dir_httpd_1 --format '{{.ID}}')"
+      - "curl -sSf http://httpd"
+
+settings:
+  default-targets: [client]
+  exec-target: client

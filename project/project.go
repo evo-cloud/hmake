@@ -10,14 +10,12 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"sort"
 	"strings"
 	"unicode"
 
 	"github.com/easeway/langx.go/errors"
 	"github.com/easeway/langx.go/mapper"
-	"github.com/flosch/pongo2"
 	zglob "github.com/mattn/go-zglob"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -114,14 +112,10 @@ func loadAndRender(fn string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	tpl, err := pongo2.FromBytes(data)
-	if err != nil {
-		return nil, err
-	}
-	return tpl.ExecuteBytes(pongo2.Context{
-		"os":   runtime.GOOS,
-		"arch": runtime.GOARCH,
-	})
+
+	// TODO templatizing
+
+	return data, nil
 }
 
 func loadYaml(filename string) (map[string]interface{}, error) {

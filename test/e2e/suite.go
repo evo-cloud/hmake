@@ -118,6 +118,10 @@ var _ = Describe("docker", func() {
 		Eventually(waitHmake("docker-commit", "test", "-vR")).Should(gexec.Exit(0))
 	})
 
+	It("docker-compose", func() {
+		Eventually(waitHmake("docker-compose", "-vR")).Should(gexec.Exit(0))
+	})
+
 	Describe("exec", func() {
 		It("exec", func() {
 			Eventually(waitHmake("docker", "-x", "true")).Should(gexec.Exit(0))

@@ -24,7 +24,7 @@ import (
 
 const (
 	// Release is the major release version
-	Release = "1.2.0"
+	Release = "1.3.0"
 	// Website is the URL to project website
 	Website = "https://github.com/evo-cloud/hmake"
 
@@ -36,23 +36,27 @@ var VersionSuffix = "dev"
 
 const (
 	faceGo int = iota
+	faceBg
 	faceOK
 	faceNA
 	faceErr
 	faceAbt
 	faceAbd
+	faceStop
 	faceGood
 )
 
 var (
-	facesNormal = []string{"=>", ":)", ":]", ":(", "^C", "!!", "OK"}
+	facesNormal = []string{"=>", "<<", ":)", ":]", ":(", "^C", "!!", "--", "OK"}
 	facesEmoji  = []string{
 		emoji.Emoji(":zap:"),
+		emoji.Emoji(":relieved:"),
 		emoji.Emoji(":yum:"),
 		emoji.Emoji(":expressionless:"),
 		emoji.Emoji(":disappointed:"),
 		emoji.Emoji(":x:"),
 		emoji.Emoji(":bangbang:"),
+		emoji.Emoji(":recycle:"),
 		emoji.Emoji(":sunglasses:"),
 	}
 	faces = facesNormal
@@ -334,6 +338,8 @@ func (c *makeCmd) onEvent(event interface{}) {
 		extra := e.Task.FinishTime.Format(timeFmt) +
 			" [+" + e.Task.Duration().String() + "]"
 		switch e.Task.Result {
+		case hm.Started:
+			c.printTaskState(e.Task, faceBg, term.StyleLo, "")
 		case hm.Success:
 			c.printTaskState(e.Task, faceOK, term.StyleOK, extra)
 		case hm.Skipped:
@@ -360,6 +366,8 @@ func (c *makeCmd) onEvent(event interface{}) {
 		if len(e.Tasks) > 0 {
 			c.promptAbort(e.Abandon)
 		}
+	case *hm.EvtTaskStop:
+		c.printTaskState(e.Task, faceStop, term.StyleLo, "")
 	}
 }
 

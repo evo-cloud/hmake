@@ -1,5 +1,6 @@
-FROM golang:1.7.1-alpine
-RUN apk update && apk add bash curl git tar zip && rm -fr /var/cache/apk/* && \
+FROM golang:1.7-alpine
+RUN apk update && apk add bash curl git tar zip py-pip && rm -fr /var/cache/apk/* && \
+    pip install 'docker-compose==1.8.0' && \
     curl -sSL https://get.docker.com/builds/Linux/x86_64/docker-1.10.0.tgz | tar -C / -xz && \
     curl -sSL https://github.com/spf13/hugo/releases/download/v0.16/hugo_0.16_linux-64bit.tgz | tar -C /usr/local/bin -xz && \
     rm -f /usr/local/bin/README.md /usr/local/bin/LICENSE.md && \

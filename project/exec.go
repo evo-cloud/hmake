@@ -99,6 +99,11 @@ type EvtAbortRequested struct {
 	Abandon bool
 }
 
+// EvtTaskStop is emitted when request a background task to stop
+type EvtTaskStop struct {
+	Task *Task
+}
+
 // Task is the execution state of a target
 type Task struct {
 	// Plan is ExecPlan owns the task
@@ -122,6 +127,7 @@ type Task struct {
 	alwaysBuild   bool
 	currentDigest string
 	sigCh         chan os.Signal
+	bgRunner      BackgroundRunner
 }
 
 // TaskResult indicates the result of task execution
@@ -130,6 +136,7 @@ type TaskResult int
 // Task results
 const (
 	Unknown TaskResult = iota
+	Started
 	Success
 	Skipped
 	Failure
@@ -140,6 +147,8 @@ func (r TaskResult) String() string {
 	switch r {
 	case Unknown:
 		return ""
+	case Started:
+		return "Started"
 	case Success:
 		return "Success"
 	case Skipped:
@@ -152,9 +161,9 @@ func (r TaskResult) String() string {
 	panic("invalid TaskResult " + strconv.Itoa(int(r)))
 }
 
-// IsOK indicates the result is positive Success/Skipped
+// IsOK indicates the result is positive Started/Success/Skipped
 func (r TaskResult) IsOK() bool {
-	return r == Success || r == Skipped
+	return r == Started || r == Success || r == Skipped
 }
 
 // MarshalJSON implements Marshaller
@@ -171,6 +180,8 @@ func (r *TaskResult) UnmarshalJSON(data []byte) error {
 	switch str {
 	case Unknown.String():
 		*r = Unknown
+	case Started.String():
+		*r = Started
 	case Success.String():
 		*r = Success
 	case Skipped.String():
@@ -194,6 +205,7 @@ const (
 	Queued
 	Running
 	Abandoned
+	Background
 	Finished
 )
 
@@ -205,10 +217,12 @@ func (r TaskState) String() string {
 		return "Queued"
 	case Running:
 		return "Running"
-	case Finished:
-		return "Finished"
 	case Abandoned:
 		return "Abandoned"
+	case Background:
+		return "Background"
+	case Finished:
+		return "Finished"
 	}
 	panic("invalid TaskState " + strconv.Itoa(int(r)))
 }
@@ -233,6 +247,8 @@ func (r *TaskState) UnmarshalJSON(data []byte) error {
 		*r = Running
 	case Abandoned.String():
 		*r = Abandoned
+	case Background.String():
+		*r = Background
 	case Finished.String():
 		*r = Finished
 	default:
@@ -273,9 +289,18 @@ func (s ExecSummary) ByTarget(target string) *TaskSummary {
 
 // Runner is the handler execute a target
 type Runner interface {
+	// Run executes the task
 	Run(<-chan os.Signal) (TaskResult, error)
+	// Signature generates the signature of task for change detection
 	Signature() string
+	// ValidateArtifacts validates task specific artifacts which may not be files
 	ValidateArtifacts() bool
+}
+
+// BackgroundRunner starts the task and runs in background
+type BackgroundRunner interface {
+	// Stop stops the background task
+	Stop() error
 }
 
 // RunnerFactory creates a runner from a task
@@ -468,6 +493,13 @@ func (p *ExecPlan) Execute(abortCh <-chan os.Signal) error {
 		}
 	}
 
+	for i := len(p.FinishedTasks); i > 0; i-- {
+		if t := p.FinishedTasks[i-1]; t.IsBackground() {
+			p.emit(&EvtTaskStop{Task: t})
+			t.Stop()
+		}
+	}
+
 	p.GenerateSummary()
 
 	errs := &errors.AggregatedError{}
@@ -595,9 +627,12 @@ func (p *ExecPlan) finishTask(task *Task) {
 
 	// transit to finished state
 	task.State = Finished
+	if task.Result == Started {
+		task.State = Background
+	}
 	delete(p.RunningTasks, task.Name())
 	p.FinishedTasks = append(p.FinishedTasks, task)
-	if !p.DryRun && !task.Target.Exec {
+	if !p.DryRun && !task.Target.Exec && task.State == Finished {
 		err := task.BuildSuccessMark()
 		if err != nil {
 			p.Logf("IGNORED: %s BuildSuccessMark Error: %v",
@@ -843,11 +878,8 @@ func (t *Task) Run() (result TaskResult, err error) {
 	runner, err = t.CreateRunner()
 	if err == nil {
 		go func() {
-			var c completion
-			c.task = t
-			if t.Plan.DryRun {
-				c.result = Success
-			} else {
+			c := completion{task: t, result: Success, runner: runner}
+			if !t.Plan.DryRun {
 				c.result, c.err = runner.Run(t.sigCh)
 			}
 			c.finishTime = time.Now()
@@ -871,6 +903,22 @@ func (t *Task) Abort(abandon bool, signal os.Signal) {
 		t.Error = t.Target.Errorf("aborted")
 		t.State = Abandoned
 	}
+}
+
+// IsBackground determine if task is running in background
+func (t *Task) IsBackground() bool {
+	return t.Result == Started
+}
+
+// Stop stops background runner
+func (t *Task) Stop() (err error) {
+	if t.bgRunner != nil {
+		t.Plan.Logf("Stop Background %s", t.Name())
+		if err = t.bgRunner.Stop(); err != nil {
+			t.Plan.Logf("Stop Background %s ERROR %v", t.Name(), err)
+		}
+	}
+	return
 }
 
 // successMarkFile returns the filename of success mark
@@ -902,11 +950,17 @@ type completion struct {
 	result     TaskResult
 	err        error
 	finishTime time.Time
+	runner     Runner
 }
 
 func (c completion) commit() {
 	c.task.Result = c.result
 	c.task.Error = c.err
 	c.task.FinishTime = c.finishTime
+	if c.result == Started {
+		if r, ok := c.runner.(BackgroundRunner); ok {
+			c.task.bgRunner = r
+		}
+	}
 	c.task.Plan.finishTask(c.task)
 }
