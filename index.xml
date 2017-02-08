@@ -10,59 +10,6 @@
     
     <item>
       <title></title>
-      <link>http://evo-cloud.github.com/hmake/CHANGES/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://evo-cloud.github.com/hmake/CHANGES/</guid>
-      <description>
-
-&lt;h1 id=&#34;change-log&#34;&gt;Change Log&lt;/h1&gt;
-
-&lt;h2 id=&#34;v1-2-0&#34;&gt;v1.2.0&lt;/h2&gt;
-
-&lt;p&gt;&lt;em&gt;Release Date&lt;/em&gt;: 2016-10-06&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Target expansion&lt;/li&gt;
-&lt;li&gt;Retire example &lt;em&gt;drone&lt;/em&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&#34;v1-1-1&#34;&gt;v1.1.1&lt;/h2&gt;
-
-&lt;p&gt;&lt;em&gt;Release Date&lt;/em&gt;: 2016-09-20&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Wrapper mode&lt;/li&gt;
-&lt;li&gt;Upgrade dependency &lt;a href=&#34;https://github.com/codingbrain/clix.go&#34;&gt;clix.go&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&#34;v1-1-0&#34;&gt;v1.1.0&lt;/h2&gt;
-
-&lt;p&gt;&lt;em&gt;Release Date&lt;/em&gt;: 2016-08-31&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Patching &lt;code&gt;/etc/passwd&lt;/code&gt; with valid username for certain apps (like &lt;code&gt;git&lt;/code&gt;) to work;&lt;/li&gt;
-&lt;li&gt;Extract &lt;code&gt;~&lt;/code&gt; as &lt;code&gt;$HOME&lt;/code&gt; in host path of volume mapping;&lt;/li&gt;
-&lt;li&gt;Direct &lt;code&gt;docker commit&lt;/code&gt; support in target, via &lt;code&gt;commit&lt;/code&gt; property;&lt;/li&gt;
-&lt;li&gt;Unify implementation logic with/without &lt;code&gt;docker-machine&lt;/code&gt;;&lt;/li&gt;
-&lt;li&gt;Properties and values in target are also calculated in target digest;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;cmd&lt;/code&gt; and &lt;code&gt;script&lt;/code&gt; are calculated in target digest;&lt;/li&gt;
-&lt;li&gt;Target name validation;&lt;/li&gt;
-&lt;li&gt;Options &lt;code&gt;-s&lt;/code&gt; and &lt;code&gt;-v&lt;/code&gt; are default;&lt;/li&gt;
-&lt;li&gt;In-container execution support (&lt;code&gt;-x&lt;/code&gt; and &lt;code&gt;-X&lt;/code&gt; options);&lt;/li&gt;
-&lt;li&gt;Direct &lt;code&gt;docker push&lt;/code&gt; support in target, via &lt;code&gt;push&lt;/code&gt; property;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&#34;v1-0-0&#34;&gt;v1.0.0&lt;/h2&gt;
-
-&lt;p&gt;&lt;em&gt;Release Date&lt;/em&gt;: 2016-06-26&lt;/p&gt;
-
-&lt;p&gt;Initial stable release&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title></title>
       <link>http://evo-cloud.github.com/hmake/README/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
@@ -160,7 +107,7 @@ brew install hmake
 
 &lt;p&gt;Alternatively, download from Github &lt;a href=&#34;https://github.com/evo-cloud/hmake/releases&#34;&gt;releases&lt;/a&gt;&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;curl -s https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
+&lt;pre&gt;&lt;code&gt;curl -s https://github.com/evo-cloud/hmake/releases/download/v1.3.0/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;If you are on Mac OS, change &lt;code&gt;linux&lt;/code&gt; above to &lt;code&gt;darwin&lt;/code&gt;.
@@ -225,7 +172,6 @@ contribute to this project.&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/examples/linux/README/&#34;&gt;Cross Compile Linux kernel&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/docs/FAQ/&#34;&gt;FAQ and Best Practices&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://evo-cloud.github.com/hmake/hmake/CHANGES/&#34;&gt;Change Log&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;h2 id=&#34;supported-platform-and-software&#34;&gt;Supported Platform and Software&lt;/h2&gt;
@@ -672,8 +618,10 @@ into container to allow docker client run from inside the container.
 This is very useful when docker is required for build and avoid problematic
 docker-in-docker;&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;privileged&lt;/code&gt;: run container in privileged mode, default is &lt;code&gt;false&lt;/code&gt;;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;net&lt;/code&gt;: when specified, only allowed value is &lt;code&gt;host&lt;/code&gt;, when specified, run
-container with &lt;code&gt;--net=host --uts=host&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;net&lt;/code&gt;: when specified, add &lt;code&gt;--net&lt;/code&gt; option to docker CLI.
+When set to &lt;code&gt;host&lt;/code&gt;, also add &lt;code&gt;--uts=host&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;link&lt;/code&gt;: a list of strings of &lt;code&gt;container:hostname&lt;/code&gt; mapping to &lt;code&gt;--link&lt;/code&gt; option.
+This is very useful when combined with &lt;code&gt;compose&lt;/code&gt; (docker-compose);&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;user&lt;/code&gt;: passed to &lt;code&gt;docker run --user...&lt;/code&gt;, by default, current &lt;code&gt;uid:gid&lt;/code&gt; are
 passed (with &lt;em&gt;docker-machine&lt;/em&gt; the &lt;code&gt;uid:gid&lt;/code&gt; is queried from the virtual machine
 running docker daemon).
@@ -683,7 +631,8 @@ When a non-root user is explicitly specified, all group IDs are automatically
 passed using &lt;code&gt;--group-add&lt;/code&gt;l;&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;groups&lt;/code&gt;: explicitly specify group IDs to pass into container, instead of
 passing all of them;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;volumes&lt;/code&gt;: a list of volume mappings passed to &lt;code&gt;-v&lt;/code&gt; option of &lt;code&gt;docker run&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;volumes&lt;/code&gt;: a list of volume mappings passed to &lt;code&gt;-v&lt;/code&gt; option of &lt;code&gt;docker run&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;compose&lt;/code&gt;: run &lt;code&gt;docker-compose&lt;/code&gt;, see below for details.&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;The following properties directly maps to &lt;code&gt;docker build/run&lt;/code&gt; options:&lt;/p&gt;
@@ -751,6 +700,35 @@ If root is required, it can be explicitly specified &lt;code&gt;user: root&lt;/c
 however, all files created inside container will be owned by &lt;code&gt;root&lt;/code&gt; outside,
 and you may eventually see some error messages like &lt;code&gt;permission denied&lt;/code&gt; when you
 do something outside.&lt;/p&gt;
+
+&lt;h2 id=&#34;docker-compose&#34;&gt;Docker Compose&lt;/h2&gt;
+
+&lt;p&gt;The property &lt;code&gt;compose&lt;/code&gt; is used to run &lt;code&gt;docker-compose&lt;/code&gt; as a background task.
+The value can be a single string pointing to a directory containing
+&lt;code&gt;docker-compose.yml&lt;/code&gt; (&lt;code&gt;docker-compose.yaml&lt;/code&gt;) or a full path to a file with
+alternative name instead of &lt;code&gt;docker-compose.yml&lt;/code&gt;,
+or an object containing detailed properties:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;file&lt;/code&gt;: the path to a directory containing &lt;code&gt;docker-compose.yml&lt;/code&gt;, or to a file
+with alternative name;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;project-name&lt;/code&gt;: override project name (&lt;code&gt;--project-name&lt;/code&gt;);&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;deps&lt;/code&gt;: when &lt;code&gt;false&lt;/code&gt;, add &lt;code&gt;--no-deps&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;recreate&lt;/code&gt;: when &lt;code&gt;false&lt;/code&gt;, add &lt;code&gt;--no-recreate&lt;/code&gt;, or &lt;code&gt;force&lt;/code&gt;, add &lt;code&gt;--force-recreate&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;build&lt;/code&gt;: when &lt;code&gt;true&lt;/code&gt;, add &lt;code&gt;--build&lt;/code&gt;, or &lt;code&gt;false&lt;/code&gt;, add &lt;code&gt;--no-build&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;remove-orphans&lt;/code&gt;: when &lt;code&gt;true&lt;/code&gt;, add &lt;code&gt;--remove-orphans&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;services&lt;/code&gt;: a list of strings as service names after &lt;code&gt;docker-compose up&lt;/code&gt; command line.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;When &lt;code&gt;compose&lt;/code&gt; is present, the task is a background task.
+&lt;code&gt;docker-compose up -d&lt;/code&gt; is used to launch containers in the background.
+If &lt;code&gt;cmds&lt;/code&gt; or &lt;code&gt;build&lt;/code&gt; are also present in the same task, they are executed after
+&lt;code&gt;docker-compose&lt;/code&gt; launched the containers.&lt;/p&gt;
+
+&lt;p&gt;Other tasks can take dependency on a background task (e.g. with &lt;code&gt;compose&lt;/code&gt;), and
+in this case, use &lt;code&gt;net&lt;/code&gt; and &lt;code&gt;link&lt;/code&gt; to connect task to containers launched by
+&lt;code&gt;docker-compose&lt;/code&gt;. This is very useful to launch a testing environment and run
+test code from tasks.&lt;/p&gt;
 
 &lt;h2 id=&#34;known-issues&#34;&gt;Known Issues&lt;/h2&gt;
 
@@ -1066,6 +1044,13 @@ targets:
             - hmake-darwin-amd64
             - hmake-windows-amd64
 
+# define some special targets which can be used as commands
+commands:
+    echo:
+        description: simple echo command
+        cmds:
+            - &#39;echo $@&#39;
+
 # settings shared across targets
 settings:
     default-targets:
@@ -1103,6 +1088,24 @@ Usually, it defines&lt;/p&gt;
 like docker image, workdir, and options for &lt;code&gt;docker run&lt;/code&gt;;&lt;/li&gt;
 &lt;li&gt;The dependencies between targets, using &lt;code&gt;before&lt;/code&gt; and &lt;code&gt;after&lt;/code&gt; properties;&lt;/li&gt;
 &lt;li&gt;Watch of files to decide whether the target should be rebuilt.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;commands&#34;&gt;Commands&lt;/h2&gt;
+
+&lt;p&gt;Commands are special type of targets, when used, it must be the first non-option
+argument in command line.
+E.g. invoking &lt;code&gt;hmake&lt;/code&gt; like &lt;code&gt;hmake name arg1 arg2&lt;/code&gt;, if &lt;code&gt;name&lt;/code&gt; is defined
+in &lt;code&gt;commands&lt;/code&gt;, the rest of arguments in the command line is passed as arguments
+to command target &lt;code&gt;name&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Commands are targets, with a few restrictions:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Commands should not be dependency of others. So &lt;code&gt;before&lt;/code&gt; is not allowed, and
+other targets/commands should not &lt;code&gt;after&lt;/code&gt; a command;&lt;/li&gt;
+&lt;li&gt;Command can only be used as the first non-option argument in &lt;em&gt;hmake&lt;/em&gt; command line
+which turns on &lt;em&gt;command mode&lt;/em&gt;. In the case &lt;code&gt;hmake target1 cmd1&lt;/code&gt;, it refuses to
+run because &lt;code&gt;cmd1&lt;/code&gt; is a command but not come first.&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;h4 id=&#34;common-properties-in-target&#34;&gt;Common Properties in Target&lt;/h4&gt;

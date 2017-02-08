@@ -236,6 +236,13 @@ targets:
             - hmake-darwin-amd64
             - hmake-windows-amd64
 
+# define some special targets which can be used as commands
+commands:
+    echo:
+        description: simple echo command
+        cmds:
+            - 'echo $@'
+
 # settings shared across targets
 settings:
     default-targets:
@@ -273,6 +280,24 @@ Usually, it defines</p>
 like docker image, workdir, and options for <code>docker run</code>;</li>
 <li>The dependencies between targets, using <code>before</code> and <code>after</code> properties;</li>
 <li>Watch of files to decide whether the target should be rebuilt.</li>
+</ul>
+
+<h2 id="commands">Commands</h2>
+
+<p>Commands are special type of targets, when used, it must be the first non-option
+argument in command line.
+E.g. invoking <code>hmake</code> like <code>hmake name arg1 arg2</code>, if <code>name</code> is defined
+in <code>commands</code>, the rest of arguments in the command line is passed as arguments
+to command target <code>name</code>.</p>
+
+<p>Commands are targets, with a few restrictions:</p>
+
+<ul>
+<li>Commands should not be dependency of others. So <code>before</code> is not allowed, and
+other targets/commands should not <code>after</code> a command;</li>
+<li>Command can only be used as the first non-option argument in <em>hmake</em> command line
+which turns on <em>command mode</em>. In the case <code>hmake target1 cmd1</code>, it refuses to
+run because <code>cmd1</code> is a command but not come first.</li>
 </ul>
 
 <h4 id="common-properties-in-target">Common Properties in Target</h4>
@@ -467,7 +492,7 @@ local development environment.
             <h1 class="brand-title"><a href="https://github.com/evo-cloud/hmake/releases">Releases</a></h1>
             
             <h2 class="brand-tagline">
-                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.2.0">1.2.0</a>
+                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.3.0">1.3.0</a>
             </h2>
             
         </hgroup>
@@ -476,21 +501,21 @@ local development environment.
             <ul class="nav-list">
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-linux-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.3.0/hmake-linux-amd64.tar.gz">
                         <i class="os fa fa-linux"></i>
                         <span>linux</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-darwin-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.3.0/hmake-darwin-amd64.tar.gz">
                         <i class="os fa fa-apple"></i>
                         <span>Mac OS X</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-windows-amd64.zip">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.3.0/hmake-windows-amd64.zip">
                         <i class="os fa fa-windows"></i>
                         <span>windows</span>
                     </a>

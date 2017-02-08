@@ -194,8 +194,10 @@ into container to allow docker client run from inside the container.
 This is very useful when docker is required for build and avoid problematic
 docker-in-docker;</li>
 <li><code>privileged</code>: run container in privileged mode, default is <code>false</code>;</li>
-<li><code>net</code>: when specified, only allowed value is <code>host</code>, when specified, run
-container with <code>--net=host --uts=host</code>;</li>
+<li><code>net</code>: when specified, add <code>--net</code> option to docker CLI.
+When set to <code>host</code>, also add <code>--uts=host</code>;</li>
+<li><code>link</code>: a list of strings of <code>container:hostname</code> mapping to <code>--link</code> option.
+This is very useful when combined with <code>compose</code> (docker-compose);</li>
 <li><code>user</code>: passed to <code>docker run --user...</code>, by default, current <code>uid:gid</code> are
 passed (with <em>docker-machine</em> the <code>uid:gid</code> is queried from the virtual machine
 running docker daemon).
@@ -205,7 +207,8 @@ When a non-root user is explicitly specified, all group IDs are automatically
 passed using <code>--group-add</code>l;</li>
 <li><code>groups</code>: explicitly specify group IDs to pass into container, instead of
 passing all of them;</li>
-<li><code>volumes</code>: a list of volume mappings passed to <code>-v</code> option of <code>docker run</code>.</li>
+<li><code>volumes</code>: a list of volume mappings passed to <code>-v</code> option of <code>docker run</code>;</li>
+<li><code>compose</code>: run <code>docker-compose</code>, see below for details.</li>
 </ul>
 
 <p>The following properties directly maps to <code>docker build/run</code> options:</p>
@@ -274,6 +277,35 @@ however, all files created inside container will be owned by <code>root</code> o
 and you may eventually see some error messages like <code>permission denied</code> when you
 do something outside.</p>
 
+<h2 id="docker-compose">Docker Compose</h2>
+
+<p>The property <code>compose</code> is used to run <code>docker-compose</code> as a background task.
+The value can be a single string pointing to a directory containing
+<code>docker-compose.yml</code> (<code>docker-compose.yaml</code>) or a full path to a file with
+alternative name instead of <code>docker-compose.yml</code>,
+or an object containing detailed properties:</p>
+
+<ul>
+<li><code>file</code>: the path to a directory containing <code>docker-compose.yml</code>, or to a file
+with alternative name;</li>
+<li><code>project-name</code>: override project name (<code>--project-name</code>);</li>
+<li><code>deps</code>: when <code>false</code>, add <code>--no-deps</code>;</li>
+<li><code>recreate</code>: when <code>false</code>, add <code>--no-recreate</code>, or <code>force</code>, add <code>--force-recreate</code>;</li>
+<li><code>build</code>: when <code>true</code>, add <code>--build</code>, or <code>false</code>, add <code>--no-build</code>;</li>
+<li><code>remove-orphans</code>: when <code>true</code>, add <code>--remove-orphans</code>;</li>
+<li><code>services</code>: a list of strings as service names after <code>docker-compose up</code> command line.</li>
+</ul>
+
+<p>When <code>compose</code> is present, the task is a background task.
+<code>docker-compose up -d</code> is used to launch containers in the background.
+If <code>cmds</code> or <code>build</code> are also present in the same task, they are executed after
+<code>docker-compose</code> launched the containers.</p>
+
+<p>Other tasks can take dependency on a background task (e.g. with <code>compose</code>), and
+in this case, use <code>net</code> and <code>link</code> to connect task to containers launched by
+<code>docker-compose</code>. This is very useful to launch a testing environment and run
+test code from tasks.</p>
+
 <h2 id="known-issues">Known Issues</h2>
 
 <ul>
@@ -323,7 +355,7 @@ host running <em>hmake</em>.</p>
             <h1 class="brand-title"><a href="https://github.com/evo-cloud/hmake/releases">Releases</a></h1>
             
             <h2 class="brand-tagline">
-                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.2.0">1.2.0</a>
+                <a href="https://github.com/evo-cloud/hmake/releases/tag/v1.3.0">1.3.0</a>
             </h2>
             
         </hgroup>
@@ -332,21 +364,21 @@ host running <em>hmake</em>.</p>
             <ul class="nav-list">
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-linux-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.3.0/hmake-linux-amd64.tar.gz">
                         <i class="os fa fa-linux"></i>
                         <span>linux</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-darwin-amd64.tar.gz">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.3.0/hmake-darwin-amd64.tar.gz">
                         <i class="os fa fa-apple"></i>
                         <span>Mac OS X</span>
                     </a>
                 </li>
                 
                 <li class="nav-item">
-                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.2.0/hmake-windows-amd64.zip">
+                    <a class="pure-button" href="https://github.com/evo-cloud/hmake/releases/download/v1.3.0/hmake-windows-amd64.zip">
                         <i class="os fa fa-windows"></i>
                         <span>windows</span>
                     </a>
