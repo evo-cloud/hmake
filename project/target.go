@@ -15,26 +15,26 @@ import (
 
 // Target defines a build target
 type Target struct {
-	Name       string                 `json:"name"`
-	Desc       string                 `json:"description"`
-	Before     []string               `json:"before"`
-	After      []string               `json:"after"`
-	ExecDriver string                 `json:"exec-driver"`
-	WorkDir    string                 `json:"workdir"`
-	Watches    []string               `json:"watches"`
-	Always     bool                   `json:"always"`
-	Artifacts  []string               `json:"artifacts"`
-	Ext        map[string]interface{} `json:"*"`
+	Name       string                 `map:"name"`
+	Desc       string                 `map:"description"`
+	Before     []string               `map:"before"`
+	After      []string               `map:"after"`
+	ExecDriver string                 `map:"exec-driver"`
+	WorkDir    string                 `map:"workdir"`
+	Watches    []string               `map:"watches"`
+	Always     bool                   `map:"always"`
+	Artifacts  []string               `map:"artifacts"`
+	Ext        map[string]interface{} `map:"*"`
 
 	// Runtime fields
 
-	Project   *Project      `json:"-"`
-	File      *File         `json:"-"`
-	Command   bool          `json:"-"`
-	Exec      bool          `json:"-"`
-	Args      []string      `json:"-"`
-	Depends   TargetNameMap `json:"-"`
-	Activates TargetNameMap `json:"-"`
+	Project   *Project      `map:"-"`
+	File      *File         `map:"-"`
+	Command   bool          `map:"-"`
+	Exec      bool          `map:"-"`
+	Args      []string      `map:"-"`
+	Depends   TargetNameMap `map:"-"`
+	Activates TargetNameMap `map:"-"`
 }
 
 // TargetNameMap is targets mapping by name

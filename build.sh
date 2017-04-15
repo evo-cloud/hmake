@@ -40,11 +40,12 @@ checkfmt() {
 
 lint() {
     gometalinter \
+        --fast \
         --disable=gotype \
         --vendor \
         --skip=examples \
         --skip=test \
-        --deadline=60s \
+        --deadline=180s \
         --severity=golint:error \
         --errors \
         ./...
