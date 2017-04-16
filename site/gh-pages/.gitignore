@@ -1,3 +1,2 @@
-/content
 /public
-!_*
+/static/json

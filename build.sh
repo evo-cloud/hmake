@@ -23,17 +23,10 @@ versuffix() {
 }
 
 gensite() {
-    rm -fr site/gh-pages/content site/gh-pages/public
-    mkdir -p site/gh-pages/content
-    cp -rf docs site/gh-pages/content/
-    for md in $(find examples -maxdepth 2 -name '*.md'); do
-        mkdir -p site/gh-pages/content/$(dirname $md)
-        cp -f $md site/gh-pages/content/$md
-    done
-    grep -F -v '[![Build Status]' README.md \
-        | sed -r 's/^(#\s+)HyperMake/\1Introduction/' \
-        > site/gh-pages/content/README.md
+    rm -fr site/gh-pages/public
     cd site/gh-pages
+    mkdir -p static/json
+    lunr-hugo -i 'content/**/*.md' -o static/json/search.json -l yaml
     hugo
 }
 

@@ -99,12 +99,8 @@ targets:
         after:
             - builder
         watches:
-            - site/gh-pages/config.toml
-            - site/gh-pages/themes/**/**/*
-            - site/gh-pages/static/**/**/*
-            - README.md
-            - docs/**/**/*
-            - examples/*/README.md
+            - site/gh-pages
+            - '!site/gh-pages/public'
             - build.sh
         cmds:
             - ./build.sh gensite
