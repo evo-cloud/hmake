@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>References on HyperMake</title>
+    <link>http://evo-cloud.github.com/hmake/references/</link>
+    <description>Recent content in References on HyperMake</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    
+	<atom:link href="http://evo-cloud.github.com/hmake/references/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Command Line</title>
+      <link>http://evo-cloud.github.com/hmake/references/commandline/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/references/commandline/</guid>
+      <description>hmake [OPTIONS] [TARGETS]  There&amp;rsquo;s no specific order between OPTIONS and TARGETS. All OPTIONS starts with hyphen - while TARGETS doesn&amp;rsquo;t.
+Common Unix command line option parsing rule is adopted:
+  A short option starts with a single hyphen and then a single letter (e.g. -C); it may have a corresponding long option which starts with a double hyphen followed by a word (or a few words concated with hyphen) (e.</description>
+    </item>
+    
+    <item>
+      <title>File Format</title>
+      <link>http://evo-cloud.github.com/hmake/references/fileformat/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/references/fileformat/</guid>
+      <description>for wrapper mode, please refer to Wrapper Mode
+File HyperMake must be present in root directory of the project tree. Command hmake can be invoked in any sub-directories inside the project tree and it will locate the root of project by looking up HyperMake. Additional files must be named as *.hmake for being referenced in includes section. All these files share the same format.
+In HyperMake or *.hmake, define the following things:</description>
+    </item>
+    
+    <item>
+      <title>Docker Driver</title>
+      <link>http://evo-cloud.github.com/hmake/references/dockerdrv/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/references/dockerdrv/</guid>
+      <description>This execution driver interprets commands or scripts and run inside docker container using specified image. The driver uses docker run to start the container, not using Docker REST API, so docker CLI is required.
+Properties  script: a multi-line string represents a full script to execute inside the container; E.g.  targets: sample: script: | #!/bin/bash echo &#39;This is a bash script&#39; sample1: script: | #!/usr/bin/env perl print &amp;quot;a perl script&amp;quot;   cmds: when script is not specified, this is a list of commands to execute for the target; E.</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -2,51 +2,98 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://evo-cloud.github.com/hmake/tutor/project/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/references/commandline/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/quickguide/install/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/intro/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/references/fileformat/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/quickguide/helloworld/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/quickguide/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/tutor/targetexec/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/tutor/buildimage/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/references/dockerdrv/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/tutor/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/tutor/pushimage/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/references/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/tutor/compose/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/tutor/execmode/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/tutor/commandmode/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/tutor/mapcreds/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/tutor/targetexp/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/tutor/wrappermode/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/tutor/faq/</loc>
+  </url>
+  
+  <url>
+    <loc>http://evo-cloud.github.com/hmake/categories/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
     <loc>http://evo-cloud.github.com/hmake/</loc>
+    <priority>0</priority>
   </url>
   
   <url>
-    <loc>http://evo-cloud.github.com/hmake/README/</loc>
-  </url>
-  
-  <url>
-    <loc>http://evo-cloud.github.com/hmake/docs/CommandLine/</loc>
-  </url>
-  
-  <url>
-    <loc>http://evo-cloud.github.com/hmake/docs/Contribute/</loc>
-  </url>
-  
-  <url>
-    <loc>http://evo-cloud.github.com/hmake/docs/DockerDriver/</loc>
-  </url>
-  
-  <url>
-    <loc>http://evo-cloud.github.com/hmake/docs/FAQ/</loc>
-  </url>
-  
-  <url>
-    <loc>http://evo-cloud.github.com/hmake/docs/FileFormat/</loc>
-  </url>
-  
-  <url>
-    <loc>http://evo-cloud.github.com/hmake/docs/QuickStart/</loc>
-  </url>
-  
-  <url>
-    <loc>http://evo-cloud.github.com/hmake/docs/UseCases/</loc>
-  </url>
-  
-  <url>
-    <loc>http://evo-cloud.github.com/hmake/docs/WrapperMode/</loc>
-  </url>
-  
-  <url>
-    <loc>http://evo-cloud.github.com/hmake/examples/arm-hello/README/</loc>
-  </url>
-  
-  <url>
-    <loc>http://evo-cloud.github.com/hmake/examples/linux/README/</loc>
+    <loc>http://evo-cloud.github.com/hmake/tags/</loc>
+    <priority>0</priority>
   </url>
   
 </urlset>

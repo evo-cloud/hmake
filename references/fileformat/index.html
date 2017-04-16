@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="generator" content="Hugo 0.20.1" />
+    <meta name="description" content="HyperMake Document">
+<meta name="author" content="Yisui Hu &lt;easeway@gmail.com&gt;">
+
+    <link rel="shortcut icon" href="http://evo-cloud.github.com/hmake//images/favicon.png" type="image/x-icon" />
+
+    
+    <title>File Format</title>
+    <link href="http://evo-cloud.github.com/hmake//css/nucleus.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/font-awesome.min.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/hybrid.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/featherlight.min.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/perfect-scrollbar.min.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/horsey.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/theme.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/hugo-theme.css" rel="stylesheet">
+    <script src="http://evo-cloud.github.com/hmake//js/jquery-2.x.min.js"></script>
+    <style type="text/css">:root #header + #content > #left > #rlblock_left
+    {display:none !important;}</style>
+    <link href="http://evo-cloud.github.com/hmake//css/default.css" rel="stylesheet">
+
+  </head>
+  <body class="" data-url="/hmake/references/fileformat/">
+    
+    <nav id="sidebar">
+  <div id="header-wrapper">
+    <div id="header">
+      <a id="logo" href="https://evo-cloud.github.io/hmake"><b>H</b>yper<b>M</b>ake</a>
+
+    </div>
+    
+        <div class="searchbox">
+    <label for="search-by"><i class="fa fa-search"></i></label>
+    <input id="search-by" type="text" placeholder="Search">
+    <span data-search-clear=""><i class="fa fa-close"></i></span>
+</div>
+<script type="text/javascript" src="http://evo-cloud.github.com/hmake//js/lunr.min.js"></script>
+<script type="text/javascript" src="http://evo-cloud.github.com/hmake//js/horsey.js"></script>
+<script type="text/javascript">
+    var baseurl = "http:\/\/evo-cloud.github.com\/hmake\/";
+</script>
+<script type="text/javascript" src="http://evo-cloud.github.com/hmake//js/search.js"></script>
+
+    
+</div>
+
+
+  <div class="highlightable">
+    <ul class="topics">
+      
+        
+        
+          
+          
+            
+          
+        
+          
+          
+            
+          
+        
+          
+          
+            
+          
+        
+          
+          
+            
+          
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      
+      
+      
+      
+
+      
+      
+      
+        
+          
+        
+      
+      
+      
+
+      <li class="dd-item  " data-nav-id="/hmake/intro/">
+        <a href="/hmake/intro/">
+          <span>
+            
+              <b>1. </b>
+            
+             Introduction
+            
+           </span>
+        </a>
+        
+      </li>
+      
+      
+      
+
+      
+      
+      
+        
+          
+        
+      
+      
+      
+
+      <li class="dd-item  " data-nav-id="/hmake/quickguide/">
+        <a href="/hmake/quickguide/">
+          <span>
+            
+              <b>2. </b>
+            
+             Quick Guide
+            
+           </span>
+        </a>
+        
+        <ul>
+          
+            <li class="dd-item " data-nav-id="/hmake/quickguide/install/">
+              <a href="/hmake/quickguide/install/">
+                <span>Installation     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/quickguide/helloworld/">
+              <a href="/hmake/quickguide/helloworld/">
+                <span>Hello World     </i></span>
+              </a>
+            </li>
+          
+        </ul>
+        
+      </li>
+      
+      
+      
+
+      
+      
+      
+        
+          
+        
+      
+      
+      
+
+      <li class="dd-item  " data-nav-id="/hmake/tutor/">
+        <a href="/hmake/tutor/">
+          <span>
+            
+              <b>3. </b>
+            
+             Tutorials
+            
+           </span>
+        </a>
+        
+        <ul>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/project/">
+              <a href="/hmake/tutor/project/">
+                <span>A HyperMake Project     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/targetexec/">
+              <a href="/hmake/tutor/targetexec/">
+                <span>Target Execution     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/buildimage/">
+              <a href="/hmake/tutor/buildimage/">
+                <span>Build Docker Image     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/pushimage/">
+              <a href="/hmake/tutor/pushimage/">
+                <span>Push Docker Image     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/compose/">
+              <a href="/hmake/tutor/compose/">
+                <span>Docker Compose     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/execmode/">
+              <a href="/hmake/tutor/execmode/">
+                <span>Exec Mode     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/commandmode/">
+              <a href="/hmake/tutor/commandmode/">
+                <span>Command Mode     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/mapcreds/">
+              <a href="/hmake/tutor/mapcreds/">
+                <span>Map Credentials     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/targetexp/">
+              <a href="/hmake/tutor/targetexp/">
+                <span>Target Expansion     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/wrappermode/">
+              <a href="/hmake/tutor/wrappermode/">
+                <span>Wrapper Mode     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/faq/">
+              <a href="/hmake/tutor/faq/">
+                <span>FAQ     </i></span>
+              </a>
+            </li>
+          
+        </ul>
+        
+      </li>
+      
+      
+      
+
+      
+      
+      
+        
+          
+        
+      
+      
+      
+
+      <li class="dd-item  parent" data-nav-id="/hmake/references/">
+        <a href="/hmake/references/">
+          <span>
+            
+              <b>4. </b>
+            
+             References
+            
+           </span>
+        </a>
+        
+        <ul>
+          
+            <li class="dd-item " data-nav-id="/hmake/references/commandline/">
+              <a href="/hmake/references/commandline/">
+                <span>Command Line     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item active" data-nav-id="/hmake/references/fileformat/">
+              <a href="/hmake/references/fileformat/">
+                <span>File Format     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/references/dockerdrv/">
+              <a href="/hmake/references/dockerdrv/">
+                <span>Docker Driver     </i></span>
+              </a>
+            </li>
+          
+        </ul>
+        
+      </li>
+      
+      
+    </ul>
+    <hr>
+     
+    <section id="footer">
+      <a class="btn btn-default" href="https://github.com/evo-cloud/hmake">Fork Me &nbsp;<i class="fa fa-github-alt"></i></a>
+
+    </section>
+  </div>
+</nav>
+
+        <section id="body">
+        <div id="overlay"></div>
+
+        <div class="padding highlightable">
+
+            <div id="top-bar">
+              
+              <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                  <span id="sidebar-toggle-span">
+                      <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                        <i class="fa fa-bars"></i>
+                      </a>
+                  </span>
+                
+                
+                  
+                  
+                  
+                    
+                    
+                <a href="/hmake/references/" itemprop="url"><span itemprop="title">References</span></a> <i class="fa fa-angle-right"></i>
+                    
+                  
+                
+                <span itemprop="title"> File Format</span>
+              </div>
+              
+
+            </div>
+            
+              <div id="body-inner">
+                
+                <h1>File Format</h1>
+                
+
+
+
+<p><em>for wrapper mode, please refer to <a href="/hmake/tutor/wrappermode/">Wrapper Mode</a></em></p>
+
+<p>File <code>HyperMake</code> must be present in root directory of the project tree.
+Command <code>hmake</code> can be invoked in any sub-directories inside the project tree
+and it will locate the root of project by looking up <code>HyperMake</code>.
+Additional files must be named as <code>*.hmake</code> for being referenced in <code>includes</code>
+section.
+All these files share the same format.</p>
+
+<p>In <code>HyperMake</code> or <code>*.hmake</code>, define the following things:</p>
+
+<ul>
+<li>Format: the format presents the current file, should always be <code>hypermake.v0</code>;</li>
+<li>Name and description: only defined in top-level <code>HyperMake</code> file;</li>
+<li>Targets: the target to build, including dependencies and commands;</li>
+<li>Settings: the settings applies to <em>hmake</em> and should be merged into a global view;</li>
+<li>Local Settings: the settings only apply to current <code>HyperMake</code> or <code>.hmake</code> file;</li>
+<li>Includes: include more <code>*.hmake</code> files.</li>
+</ul>
+
+<p>Here&rsquo;s the schema in example (this is from the <code>HyperMake</code> file of <code>hmake</code> project):</p>
+
+<pre><code>---
+format: hypermake.v0 # this indicates this is a HyperMake file
+
+# project name and description
+name: hmake
+description: HyperMake builds your project without pre-requisites
+
+# define targets
+targets:
+    builder:
+        description: build the docker image including toolchain
+        build: builder
+        image: hmake-builder:latest
+        watches:
+            - builder
+
+    vendor:
+        description: pull all vendor packages
+        after:
+            - builder
+        watches:
+            - 'vendor/manifest'
+        cmds:
+            - gvt restore
+
+    # target hmake-linux- will be expanded to three target architectures
+    hmake-linux-[arch:amd64,arm,arm64]:
+        description: static linked hmake binary for linux-$[arch]
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+            - build.sh
+        cmds:
+            - ./build.sh linux $[arch]
+        artifacts:
+            - bin/linux/$[arch]/hmake
+            - bin/hmake-linux-$[arch].tar.gz
+            - bin/hmake-linux-$[arch].tar.gz.sha256sum
+
+    hmake-darwin-amd64:
+        description: static linked hmake binary for Mac OS
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+            - build.sh
+        cmds:
+            - ./build.sh darwin amd64
+        artifacts:
+            - bin/darwin/amd64/hmake
+            - bin/hmake-darwin-amd64.tar.gz
+            - bin/hmake-darwin-amd64.tar.gz.sha256sum
+
+    hmake-windows-amd64:
+        description: static linked hmake binary for Windows
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+            - build.sh
+        cmds:
+            - ./build.sh windows amd64
+        artifacts:
+            - bin/windows/amd64/hmake.exe
+            - bin/hmake-windows-amd64.zip
+            - bin/hmake-windows-amd64.zip.sha256sum
+
+    site:
+        description: generate document site
+        after:
+            - builder
+        watches:
+            - site/gh-pages
+            - '!site/gh-pages/public'
+            - build.sh
+        cmds:
+            - ./build.sh gensite
+
+    checkfmt:
+        description: check code format
+        after:
+            - builder
+        always: true
+        cmds:
+            - ./build.sh checkfmt
+
+    lint:
+        description: check code using metalint
+        after:
+            - builder
+        always: true
+        cmds:
+            - ./build.sh lint
+
+    check:
+        description: check source code
+        after:
+            - checkfmt
+            - lint
+
+    test:
+        description: run tests
+        after:
+            - vendor
+        always: true
+        cmds:
+            - ginkgo ./test
+
+    cover:
+        description: run tests with coverage
+        after:
+            - vendor
+        always: true
+        cmds:
+            - &gt;
+                go test -coverprofile cover.out
+                -coverpkg ./project
+                ./test
+
+    e2e:
+        description: end-to-end tests
+        after:
+            - vendor
+        expose-docker: true
+        always: true
+        cmds:
+            - ginkgo ./test/e2e
+
+    all:
+        description: the default make target
+        after:
+            - hmake-linux-amd64
+            - hmake-darwin-amd64
+            - hmake-windows-amd64
+
+# define some special targets which can be used as commands
+commands:
+    echo:
+        description: simple echo command
+        cmds:
+            - 'echo $@'
+
+# settings shared across targets
+settings:
+    default-targets:
+        - all
+    docker:
+        image: hmake-builder:latest
+        src-volume: /go/src/github.com/evo-cloud/hmake
+
+# same as settings, but only apply to targets in the same file
+local:
+    key: value
+
+includes:
+    - build/**/**/*.hmake
+</code></pre>
+
+<h2 id="format">Format</h2>
+
+<p>The format of this <code>YAML</code> file is indicated by <code>format</code> property which is
+mandatory and the current acceptable value is <code>hypermake.v0</code></p>
+
+<h2 id="name-and-description">Name and Description</h2>
+
+<p>These are optional properties, while it&rsquo;s recommended <code>name</code> should be provided
+as project name.</p>
+
+<h2 id="targets">Targets</h2>
+
+<p>The property <code>targets</code> defines a dictionary of named targets.
+A target is a set of properties to define what to do (a script or a list of commands).
+Usually, it defines</p>
+
+<ul>
+<li>The environment to execute the script/commands,
+like docker image, workdir, and options for <code>docker run</code>;</li>
+<li>The dependencies between targets, using <code>before</code> and <code>after</code> properties;</li>
+<li>Watch of files and artifacts to decide whether the target should be rebuilt.</li>
+</ul>
+
+<h2 id="commands">Commands</h2>
+
+<p>Commands are special type of targets, when used, it must be the first non-option
+argument in command line.</p>
+
+<p>E.g.</p>
+
+<pre><code class="language-sh">hmake name arg1 arg2
+</code></pre>
+
+<p>If <code>name</code> is defined in <code>commands</code>,
+the rest of arguments in the command line is passed as arguments to command target <code>name</code>.</p>
+
+<p>Commands are targets, with a few restrictions:</p>
+
+<ul>
+<li>Commands should not be dependency of others. So <code>before</code> is not allowed, and
+other targets/commands should not <code>after</code> a command;</li>
+<li>Command can only be used as the first non-option argument in <em>hmake</em> command line
+which turns on <em>command mode</em>. In the case <code>hmake target1 cmd1</code>, it refuses to
+run because <code>cmd1</code> is a command but not come first.</li>
+</ul>
+
+<h4 id="common-properties-in-target">Common Properties in Target</h4>
+
+<ul>
+<li><code>description</code>: description of the target;</li>
+<li><code>before</code>: a list of names of targets which can only execute after this target;</li>
+<li><code>after</code>: a list of names of targets on which this targets depends;</li>
+<li><code>workdir</code>: the current working directory for commands in the target,
+relative to <code>.hmake</code> file defining the target;
+if it&rsquo;s absolute (starting with <code>/</code>), it&rsquo;s relative to project root;
+by default, it&rsquo;s the current directory containing the <code>.hmake</code> file.</li>
+<li><code>watches</code>: a list of path/filenames <a href="#path-wildcard">wildcard supported</a>
+whose mtime will be checked to determine if the target is out-of-date,
+without specifying this property,
+the target is automatically skipped if the last execution was successful
+and all dependencies are skipped;
+any path/filenames prefixed with <code>!</code> will be excluded
+(must be quoted, or <code>!</code> will be interpreted by YAML).</li>
+<li><code>always</code>: always build the target regardless of last execution state and results
+of all dependencies (the <code>.PHONY</code> target in <code>make</code>);</li>
+<li><code>artifacts</code>: a list of files/directory must be present after the execution of
+the target (aka. the output of the target), in relative path to current <code>.hmake</code>
+file, or if it&rsquo;s absolute path, it&rsquo;s relative to project root.</li>
+</ul>
+
+<p>Other properties are specific to execution driver which executes the target.
+The currently supported execution driver is <code>docker</code>, please read
+<a href="/hmake/references/dockerdrv/">Docker Driver</a> for details.</p>
+
+<h4 id="dependencies">Dependencies</h4>
+
+<p>Dependencies are specified using:</p>
+
+<ul>
+<li><code>after</code>: the target is executed when the depended tasks succeed or are skipped</li>
+<li><code>before</code>: the target must succeed or skip before the specified tasks get executed.</li>
+</ul>
+
+<p>A <em>skipped</em> target means there&rsquo;s nothing to do with the target (no commands or
+it&rsquo;s still up-to-date). It can be an equivalent to <em>success</em>.</p>
+
+<p>In most cases, <code>after</code> is enough. <code>before</code> is often used to inject dependencies.</p>
+
+<h4 id="matching-targets-names-with-wildcards">Matching targets names with wildcards</h4>
+
+<p>The places (<code>before</code>, <code>after</code>, <code>-r</code>, <code>-S</code>, command line targets, etc) requiring
+target names accept wildcards:</p>
+
+<ul>
+<li>Wildcards used in file names: <code>*</code>, <code>?</code>, <code>\</code> and <code>[chars]</code>, they are matched using <code>filepath.Match</code></li>
+<li>Regular Expression: the name starts and ends with <code>/</code></li>
+</ul>
+
+<h4 id="pre-defined-environment-variables">Pre-defined Environment Variables</h4>
+
+<p>These environment variables can be used in each targets.</p>
+
+<ul>
+<li><code>HMAKE_PROJECT_NAME</code>: the name of the project;</li>
+<li><code>HMAKE_PROJECT_DIR</code>: the directory containing <code>HyperMake</code> (aka. project root);</li>
+<li><code>HMAKE_PROJECT_FILE</code>: the full path to <code>HyperMake</code>, including file name;</li>
+<li><code>HMAKE_WORK_DIR</code>: <code>$HMAKE_PROJECT_DIR/.hmake</code>;</li>
+<li><code>HMAKE_LAUNCH_PATH</code>: the relative path under <code>$HMAKE_PROJECT_DIR</code> where <code>hmake</code> launches</li>
+<li><code>HMAKE_REQUIRED_TARGETS</code>: the names of targets explicitly required from command line, separate by space</li>
+<li><code>HMAKE_TARGET</code>: the name of the target currently in execution</li>
+<li><code>HMAKE_TARGET_DIR</code>: the relative path to directory containing the <code>HyperMake</code>
+or <code>*.hmake</code> file which defines the target</li>
+<li><code>HMAKE_VERSION</code>: version of <em>hmake</em></li>
+<li><code>HMAKE_OS</code>: operating system</li>
+<li><code>HMAKE_ARCH</code>: CPU architecture</li>
+</ul>
+
+<h4 id="target-expansions">Target Expansions</h4>
+
+<p><em>Target Expansion</em> is useful when defining multiple targets with similar properties.
+For example cross compiling for multiple targets, most of the properties are identical
+only OS and CPU arch is different. In stead of duplicate the same blocks for each
+target, writing one target with expansion syntax in target name, and <em>hmake</em> will help
+generate multiple targets using expansion information.</p>
+
+<p>In above example:</p>
+
+<pre><code>targets:
+    hmake-linux-[arch:amd64,arm,arm64]:
+        description: static linked hmake binary for linux-$[arch]
+        after:
+            - vendor
+        watches:
+            - '**/**/*.go'
+            - build.sh
+        cmds:
+            - ./build.sh linux $[arch]
+        artifacts:
+            - bin/linux/$[arch]/hmake
+            - bin/hmake-linux-$[arch].tar.gz
+            - bin/hmake-linux-$[arch].tar.gz.sha256sum
+</code></pre>
+
+<p>The target <code>hmake-linux-[arch:amd64,arm,arm64]</code> will be expanded into three targets:</p>
+
+<ul>
+<li>hmake-linux-amd64</li>
+<li>hmake-linux-arm</li>
+<li>hmake-linux-arm64</li>
+</ul>
+
+<p>With <code>$[arch]</code> substituted accordingly in each expanded targets.</p>
+
+<p>The syntax is simple: <code>[var-name:val1,val2,...]</code> to define an expansion variable
+with possible values, and in the properties, <code>$[var-name]</code> will be substituted.
+If <code>var-name</code> is not defined in target name, <code>$[var-name]</code> will NOT be substituted.
+Specially, <code>$[$]</code> substitutes to <code>$</code>.</p>
+
+<p>Multiple variables can be defined, example:</p>
+
+<pre><code>target-[os:linux,darwin]-[arch:386,amd64]
+</code></pre>
+
+<p>will expand to</p>
+
+<ul>
+<li><code>target-linux-386</code></li>
+<li><code>target-linux-amd64</code></li>
+<li><code>target-darwin-386</code></li>
+<li><code>target-darwin-amd64</code></li>
+</ul>
+
+<h2 id="include-files">Include Files</h2>
+
+<p>In <code>includes</code> section, specify files to be included.
+The files included can provide more targets and also override settings.
+<a href="#path-wildcard">Path wildcard</a> can be used.</p>
+
+<p>Any path used in <code>HyperMake</code> or <code>*.hmake</code> files are relative to current file.
+When a target gets executed, the default working directory is where the file
+defining the target exists.</p>
+
+<h2 id="settings">Settings</h2>
+
+<p>In <code>settings</code> section, the hierarchical dictionary is used to provide
+global settings. According to the order of <code>*.hmake</code> files loaded, the file loaded
+latter overrides the settings in the former loaded files.
+In <code>local</code> section, the settings are only applied to current file.
+And the properties defined in target overrides everything.</p>
+
+<p>Here&rsquo;s the order <em>hmake</em> looks a setting by name:</p>
+
+<ul>
+<li>From target&rsquo;s properties;</li>
+<li>From <code>local</code>;</li>
+<li>From <code>settings</code> in the reversed order of files being loaded.</li>
+</ul>
+
+<h4 id="pre-defined-setting-properties">Pre-defined Setting Properties</h4>
+
+<ul>
+<li><code>default-targets</code>: a list of targets to build when no targets are specified
+in <code>hmake</code> command;</li>
+<li><code>docker</code>: a set of <a href="/hmake/references/dockerdrv/">docker</a> specific properties which defines
+default values for targets.</li>
+</ul>
+
+<h2 id="local-customization">Local Customization</h2>
+
+<p>After loading <code>HyperMake</code> and <code>*.hmake</code> files, <em>hmake</em> also looks up <code>.hmakerc</code>
+files from current directory up to root directory of the project and load them
+in the order from root directory down to the current directory.
+The <code>.hmakerc</code> has the same format as <code>HyperMake</code> and <code>*.hmake</code> files and is
+used to override settings and inject targets to satisfy the special needs of
+local development environment.</p>
+
+<div class="notices tip" ><p><code>.hmakerc</code> SHOULD be included in <code>.gitignore</code> file.</p>
+</div>
+
+
+<h2 id="path-wildcard">Path Wildcard</h2>
+
+<p><em>hmake</em> supports wildcards in paths, e.g.</p>
+
+<ul>
+<li><code>*fn*</code>: matches files/directories in current level;</li>
+<li><code>*/*fn</code>: matches files/directories in any sub-directories;</li>
+<li><code>**/**/*fn</code>: matches files/directories in any levels of sub-directories.</li>
+</ul>
+
+
+      
+      
+      </div>
+    </div>
+
+    
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+      
+    
+    
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+        
+      
+        
+      
+    
+      
+        
+      
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+      
+        
+      
+      
+        
+      
+        
+      
+        
+      
+    
+    
+
+    <div id="navigation">
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              
+                <a class="nav nav-prev" href="/hmake/references/commandline/"> <i class="fa fa-chevron-left"></i></a>
+              
+            
+            
+              
+                <a class="nav nav-next" href="/hmake/references/dockerdrv/" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+              
+            
+          
+        
+          
+        
+        
+        
+        
+    </div>
+
+    </section>
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>
+    <script src="http://evo-cloud.github.com/hmake//js/clipboard.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/perfect-scrollbar.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/perfect-scrollbar.jquery.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/jquery.sticky-kit.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/featherlight.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/html5shiv-printshiv.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="http://evo-cloud.github.com/hmake//js/modernizr.custom.71422.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/learn.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/hugo-learn.js"></script>
+    
+
+  </body>
+</html>
+

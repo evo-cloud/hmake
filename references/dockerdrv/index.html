@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="generator" content="Hugo 0.20.1" />
+    <meta name="description" content="HyperMake Document">
+<meta name="author" content="Yisui Hu &lt;easeway@gmail.com&gt;">
+
+    <link rel="shortcut icon" href="http://evo-cloud.github.com/hmake//images/favicon.png" type="image/x-icon" />
+
+    
+    <title>Docker Driver</title>
+    <link href="http://evo-cloud.github.com/hmake//css/nucleus.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/font-awesome.min.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/hybrid.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/featherlight.min.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/perfect-scrollbar.min.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/horsey.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/theme.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/hugo-theme.css" rel="stylesheet">
+    <script src="http://evo-cloud.github.com/hmake//js/jquery-2.x.min.js"></script>
+    <style type="text/css">:root #header + #content > #left > #rlblock_left
+    {display:none !important;}</style>
+    <link href="http://evo-cloud.github.com/hmake//css/default.css" rel="stylesheet">
+
+  </head>
+  <body class="" data-url="/hmake/references/dockerdrv/">
+    
+    <nav id="sidebar">
+  <div id="header-wrapper">
+    <div id="header">
+      <a id="logo" href="https://evo-cloud.github.io/hmake"><b>H</b>yper<b>M</b>ake</a>
+
+    </div>
+    
+        <div class="searchbox">
+    <label for="search-by"><i class="fa fa-search"></i></label>
+    <input id="search-by" type="text" placeholder="Search">
+    <span data-search-clear=""><i class="fa fa-close"></i></span>
+</div>
+<script type="text/javascript" src="http://evo-cloud.github.com/hmake//js/lunr.min.js"></script>
+<script type="text/javascript" src="http://evo-cloud.github.com/hmake//js/horsey.js"></script>
+<script type="text/javascript">
+    var baseurl = "http:\/\/evo-cloud.github.com\/hmake\/";
+</script>
+<script type="text/javascript" src="http://evo-cloud.github.com/hmake//js/search.js"></script>
+
+    
+</div>
+
+
+  <div class="highlightable">
+    <ul class="topics">
+      
+        
+        
+          
+          
+            
+          
+        
+          
+          
+            
+          
+        
+          
+          
+            
+          
+        
+          
+          
+            
+          
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      
+      
+      
+      
+
+      
+      
+      
+        
+          
+        
+      
+      
+      
+
+      <li class="dd-item  " data-nav-id="/hmake/intro/">
+        <a href="/hmake/intro/">
+          <span>
+            
+              <b>1. </b>
+            
+             Introduction
+            
+           </span>
+        </a>
+        
+      </li>
+      
+      
+      
+
+      
+      
+      
+        
+          
+        
+      
+      
+      
+
+      <li class="dd-item  " data-nav-id="/hmake/quickguide/">
+        <a href="/hmake/quickguide/">
+          <span>
+            
+              <b>2. </b>
+            
+             Quick Guide
+            
+           </span>
+        </a>
+        
+        <ul>
+          
+            <li class="dd-item " data-nav-id="/hmake/quickguide/install/">
+              <a href="/hmake/quickguide/install/">
+                <span>Installation     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/quickguide/helloworld/">
+              <a href="/hmake/quickguide/helloworld/">
+                <span>Hello World     </i></span>
+              </a>
+            </li>
+          
+        </ul>
+        
+      </li>
+      
+      
+      
+
+      
+      
+      
+        
+          
+        
+      
+      
+      
+
+      <li class="dd-item  " data-nav-id="/hmake/tutor/">
+        <a href="/hmake/tutor/">
+          <span>
+            
+              <b>3. </b>
+            
+             Tutorials
+            
+           </span>
+        </a>
+        
+        <ul>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/project/">
+              <a href="/hmake/tutor/project/">
+                <span>A HyperMake Project     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/targetexec/">
+              <a href="/hmake/tutor/targetexec/">
+                <span>Target Execution     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/buildimage/">
+              <a href="/hmake/tutor/buildimage/">
+                <span>Build Docker Image     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/pushimage/">
+              <a href="/hmake/tutor/pushimage/">
+                <span>Push Docker Image     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/compose/">
+              <a href="/hmake/tutor/compose/">
+                <span>Docker Compose     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/execmode/">
+              <a href="/hmake/tutor/execmode/">
+                <span>Exec Mode     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/commandmode/">
+              <a href="/hmake/tutor/commandmode/">
+                <span>Command Mode     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/mapcreds/">
+              <a href="/hmake/tutor/mapcreds/">
+                <span>Map Credentials     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/targetexp/">
+              <a href="/hmake/tutor/targetexp/">
+                <span>Target Expansion     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/wrappermode/">
+              <a href="/hmake/tutor/wrappermode/">
+                <span>Wrapper Mode     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/faq/">
+              <a href="/hmake/tutor/faq/">
+                <span>FAQ     </i></span>
+              </a>
+            </li>
+          
+        </ul>
+        
+      </li>
+      
+      
+      
+
+      
+      
+      
+        
+          
+        
+      
+      
+      
+
+      <li class="dd-item  parent" data-nav-id="/hmake/references/">
+        <a href="/hmake/references/">
+          <span>
+            
+              <b>4. </b>
+            
+             References
+            
+           </span>
+        </a>
+        
+        <ul>
+          
+            <li class="dd-item " data-nav-id="/hmake/references/commandline/">
+              <a href="/hmake/references/commandline/">
+                <span>Command Line     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/references/fileformat/">
+              <a href="/hmake/references/fileformat/">
+                <span>File Format     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item active" data-nav-id="/hmake/references/dockerdrv/">
+              <a href="/hmake/references/dockerdrv/">
+                <span>Docker Driver     </i></span>
+              </a>
+            </li>
+          
+        </ul>
+        
+      </li>
+      
+      
+    </ul>
+    <hr>
+     
+    <section id="footer">
+      <a class="btn btn-default" href="https://github.com/evo-cloud/hmake">Fork Me &nbsp;<i class="fa fa-github-alt"></i></a>
+
+    </section>
+  </div>
+</nav>
+
+        <section id="body">
+        <div id="overlay"></div>
+
+        <div class="padding highlightable">
+
+            <div id="top-bar">
+              
+              <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                  <span id="sidebar-toggle-span">
+                      <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                        <i class="fa fa-bars"></i>
+                      </a>
+                  </span>
+                
+                
+                  
+                  
+                  
+                    
+                    
+                <a href="/hmake/references/" itemprop="url"><span itemprop="title">References</span></a> <i class="fa fa-angle-right"></i>
+                    
+                  
+                
+                <span itemprop="title"> Docker Driver</span>
+              </div>
+              
+
+            </div>
+            
+              <div id="body-inner">
+                
+                <h1>Docker Driver</h1>
+                
+
+
+
+<p>This execution driver interprets commands or scripts and run inside docker container
+using specified image.
+The driver uses <code>docker run</code> to start the container, not using Docker REST API,
+so docker CLI is required.</p>
+
+<h2 id="properties">Properties</h2>
+
+<ul>
+<li><code>script</code>: a multi-line string represents a full script to execute inside the
+container;
+E.g.</li>
+</ul>
+
+<pre><code class="language-yaml">  targets:
+      sample:
+          script: |
+              #!/bin/bash
+              echo 'This is a bash script'
+      sample1:
+          script: |
+              #!/usr/bin/env perl
+              print &quot;a perl script&quot;
+</code></pre>
+
+<ul>
+<li><code>cmds</code>: when <code>script</code> is not specified, this is a list of commands to execute
+for the target; E.g.</li>
+</ul>
+
+<pre><code class="language-yaml">  targets:
+      sample:
+          cmds:
+              - mkdir -p bin
+              - gcc -o bin/hello hello.c
+</code></pre>
+
+<p>the list of commands is merged to generate a shell script:</p>
+
+<pre><code class="language-sh">  #!/bin/sh
+  set -e
+  mkdir -p bin
+  gcc -o bin/hello hello.c
+</code></pre>
+
+<ul>
+<li><code>env</code>: a list of environment variables (the form <code>NAME=VALUE</code>) to be used for
+execution (the <code>-e</code> option of <code>docker run</code>); E.g.</li>
+</ul>
+
+<pre><code class="language-yaml">  targets:
+      sample:
+          env:
+              - ARCH=x86_64
+              - OS=linux
+              - RELEASE        # without =VALUE, the value is populated from
+                               # current environment of hmake
+</code></pre>
+
+<div class="notices tip" ><p>It&rsquo;s very useful to specify environment variable without a value.
+It&rsquo;s possible to specify the value at the time invoking hmake, instead of hard-code
+in hmake files.</p>
+</div>
+
+
+<ul>
+<li><p><code>env-files</code>: list of files providing environment variables, see <code>--env-files</code>
+of <code>docker run</code>;</p></li>
+
+<li><p><code>console</code>: when <code>true</code>, the current stdin/stdout/stderr is directly passed to
+command which is able to fully control the current console, equivalent to
+<code>docker run -it</code>.
+Default is false, equivalent to <code>docker run -a STDOUT -a STDERR</code>.</p></li>
+</ul>
+
+<div class="notices info" ><p>When <code>console</code> is enabled, no output is captured or logged.</p>
+</div>
+
+
+<ul>
+<li><code>build</code>: path to <code>Dockerfile</code>, when specified, this target builds a docker
+image first. <code>image</code> property specifies the image name and tag.
+The value can point to a <code>Dockerfile</code> (e.g. <code>build: build/Dockerfile.arm</code>)
+which indicates the folder containing the file is the context folder.
+And the value can also point to a folder which contains a <code>Dockerfile</code>
+(e.g. <code>build: build</code>) which uses the folder as context folder and looks for
+<code>Dockerfile</code> there.</li>
+</ul>
+
+<div class="notices tip" ><p><code>Dockerfile</code> and any related files should be included in <code>watches</code> list</p>
+</div>
+
+
+<ul>
+<li><p><code>build-from</code>: the path of context folder for <code>docker build</code>.
+Without this property, the path is derived from path of <code>Dockerfile</code> specified
+in <code>build</code>. Please note, the path must be direct/indirect parent of the
+<code>Dockerfile</code> as required by <code>docker build</code>;</p></li>
+
+<li><p><code>build-args</code>: list of args, corresponding to <code>docker build</code> option;</p></li>
+
+<li><p><code>image</code>: with <code>build</code> it&rsquo;s the image name and tag to build,
+without <code>build</code>, it&rsquo;s the image used to create the container;</p></li>
+
+<li><p><code>tags</code>: a list of tags in addition to <code>image</code> when do <code>docker build</code>;</p></li>
+
+<li><p><code>commit</code>: commit running container into new image. Support multiple tags.
+Image tag will be <code>latest</code>, if not self-defined in image name. E.g.</p></li>
+</ul>
+
+<pre><code class="language-yaml">  target:
+      image: image-name:tag
+      cmds:
+          - Some commands
+          - ...
+      commit:
+            - new-image-name:tag1
+            - new-image-name:tag2
+</code></pre>
+
+<p>It will first run the commands in the container created from <em>image-name:tag</em>
+  and then commit the container to image <em>new-image-name:tag1</em>, <em>new-image-name:tag2</em>.
+  It&rsquo;s the alternative way to build an image, versus using property <code>build</code>.</p>
+
+<ul>
+<li><code>cache</code>: only used to specify <code>false</code> which adds <code>--no-cache</code> to <code>docker build</code>;</li>
+<li><code>content-trust</code>: only used to specify <code>false</code> which adds
+<code>--disable-content-trust</code> to <code>docker build/run</code>;</li>
+<li><code>src-volume</code>: the full path inside container where project root is mapped to.
+Default is <code>/src</code>;</li>
+<li><code>expose-docker</code>: when set <code>true</code>, expose the host docker server connectivity
+into container to allow docker client run from inside the container.
+This is very useful when docker is required for build and avoid problematic
+docker-in-docker;</li>
+<li><code>privileged</code>: run container in privileged mode, default is <code>false</code>;</li>
+<li><code>net</code>: when specified, add <code>--net</code> option to docker CLI.
+When set to <code>host</code>, also add <code>--uts=host</code>;</li>
+<li><code>link</code>: a list of strings of <code>container:hostname</code> mapping to <code>--link</code> option.
+This is very useful when combined with <code>compose</code> (docker-compose);</li>
+<li><code>user</code>: passed to <code>docker run --user...</code>, by default, current <code>uid:gid</code> are
+passed (with <em>docker-machine</em> the <code>uid:gid</code> is queried from the virtual machine
+running docker daemon).
+It must be explicitly specified <code>root</code> if the script is executed as root
+inside container.
+When a non-root user is explicitly specified, all group IDs are automatically
+passed using <code>--group-add</code>l;</li>
+<li><code>groups</code>: explicitly specify group IDs to pass into container, instead of
+passing all of them;</li>
+<li><code>volumes</code>: a list of volume mappings passed to <code>-v</code> option of <code>docker run</code>;</li>
+<li><code>compose</code>: run <code>docker-compose</code>, see below for details.</li>
+</ul>
+
+<p>The following properties directly maps to <code>docker build/run</code> options:</p>
+
+<ul>
+<li><code>cap-add</code>, <code>cap-drop</code></li>
+<li><code>devices</code></li>
+<li><code>hosts</code>: mapped to <code>--add-host</code></li>
+<li><code>dns</code>, <code>dns-opts</code>, <code>dns-search</code></li>
+<li><code>blkio-weight</code>, <code>blkio-weight-devices</code></li>
+<li><code>device-read-bps</code>, <code>device-write-bps</code>, <code>device-read-iops</code>, <code>device-write-iops</code></li>
+<li><code>cpu-shares</code>, <code>cpu-period</code>, <code>cpu-quota</code>, <code>cpuset-cpus</code>, <code>cpuset-mems</code></li>
+<li><code>kernel-memory</code>, <code>memory</code>, <code>memory-swap</code>, <code>memory-swappiness</code>, <code>shm-size</code></li>
+<li><code>ulimit</code></li>
+<li><code>labels</code>, <code>label-files</code></li>
+<li><code>pull</code>, <code>force-rm</code></li>
+</ul>
+
+<p>All above properties can also be specified in <code>settings</code>/<code>local</code> under
+<code>docker</code> section:</p>
+
+<pre><code class="language-yaml">settings:
+    docker:
+        property: value
+</code></pre>
+
+<h2 id="volume-mapping">Volume Mapping</h2>
+
+<p>By default the current project root is mapped into container at <code>src-volume</code>,
+default value is <code>/src</code>.
+As the script is a shell script, the executable <code>/bin/sh</code> must be present in
+the container.</p>
+
+<p>The host side path is translated with the following rule:</p>
+
+<ul>
+<li>It&rsquo;s relative path, it&rsquo;s relative to working directory (property <code>workdir</code>);</li>
+<li>It&rsquo;s absolute path (including starting with <code>~/</code>, <code>~</code> expands to home), it&rsquo;s absolute on the host;</li>
+<li>It starts with <code>-/</code>, it&rsquo;s relative to project root.</li>
+</ul>
+
+<p>Example:</p>
+
+<pre><code class="language-yaml">targets:
+  volumes:
+    - 'abc:/var/lib/abc'  # host path is $HMAKE_PROJECT_DIR/$HMAKE_TARGET_DIR/abc
+    - '~/.ssh:/root/.ssh' # host path is $HOME/.ssh
+    - '/var/lib:/var/lib' # host path is /var/lib
+    - '-/src:/src'        # host path is $HMAKE_PROJECT_DIR/src
+</code></pre>
+
+<div class="notices info" ><p>On Mac OS, only paths under <code>/Users</code> can be mapped into the container.
+All project trees must sit under <code>/Users</code>.</p>
+</div>
+
+
+<div class="notices info" ><p>On Windows, only paths under <code>C:\Users</code> can be mapped into the container.
+All project trees must sit under <code>C:\Users</code>.</p>
+</div>
+
+
+<h2 id="user">User</h2>
+
+<p>By default <em>hmake</em> uses current user (NOT root) to run inside container,
+which make sure any file change has the same ownership as the environment outside.
+If root is required, it can be explicitly specified <code>user: root</code>,
+however, all files created inside container will be owned by <code>root</code> outside,
+and you may eventually see some error messages like <code>permission denied</code> when you
+do something outside.</p>
+
+<h2 id="docker-compose">Docker Compose</h2>
+
+<p>The property <code>compose</code> is used to run <code>docker-compose</code> as a background target.
+The value can be a single string pointing to a directory containing
+<code>docker-compose.yml</code> (<code>docker-compose.yaml</code>) or a full path to a file with
+alternative name instead of <code>docker-compose.yml</code>,
+or an object containing detailed properties:</p>
+
+<ul>
+<li><code>file</code>: the path to a directory containing <code>docker-compose.yml</code>, or to a file
+with alternative name;</li>
+<li><code>project-name</code>: override project name (<code>--project-name</code>);</li>
+<li><code>deps</code>: when <code>false</code>, add <code>--no-deps</code>;</li>
+<li><code>recreate</code>: when <code>false</code>, add <code>--no-recreate</code>, or <code>force</code>, add <code>--force-recreate</code>;</li>
+<li><code>build</code>: when <code>true</code>, add <code>--build</code>, or <code>false</code>, add <code>--no-build</code>;</li>
+<li><code>remove-orphans</code>: when <code>true</code>, add <code>--remove-orphans</code>;</li>
+<li><code>services</code>: a list of strings as service names after <code>docker-compose up</code> command line.</li>
+</ul>
+
+<p>When <code>compose</code> is present, the target is executed as a background target.
+<code>docker-compose up -d</code> is used to launch containers in the background.
+If <code>cmds</code> or <code>build</code> are also present in the same target, they are executed after
+<code>docker-compose</code> launched the containers.</p>
+
+<p>Other targets can take dependency on a background target (e.g. with <code>compose</code>), and
+in this case, use <code>net</code> and <code>link</code> to connect target to containers launched by
+<code>docker-compose</code>. This is very useful to launch a testing environment and run
+test code from targets.</p>
+
+<h2 id="known-issues">Known Issues</h2>
+
+<ul>
+<li>Docker machine backed by VirtualBox: Docker for Mac is recommended instead of VirtualBox
+
+<ul>
+<li>Unstable NAT service: the NAT service from VirtualBox will eventually disconnect;</li>
+<li>Hard link not supported: hard links can&rsquo;t be created on mapped volumes;</li>
+</ul></li>
+<li>Time drifting inside the VM: with Docker for Mac, the time may drift because there&rsquo;s
+no time synchronization at current stage;</li>
+<li>Memory exhaust: observed with Docker for Mac, restart Docker service solve the problem;</li>
+<li>Docker <code>--label</code> bug: Docker <em>1.12</em> has a bug parsing command line <code>--label</code> which works
+with Docker <em>1.11</em>, putting labels inside <code>Dockerfile</code> works fine.</li>
+</ul>
+
+<h2 id="limits">Limits</h2>
+
+<p>On Linux, <em>docker-machine</em> is not supported, docker daemon must run on the same
+host running <em>hmake</em>.</p>
+
+
+      
+      
+      </div>
+    </div>
+
+    
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+      
+    
+    
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+        
+      
+        
+      
+    
+      
+        
+      
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+      
+        
+      
+      
+        
+      
+        
+      
+        
+      
+    
+    
+
+    <div id="navigation">
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              
+                <a class="nav nav-prev" href="/hmake/references/fileformat/"> <i class="fa fa-chevron-left"></i></a>
+              
+            
+            
+              
+            
+          
+        
+        
+        
+        
+    </div>
+
+    </section>
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>
+    <script src="http://evo-cloud.github.com/hmake//js/clipboard.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/perfect-scrollbar.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/perfect-scrollbar.jquery.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/jquery.sticky-kit.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/featherlight.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/html5shiv-printshiv.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="http://evo-cloud.github.com/hmake//js/modernizr.custom.71422.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/learn.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/hugo-learn.js"></script>
+    
+
+  </body>
+</html>
+

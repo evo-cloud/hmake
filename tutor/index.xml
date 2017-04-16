@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>HyperMake</title>
-    <link>http://evo-cloud.github.com/hmake/</link>
-    <description>Recent content on HyperMake</description>
+    <title>Tutorials on HyperMake</title>
+    <link>http://evo-cloud.github.com/hmake/tutor/</link>
+    <description>Recent content in Tutorials on HyperMake</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     
-	<atom:link href="http://evo-cloud.github.com/hmake/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="http://evo-cloud.github.com/hmake/tutor/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
@@ -18,54 +18,6 @@
       <guid>http://evo-cloud.github.com/hmake/tutor/project/</guid>
       <description>Project Layout A HyperMake project requires one HyperMake file in root directory of the project (The file name can be overridden using --file|-f, see Command Line for details). The command hmake can be invoked in any sub-directory of the project and it will look up HyperMake to determine the root of project.
 Similar to a Makefile, HyperMake defines targets with dependencies (see File Format). To better organize the targets, it&amp;rsquo;s possible to break targets into multiple files.</description>
-    </item>
-    
-    <item>
-      <title>Command Line</title>
-      <link>http://evo-cloud.github.com/hmake/references/commandline/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://evo-cloud.github.com/hmake/references/commandline/</guid>
-      <description>hmake [OPTIONS] [TARGETS]  There&amp;rsquo;s no specific order between OPTIONS and TARGETS. All OPTIONS starts with hyphen - while TARGETS doesn&amp;rsquo;t.
-Common Unix command line option parsing rule is adopted:
-  A short option starts with a single hyphen and then a single letter (e.g. -C); it may have a corresponding long option which starts with a double hyphen followed by a word (or a few words concated with hyphen) (e.</description>
-    </item>
-    
-    <item>
-      <title>Installation</title>
-      <link>http://evo-cloud.github.com/hmake/quickguide/install/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://evo-cloud.github.com/hmake/quickguide/install/</guid>
-      <description>Install Docker Install Docker, version 1.12.3 or above is required.
-Run
-docker version  and make sure it shows both client and server versions correctly.
-Docker Compose (Optional) Install docker-compose if you want to use compose property in targets.
-Install HyperMake For Mac brew tap evo-cloud/toolkit # only do this once brew install hmake  Or download and extract the binary directly
-curl -s https://github.com/evo-cloud/hmake/releases/download/v1.3.0/hmake-darwin-amd64.tar.gz | sudo tar -C /usr/local/bin -zx  For Linux curl -s https://github.</description>
-    </item>
-    
-    <item>
-      <title>File Format</title>
-      <link>http://evo-cloud.github.com/hmake/references/fileformat/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://evo-cloud.github.com/hmake/references/fileformat/</guid>
-      <description>for wrapper mode, please refer to Wrapper Mode
-File HyperMake must be present in root directory of the project tree. Command hmake can be invoked in any sub-directories inside the project tree and it will locate the root of project by looking up HyperMake. Additional files must be named as *.hmake for being referenced in includes section. All these files share the same format.
-In HyperMake or *.hmake, define the following things:</description>
-    </item>
-    
-    <item>
-      <title>Hello World</title>
-      <link>http://evo-cloud.github.com/hmake/quickguide/helloworld/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://evo-cloud.github.com/hmake/quickguide/helloworld/</guid>
-      <description>A Simple Project Let&amp;rsquo;s make a simple Hello World C++ project, and see how HyperMake can help.
-Here&amp;rsquo;s the project directory layout:
-ProjectRoot | +--inc/ +--src/ +--hello.cpp  In hello.cpp:
-#include &amp;lt;iostream&amp;gt; int main(int argc, char *argv[]) { std::cout &amp;lt;&amp;lt; &amp;quot;Hello World!&amp;quot; &amp;lt;&amp;lt; std::endl; return 0; }  To build it, use g++ -o hello src/hello.cpp. Probably you will need to run sudo apt install g++ first on Debian/Ubuntu if you&amp;rsquo;ve never installed the toolchain.</description>
     </item>
     
     <item>
@@ -87,16 +39,6 @@ ProjectRoot | +--inc/ +--src/ +--hello.cpp  In hello.cpp:
       <guid>http://evo-cloud.github.com/hmake/tutor/buildimage/</guid>
       <description>It&amp;rsquo;s simple and straight-forward to build Docker images using hmake.
 Use Docker build --- format: hypermake.v0 name: build-sample targets: build-image: description: build docker image build: dir-contains-Dockerfile image: &#39;my-image:tag&#39; tags: - &#39;my-image1:tag1&#39; - &#39;my-image2:tag2&#39;  Specify property build to run docker build for the target. The value can be a path to a directory containing Dockerfile, or path including filename. If filename is included, it&amp;rsquo;s not necessary to be Dockerfile, hmake will take care of the right command line arguments to docker build.</description>
-    </item>
-    
-    <item>
-      <title>Docker Driver</title>
-      <link>http://evo-cloud.github.com/hmake/references/dockerdrv/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://evo-cloud.github.com/hmake/references/dockerdrv/</guid>
-      <description>This execution driver interprets commands or scripts and run inside docker container using specified image. The driver uses docker run to start the container, not using Docker REST API, so docker CLI is required.
-Properties  script: a multi-line string represents a full script to execute inside the container; E.g.  targets: sample: script: | #!/bin/bash echo &#39;This is a bash script&#39; sample1: script: | #!/usr/bin/env perl print &amp;quot;a perl script&amp;quot;   cmds: when script is not specified, this is a list of commands to execute for the target; E.</description>
     </item>
     
     <item>

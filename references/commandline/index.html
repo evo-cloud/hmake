@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="generator" content="Hugo 0.20.1" />
+    <meta name="description" content="HyperMake Document">
+<meta name="author" content="Yisui Hu &lt;easeway@gmail.com&gt;">
+
+    <link rel="shortcut icon" href="http://evo-cloud.github.com/hmake//images/favicon.png" type="image/x-icon" />
+
+    
+    <title>Command Line</title>
+    <link href="http://evo-cloud.github.com/hmake//css/nucleus.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/font-awesome.min.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/hybrid.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/featherlight.min.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/perfect-scrollbar.min.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/horsey.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/theme.css" rel="stylesheet">
+    <link href="http://evo-cloud.github.com/hmake//css/hugo-theme.css" rel="stylesheet">
+    <script src="http://evo-cloud.github.com/hmake//js/jquery-2.x.min.js"></script>
+    <style type="text/css">:root #header + #content > #left > #rlblock_left
+    {display:none !important;}</style>
+    <link href="http://evo-cloud.github.com/hmake//css/default.css" rel="stylesheet">
+
+  </head>
+  <body class="" data-url="/hmake/references/commandline/">
+    
+    <nav id="sidebar">
+  <div id="header-wrapper">
+    <div id="header">
+      <a id="logo" href="https://evo-cloud.github.io/hmake"><b>H</b>yper<b>M</b>ake</a>
+
+    </div>
+    
+        <div class="searchbox">
+    <label for="search-by"><i class="fa fa-search"></i></label>
+    <input id="search-by" type="text" placeholder="Search">
+    <span data-search-clear=""><i class="fa fa-close"></i></span>
+</div>
+<script type="text/javascript" src="http://evo-cloud.github.com/hmake//js/lunr.min.js"></script>
+<script type="text/javascript" src="http://evo-cloud.github.com/hmake//js/horsey.js"></script>
+<script type="text/javascript">
+    var baseurl = "http:\/\/evo-cloud.github.com\/hmake\/";
+</script>
+<script type="text/javascript" src="http://evo-cloud.github.com/hmake//js/search.js"></script>
+
+    
+</div>
+
+
+  <div class="highlightable">
+    <ul class="topics">
+      
+        
+        
+          
+          
+            
+          
+        
+          
+          
+            
+          
+        
+          
+          
+            
+          
+        
+          
+          
+            
+          
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      
+      
+      
+      
+
+      
+      
+      
+        
+          
+        
+      
+      
+      
+
+      <li class="dd-item  " data-nav-id="/hmake/intro/">
+        <a href="/hmake/intro/">
+          <span>
+            
+              <b>1. </b>
+            
+             Introduction
+            
+           </span>
+        </a>
+        
+      </li>
+      
+      
+      
+
+      
+      
+      
+        
+          
+        
+      
+      
+      
+
+      <li class="dd-item  " data-nav-id="/hmake/quickguide/">
+        <a href="/hmake/quickguide/">
+          <span>
+            
+              <b>2. </b>
+            
+             Quick Guide
+            
+           </span>
+        </a>
+        
+        <ul>
+          
+            <li class="dd-item " data-nav-id="/hmake/quickguide/install/">
+              <a href="/hmake/quickguide/install/">
+                <span>Installation     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/quickguide/helloworld/">
+              <a href="/hmake/quickguide/helloworld/">
+                <span>Hello World     </i></span>
+              </a>
+            </li>
+          
+        </ul>
+        
+      </li>
+      
+      
+      
+
+      
+      
+      
+        
+          
+        
+      
+      
+      
+
+      <li class="dd-item  " data-nav-id="/hmake/tutor/">
+        <a href="/hmake/tutor/">
+          <span>
+            
+              <b>3. </b>
+            
+             Tutorials
+            
+           </span>
+        </a>
+        
+        <ul>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/project/">
+              <a href="/hmake/tutor/project/">
+                <span>A HyperMake Project     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/targetexec/">
+              <a href="/hmake/tutor/targetexec/">
+                <span>Target Execution     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/buildimage/">
+              <a href="/hmake/tutor/buildimage/">
+                <span>Build Docker Image     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/pushimage/">
+              <a href="/hmake/tutor/pushimage/">
+                <span>Push Docker Image     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/compose/">
+              <a href="/hmake/tutor/compose/">
+                <span>Docker Compose     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/execmode/">
+              <a href="/hmake/tutor/execmode/">
+                <span>Exec Mode     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/commandmode/">
+              <a href="/hmake/tutor/commandmode/">
+                <span>Command Mode     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/mapcreds/">
+              <a href="/hmake/tutor/mapcreds/">
+                <span>Map Credentials     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/targetexp/">
+              <a href="/hmake/tutor/targetexp/">
+                <span>Target Expansion     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/wrappermode/">
+              <a href="/hmake/tutor/wrappermode/">
+                <span>Wrapper Mode     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/tutor/faq/">
+              <a href="/hmake/tutor/faq/">
+                <span>FAQ     </i></span>
+              </a>
+            </li>
+          
+        </ul>
+        
+      </li>
+      
+      
+      
+
+      
+      
+      
+        
+          
+        
+      
+      
+      
+
+      <li class="dd-item  parent" data-nav-id="/hmake/references/">
+        <a href="/hmake/references/">
+          <span>
+            
+              <b>4. </b>
+            
+             References
+            
+           </span>
+        </a>
+        
+        <ul>
+          
+            <li class="dd-item active" data-nav-id="/hmake/references/commandline/">
+              <a href="/hmake/references/commandline/">
+                <span>Command Line     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/references/fileformat/">
+              <a href="/hmake/references/fileformat/">
+                <span>File Format     </i></span>
+              </a>
+            </li>
+          
+            <li class="dd-item " data-nav-id="/hmake/references/dockerdrv/">
+              <a href="/hmake/references/dockerdrv/">
+                <span>Docker Driver     </i></span>
+              </a>
+            </li>
+          
+        </ul>
+        
+      </li>
+      
+      
+    </ul>
+    <hr>
+     
+    <section id="footer">
+      <a class="btn btn-default" href="https://github.com/evo-cloud/hmake">Fork Me &nbsp;<i class="fa fa-github-alt"></i></a>
+
+    </section>
+  </div>
+</nav>
+
+        <section id="body">
+        <div id="overlay"></div>
+
+        <div class="padding highlightable">
+
+            <div id="top-bar">
+              
+              <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                  <span id="sidebar-toggle-span">
+                      <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                        <i class="fa fa-bars"></i>
+                      </a>
+                  </span>
+                
+                
+                  
+                  
+                  
+                    
+                    
+                <a href="/hmake/references/" itemprop="url"><span itemprop="title">References</span></a> <i class="fa fa-angle-right"></i>
+                    
+                  
+                
+                <span itemprop="title"> Command Line</span>
+              </div>
+              
+
+            </div>
+            
+              <div id="body-inner">
+                
+                <h1>Command Line</h1>
+                
+
+
+
+<pre><code>hmake [OPTIONS] [TARGETS]
+</code></pre>
+
+<p>There&rsquo;s no specific order between <code>OPTIONS</code> and <code>TARGETS</code>. All <code>OPTIONS</code> starts
+with hyphen <code>-</code> while <code>TARGETS</code> doesn&rsquo;t.</p>
+
+<div class="notices tip" ><p>Common Unix command line option parsing rule is adopted:</p>
+</div>
+
+
+<ul>
+<li>A short option starts with a single hyphen and then a single letter
+(e.g. <code>-C</code>);
+it may have a corresponding long option which starts with a double hyphen
+followed by a word (or a few words concated with hyphen)
+(e.g. <code>--chdir</code>, <code>--this-is-a-multi-word-opt</code>);</li>
+<li>The value after a short option is provided as a separated argument
+(after a space, e.g. <code>-C /tmp/proj</code>);
+for long option, the value follows directly with <code>=</code> in the same argument
+(e.g. <code>--chdir=/tmp/proj</code>);</li>
+<li>Some option can be specified multiple times to provide a list or a map
+(e.g.<br>
+<em>list</em>: <code>--include=a.hmake --include=b.hmake</code> or <code>-I a.hmake -I b.hmake</code>;<br>
+<em>map</em>: <code>--define=ARCH=x86_64 --define=OS=linux</code> or <code>-D ARCH=x86_64 -D OS=linux</code>
+);</li>
+<li>Bool options can be specified without value as <code>true</code> or prefixed by <code>no-</code> as
+<code>false</code> (e.g. <code>--verbose</code> for <code>true</code>, <code>--no-verbose</code> for <code>false</code>);
+It can also be specified with a value in the long option format
+(e.g. <code>--verbose=true</code> or <code>--verbose=false</code>).</li>
+</ul>
+
+<h2 id="options">Options</h2>
+
+<ul>
+<li><code>--chdir=PATH, -C PATH</code>: Chdir to specified PATH before doing anything;</li>
+<li><code>--file=FILE, -f FILE</code>: Override the default project file name <code>HyperMake</code>;
+This only specifies the file name, no path included;</li>
+<li><code>--include=FILE, -I FILE</code>: Include additional files (must be relative path under project root), can be specified multiple times</li>
+<li><code>--property=key=value, -P key=value</code>: Define property in global <code>settings</code> section, <code>key</code> may include <code>.</code> to specify the hierarchy (e.g. <code>-P docker.image=gcc-5</code>);</li>
+<li><code>--parallel=N, -p N</code>: Set maximum number of targets executed in parallel, 0 for auto, -1 for unlimited;</li>
+<li><code>--rebuild-all, -R</code>: Force rebuild all needed targets</li>
+<li><code>--rebuild-target TARGET, -r TARGET</code>: Force rebuild specified target, this can be specified multiple times;</li>
+<li><code>--rebuild, -b</code>: Force rebuild targets specified on command line;</li>
+<li><code>--skip TARGET, -S TARGET</code>: Skip specified target (mark as Skipped), this can be specified multiple times;</li>
+<li><code>--exec, -x</code>: Execute a shell command in the context of a target.
+The target name must be specified in <code>settings.exec-target</code> or use <code>--exec-with=TARGET</code>.
+It&rsquo;s extremely useful to run arbitrary command in the context of a target.
+It should come as the last option, as the rest command-line arguments will be
+treated as command.</li>
+</ul>
+
+<p>For example:</p>
+
+<pre><code class="language-sh">  hmake -x go version
+  hmake -x   # enter an interactive shell inside the container
+</code></pre>
+
+<p>The commands parsing after <code>-x</code> is directly executed by <code>execvp</code> system call,
+  not a command to be parsed by shell. So shell syntax like <code>&amp;&amp;</code> won&rsquo;t work.</p>
+
+<p>To run as a shell command</p>
+
+<pre><code class="language-sh">  hmake -x /bin/sh -c 'go version || echo &quot;go version failed&quot;'
+</code></pre>
+
+<ul>
+<li><code>--exec-with=TARGET, -X TARGET</code>: Explicitly specify the target for <code>--exec</code> instead of
+fetching from <code>settings.exec-target</code>.
+As it implies <code>--exec</code>, it should come as the last option.</li>
+</ul>
+
+<p>For example:</p>
+
+<pre><code class="language-sh">  hmake --exec-with=vendor go version
+</code></pre>
+
+<ul>
+<li><code>--json</code>: Dump execution events to stdout in single line JSON documents;</li>
+<li><code>--summary, -s</code>: Show execution summary before exit;</li>
+<li><code>--quiet, -q</code>: Suppress output from targets;</li>
+<li><code>--rcfile|--no-rcfile</code>: Load <em>.hmakerc</em> inside project directories, default is true;</li>
+<li><code>--color|--no-color</code>: Explicitly specify print with color/no-color;</li>
+<li><code>--emoji|--no-emoji</code>: Explicitly specify print with emoji/no-emoji;</li>
+<li><code>--no-debug-log</code>: Disable writing debug log to <code>hmake.debug.log</code> in hmake state directory (.hmake);</li>
+<li><code>--show-summary</code>: When specified, print previous execution summary and exit, without doing anything else;</li>
+<li><code>--targets</code>: When specified, print list of target names and exit;</li>
+<li><code>--dryrun</code>: When specified, pretend to run targets in the right order, but without actually execute them (simply mark task Success);</li>
+<li><code>--version</code>: When specified, print version and exit.</li>
+</ul>
+
+<p>The parsing of options stops when <code>--</code> is encountered.
+The rest of arguments will be treated as target names.
+Except <code>--exec</code>/<code>--exec-with</code> already implies end of options parsing,
+<code>--</code> will be interpreted as an argument to exec command.</p>
+
+<div class="notices info" ><p><code>--exec</code>/<code>--exec-with</code> doesn&rsquo;t affect the last execution result of the
+target, though it displays the result and updates the summary. The target
+may still be skipped next time if nothing changed.</p>
+</div>
+
+
+<h2 id="exit-code">Exit Code</h2>
+
+<ul>
+<li>0: Success</li>
+<li>1: One or more targets failed</li>
+<li>2: Incorrect usage</li>
+</ul>
+
+
+      
+      
+      </div>
+    </div>
+
+    
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+      
+    
+    
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+        
+      
+        
+      
+    
+      
+        
+      
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+      
+        
+      
+      
+        
+      
+        
+      
+        
+      
+    
+    
+
+    <div id="navigation">
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              
+                <a class="nav nav-prev" href="/hmake/references/"> <i class="fa fa-chevron-left"></i></a>
+              
+            
+            
+              
+                <a class="nav nav-next" href="/hmake/references/fileformat/" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+              
+            
+          
+        
+          
+        
+          
+        
+        
+        
+        
+    </div>
+
+    </section>
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>
+    <script src="http://evo-cloud.github.com/hmake//js/clipboard.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/perfect-scrollbar.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/perfect-scrollbar.jquery.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/jquery.sticky-kit.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/featherlight.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/html5shiv-printshiv.min.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="http://evo-cloud.github.com/hmake//js/modernizr.custom.71422.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/learn.js"></script>
+    <script src="http://evo-cloud.github.com/hmake//js/hugo-learn.js"></script>
+    
+
+  </body>
+</html>
+

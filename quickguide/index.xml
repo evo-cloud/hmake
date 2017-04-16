@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Quick Guide on HyperMake</title>
+    <link>http://evo-cloud.github.com/hmake/quickguide/</link>
+    <description>Recent content in Quick Guide on HyperMake</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    
+	<atom:link href="http://evo-cloud.github.com/hmake/quickguide/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Installation</title>
+      <link>http://evo-cloud.github.com/hmake/quickguide/install/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/quickguide/install/</guid>
+      <description>Install Docker Install Docker, version 1.12.3 or above is required.
+Run
+docker version  and make sure it shows both client and server versions correctly.
+Docker Compose (Optional) Install docker-compose if you want to use compose property in targets.
+Install HyperMake For Mac brew tap evo-cloud/toolkit # only do this once brew install hmake  Or download and extract the binary directly
+curl -s https://github.com/evo-cloud/hmake/releases/download/v1.3.0/hmake-darwin-amd64.tar.gz | sudo tar -C /usr/local/bin -zx  For Linux curl -s https://github.</description>
+    </item>
+    
+    <item>
+      <title>Hello World</title>
+      <link>http://evo-cloud.github.com/hmake/quickguide/helloworld/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://evo-cloud.github.com/hmake/quickguide/helloworld/</guid>
+      <description>A Simple Project Let&amp;rsquo;s make a simple Hello World C++ project, and see how HyperMake can help.
+Here&amp;rsquo;s the project directory layout:
+ProjectRoot | +--inc/ +--src/ +--hello.cpp  In hello.cpp:
+#include &amp;lt;iostream&amp;gt; int main(int argc, char *argv[]) { std::cout &amp;lt;&amp;lt; &amp;quot;Hello World!&amp;quot; &amp;lt;&amp;lt; std::endl; return 0; }  To build it, use g++ -o hello src/hello.cpp. Probably you will need to run sudo apt install g++ first on Debian/Ubuntu if you&amp;rsquo;ve never installed the toolchain.</description>
+    </item>
+    
+  </channel>
+</rss>
