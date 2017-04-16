@@ -2,7 +2,7 @@ sudo: required
 
 language: go
 go:
-    - 1.7
+    - 1.8
     - tip
 
 services:
@@ -10,7 +10,7 @@ services:
 
 env:
     global:
-        - DOCKER_VERSION=1.12.1-0~trusty
+        - DOCKER_VERSION=1.12.3-0~trusty
 
 before_install:
     - apt-cache madison docker-engine
@@ -19,6 +19,8 @@ before_install:
 script:
     - docker version
     - go get
-    - go build
+    - go get -v github.com/FiloSottile/gvt
+    - gvt restore
+    - go build -o hmake ./
     - ./hmake all
-    - ./bin/linux/amd64/hmake check test e2e site -sv
+    - ./bin/linux/amd64/hmake check test e2e site

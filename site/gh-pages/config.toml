@@ -1,29 +1,10 @@
 baseurl = "http://evo-cloud.github.com/hmake/"
 languageCode = "en-us"
 title = "HyperMake"
-theme = "purehugo"
-paginate = 0
-
-[blackfriday]
-sourceRelativeLinksEval = true
+theme = "hugo-theme-learn"
 
 [params]
-githubName = "evo-cloud/hmake"
-description = "build without pre-requisites"
-hideShareOptions = true
-hidePostTime = true
-releaseVersion = "1.3.0"
-
-[[params.artifacts]]
-os = "linux"
-file = "hmake-linux-amd64.tar.gz"
-
-[[params.artifacts]]
-os = "darwin"
-file = "hmake-darwin-amd64.tar.gz"
-osIcon = "apple"
-osName = "Mac OS X"
-
-[[params.artifacts]]
-os = "windows"
-file = "hmake-windows-amd64.zip"
+author = "Yisui Hu <easeway@gmail.com>"
+description = "HyperMake Document"
+autoNav = true
+search = true
