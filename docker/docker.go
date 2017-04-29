@@ -69,6 +69,7 @@ type Runner struct {
 	Devices           []string       `map:"devices"`
 	Privileged        bool           `map:"privileged"`
 	Network           string         `map:"net"`
+	Ports             []string       `map:"ports"`
 	Hosts             []string       `map:"hosts"`
 	DNSServers        []string       `map:"dns"`
 	DNSSearch         string         `map:"dns-search"`
@@ -447,6 +448,9 @@ func (r *Runner) run(sigCh <-chan os.Signal) error {
 	if r.Network == "host" {
 		dockerCmd.Add("--uts", "host")
 	} else {
+		for _, port := range r.Ports {
+			dockerCmd.Add("-p", port)
+		}
 		for _, host := range r.Hosts {
 			dockerCmd.Add("--add-host", host)
 		}
