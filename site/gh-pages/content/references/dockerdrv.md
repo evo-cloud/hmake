@@ -130,6 +130,7 @@ When `console` is enabled, no output is captured or logged.
 - `privileged`: run container in privileged mode, default is `false`;
 - `net`: when specified, add `--net` option to docker CLI.
   When set to `host`, also add `--uts=host`;
+- `ports`: a list of strings passed to `-p` to docker CLI;
 - `link`: a list of strings of `container:hostname` mapping to `--link` option.
   This is very useful when combined with `compose` (docker-compose);
 - `user`: passed to `docker run --user...`, by default, current `uid:gid` are
