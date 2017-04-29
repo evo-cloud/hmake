@@ -42,7 +42,7 @@ Run
 docker version  and make sure it shows both client and server versions correctly.
 Docker Compose (Optional) Install docker-compose if you want to use compose property in targets.
 Install HyperMake For Mac brew tap evo-cloud/toolkit # only do this once brew install hmake  Or download and extract the binary directly
-curl -s https://github.com/evo-cloud/hmake/releases/download/v1.3.0/hmake-darwin-amd64.tar.gz | sudo tar -C /usr/local/bin -zx  For Linux curl -s https://github.</description>
+curl -s https://github.com/evo-cloud/hmake/releases/download/v1.3.1/hmake-darwin-amd64.tar.gz | sudo tar -C /usr/local/bin -zx  For Linux curl -s https://github.</description>
     </item>
     
     <item>
@@ -120,13 +120,13 @@ Properties  script: a multi-line string represents a full script to execute insi
     </item>
     
     <item>
-      <title>Exec Mode</title>
+      <title>Exec(Debug) Mode</title>
       <link>http://evo-cloud.github.com/hmake/tutor/execmode/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>http://evo-cloud.github.com/hmake/tutor/execmode/</guid>
-      <description>exec mode allows execution of arbitrary command inside the container under the context of the specified target.
-Overview --- format: hypermake.v0 targets: build: description: build the source code cmds: - ./build.sh env: - FLAG=1 test: description: run test cmds: - ./test.sh settings: exec-target: build docker: image: &#39;ubuntu:latest&#39;  Sometimes, developers need to get into the execution environment of a target to find out what goes wrong. exec mode is designed for this specific needs.</description>
+      <description>exec mode allows execution of arbitrary command inside the container under the context of the specified target. It&amp;rsquo;s very useful to debug the environment.
+Overview --- format: hypermake.v0 targets: build: description: build the source code cmds: - ./build.sh env: - FLAG=1 test: description: run test cmds: - ./test.sh settings: exec-target: build docker: image: &#39;ubuntu:latest&#39;  Sometimes, developers need to get into the execution environment of a target to find out what goes wrong.</description>
     </item>
     
     <item>

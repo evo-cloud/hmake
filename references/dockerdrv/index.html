@@ -213,7 +213,7 @@
           
             <li class="dd-item " data-nav-id="/hmake/tutor/execmode/">
               <a href="/hmake/tutor/execmode/">
-                <span>Exec Mode     </i></span>
+                <span>Exec(Debug) Mode     </i></span>
               </a>
             </li>
           
@@ -483,6 +483,7 @@ docker-in-docker;</li>
 <li><code>privileged</code>: run container in privileged mode, default is <code>false</code>;</li>
 <li><code>net</code>: when specified, add <code>--net</code> option to docker CLI.
 When set to <code>host</code>, also add <code>--uts=host</code>;</li>
+<li><code>ports</code>: a list of strings passed to <code>-p</code> to docker CLI;</li>
 <li><code>link</code>: a list of strings of <code>container:hostname</code> mapping to <code>--link</code> option.
 This is very useful when combined with <code>compose</code> (docker-compose);</li>
 <li><code>user</code>: passed to <code>docker run --user...</code>, by default, current <code>uid:gid</code> are
