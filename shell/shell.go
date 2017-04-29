@@ -14,16 +14,16 @@ import (
 
 // Target defines the schema of shell commands in target
 type Target struct {
-	Console bool       `json:"console"`
-	Env     []string   `json:"env"`
-	Cmds    []*Command `json:"cmds"`
-	Script  string     `json:"script"`
+	Console bool       `map:"console"`
+	Env     []string   `map:"env"`
+	Cmds    []*Command `map:"cmds"`
+	Script  string     `map:"script"`
 }
 
 // Command defines a single command to execute
 type Command struct {
-	Shell string                 `json:"*"`
-	Ext   map[string]interface{} `json:"*"`
+	Shell string                 `map:"*"`
+	Ext   map[string]interface{} `map:"*"`
 }
 
 // Args build arguments

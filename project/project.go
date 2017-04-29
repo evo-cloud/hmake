@@ -62,26 +62,26 @@ var (
 // File defines the content of HyperMake or .hmake file
 type File struct {
 	// Format indicates file format
-	Format string `json:"format"`
+	Format string `map:"format"`
 	// Name is name of the project
-	Name string `json:"name"`
+	Name string `map:"name"`
 	// Desc is description of the project
-	Desc string `json:"description"`
+	Desc string `map:"description"`
 	// Targets are targets defined in current file
-	Targets map[string]*Target `json:"targets"`
+	Targets map[string]*Target `map:"targets"`
 	// Commands are targets used as commands
-	Commands map[string]*Target `json:"commands"`
+	Commands map[string]*Target `map:"commands"`
 	// Settings are properties
-	Settings Settings `json:"settings"`
+	Settings Settings `map:"settings"`
 	// Local are properties only applied to file
-	Local Settings `json:"local"`
+	Local Settings `map:"local"`
 	// Includes are patterns for sourcing external files
-	Includes []string `json:"includes"`
+	Includes []string `map:"includes"`
 
 	// Source is the relative path to the project
-	Source string `json:"-"`
+	Source string `map:"-"`
 	// WrapperTarget specifies the default target in wrapper mode
-	WrapperTarget string `json:"-"`
+	WrapperTarget string `map:"-"`
 }
 
 // Project is the world view of hmake
@@ -104,9 +104,9 @@ type Project struct {
 
 // CommonSettings are well known settings
 type CommonSettings struct {
-	DefaultTargets []string `json:"default-targets"`
-	ExecTarget     string   `json:"exec-target"`
-	ExecShell      string   `json:"exec-shell"`
+	DefaultTargets []string `map:"default-targets"`
+	ExecTarget     string   `map:"exec-target"`
+	ExecShell      string   `map:"exec-shell"`
 }
 
 func loadAndRender(fn string) ([]byte, error) {
@@ -135,27 +135,7 @@ func loadYaml(filename string) (map[string]interface{}, error) {
 
 	// normalize yaml by converting
 	// map[interface{}]interface{} to map[string]interface{}
-	return normalizeMap(val).(map[string]interface{}), nil
-}
-
-func normalizeMap(val interface{}) interface{} {
-	switch v := val.(type) {
-	case []interface{}:
-		for n, item := range v {
-			v[n] = normalizeMap(item)
-		}
-	case map[interface{}]interface{}:
-		m := make(map[string]interface{})
-		for key, value := range v {
-			m[fmt.Sprintf("%v", key)] = normalizeMap(value)
-		}
-		val = m
-	case map[string]interface{}:
-		for key, value := range v {
-			v[key] = normalizeMap(value)
-		}
-	}
-	return val
+	return mapper.StringifyKeys(val).(map[string]interface{}), nil
 }
 
 func loadAsWrapper(fn string) (*File, error) {

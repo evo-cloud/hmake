@@ -56,8 +56,8 @@ type testRunner struct {
 }
 
 type testRunnerExt struct {
-	Touch string `json:"touch"`
-	Do    string `json:"do"`
+	Touch string `map:"touch"`
+	Do    string `map:"do"`
 }
 
 func (r *testRunner) Run(sigCh <-chan os.Signal) (hm.TaskResult, error) {
@@ -89,13 +89,13 @@ func (r *testRunner) ValidateArtifacts() bool {
 }
 
 type testSetting struct {
-	TopLevel  string `json:"toplevel"`
-	TopLevel1 string `json:"toplevel1"`
-	Local1    string `json:"local1"`
+	TopLevel  string `map:"toplevel"`
+	TopLevel1 string `map:"toplevel1"`
+	Local1    string `map:"local1"`
 	Dict      struct {
-		Key  string `json:"key"`
-		Key1 string `json:"key1"`
-	} `json:"dict"`
+		Key  string `map:"key"`
+		Key1 string `map:"key1"`
+	} `map:"dict"`
 }
 
 var _ = BeforeSuite(func() {
