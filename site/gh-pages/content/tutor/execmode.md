@@ -1,10 +1,11 @@
 ---
-title: Exec Mode
+title: Exec(Debug) Mode
 weight: 6
 ---
 
 **exec mode** allows execution of arbitrary command inside the container under
 the context of the specified target.
+It's very useful to debug the environment.
 
 ## Overview
 

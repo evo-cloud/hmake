@@ -24,7 +24,7 @@ import (
 
 const (
 	// Release is the major release version
-	Release = "1.3.0"
+	Release = "1.3.1"
 	// Website is the URL to project website
 	Website = "https://github.com/evo-cloud/hmake"
 

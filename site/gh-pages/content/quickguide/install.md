@@ -31,13 +31,13 @@ brew install hmake
 Or download and extract the binary directly
 
 ```sh
-curl -s https://github.com/evo-cloud/hmake/releases/download/v1.3.0/hmake-darwin-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
+curl -s https://github.com/evo-cloud/hmake/releases/download/v1.3.1/hmake-darwin-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 ```
 
 ### For Linux
 
 ```sh
-curl -s https://github.com/evo-cloud/hmake/releases/download/v1.3.0/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
+curl -s https://github.com/evo-cloud/hmake/releases/download/v1.3.1/hmake-linux-amd64.tar.gz | sudo tar -C /usr/local/bin -zx
 ```
 
 ### For Windows
@@ -45,7 +45,7 @@ curl -s https://github.com/evo-cloud/hmake/releases/download/v1.3.0/hmake-linux-
 Download and extract the binary from
 
 ```text
-https://github.com/evo-cloud/hmake/releases/download/v1.3.0/hmake-windows-amd64.zip
+https://github.com/evo-cloud/hmake/releases/download/v1.3.1/hmake-windows-amd64.zip
 ```
 
 ## Anything else?

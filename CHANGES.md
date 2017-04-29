@@ -1,5 +1,12 @@
 # Change Log
 
+## v1.3.1
+
+_Release Date_: 2017-04-28
+
+- Add port mapping (`-p`) support in docker driver
+- Rewrite documents and site pages
+
 ## v1.3.0
 
 _Release Date_: 2017-02-08
