@@ -14,6 +14,9 @@ docker version
 
 and make sure it shows both client and server versions correctly.
 
+_NOTE:_ Docker machine is no longer supported.
+For Mac/Windows, please use Docker for Mac or Docker for Windows.
+
 ## Docker Compose (Optional)
 
 Install [docker-compose](https://docs.docker.com/compose/install/) if you want to

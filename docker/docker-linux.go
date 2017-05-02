@@ -8,10 +8,6 @@ const (
 	dockerSockPath = "/var/run/docker.sock"
 )
 
-func (r *Runner) checkProjectDir() error {
-	return nil
-}
-
 func (r *Runner) canonicalProjectDir() string {
 	return r.projectDir
 }
