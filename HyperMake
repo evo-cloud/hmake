@@ -18,7 +18,7 @@ targets:
         watches:
             - 'vendor/manifest'
         cmds:
-            - gvt restore
+            - dep ensure
 
     hmake-linux-[arch:amd64,arm,arm64]:
         description: static linked hmake binary for linux-$[arch]
