@@ -308,6 +308,12 @@ func (r *Runner) build(sigCh <-chan os.Signal) error {
 		dockerCmd.Add("--no-cache")
 	}
 
+	dockerCmd.Add("--label", "hmake="+r.Task.Plan.Env["HMAKE_VERSION"])
+	dockerCmd.Add("--label", "hmake.target="+r.Task.Name())
+	if projName := r.Task.Project().Name; projName != "" {
+		dockerCmd.Add("--label", "hmake.project="+projName)
+	}
+
 	r.commonOpts(dockerCmd)
 
 	dockerFile := r.Task.WorkingDir(r.Build)
