@@ -23,8 +23,6 @@ import (
 const (
 	// ExecDriverName is name of exec-driver
 	ExecDriverName = "docker"
-	// DefaultSrcVolume is the default source path inside the container
-	DefaultSrcVolume = "/src"
 	// SettingName is the name of section of settings
 	SettingName = "docker"
 	// Dockerfile is default name of Dockerfile
@@ -362,12 +360,7 @@ func (r *Runner) push(sigCh <-chan os.Signal) error {
 	return nil
 }
 
-func (r *Runner) run(sigCh <-chan os.Signal) error {
-	err := r.checkProjectDir()
-	if err != nil {
-		return err
-	}
-
+func (r *Runner) run(sigCh <-chan os.Signal) (err error) {
 	workDir := filepath.Join(r.SrcVolume, r.Task.Target.WorkingDir())
 	dockerCmd := shell.NewArgs("create",
 		"-v", r.canonicalProjectDir()+":"+r.SrcVolume,
@@ -750,7 +743,7 @@ func Factory(task *hm.Task) (hm.Runner, error) {
 	}
 
 	if r.SrcVolume == "" {
-		r.SrcVolume = DefaultSrcVolume
+		r.SrcVolume = task.Project().BaseDir
 	}
 	if r.ExposeDocker {
 		r.exposeDocker()
@@ -846,7 +839,14 @@ func (p *passwdPatcher) patch(r *Runner, sigCh <-chan os.Signal) (err error) {
 		return
 	}
 
-	lines = append(lines, fmt.Sprintf("user%d:x:%d:%d::/tmp:/sbin/nologin", p.uid, p.uid, p.gid))
+	// map current user name
+	var username string
+	if u, e := user.Current(); e == nil {
+		username = u.Username
+	} else {
+		username = fmt.Sprintf("user%d", p.uid)
+	}
+	lines = append(lines, fmt.Sprintf("%s:x:%d:%d::/tmp:/sbin/nologin", username, p.uid, p.gid))
 	content := []byte(strings.Join(lines, "\n"))
 
 	var gen bytes.Buffer
